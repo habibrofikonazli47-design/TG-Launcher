@@ -1,0 +1,72 @@
+name: Import NUX Launcher v1.1.6 and build TG Launcher
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/import-nux-source.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  import-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out TG Launcher
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check out upstream NUX Launcher v1.1.6
+        uses: actions/checkout@v4
+        with:
+          repository: IsraaDeveloper/nuxlabs
+          ref: v1.1.6
+          path: nux-source
+
+      - name: Import upstream source while preserving TG project metadata
+        run: |
+          rsync -a --exclude='.git/' --exclude='README.md' nux-source/ ./
+          rm -rf nux-source
+          sed -i 's#<string name="app_name">NUX Launcher</string>#<string name="app_name">TG Launcher</string>#' app/src/main/res/values/strings.xml
+          if ! grep -q '<string name="app_name">TG Launcher</string>' app/src/main/res/values/strings.xml; then
+            echo "Could not update the launcher display name."
+            exit 1
+          fi
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build debug APK
+        run: |
+          chmod +x ./gradlew
+          ./gradlew --no-daemon assembleDebug
+
+      - name: Commit imported source to TG Launcher
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No source changes to commit."
+          else
+            git commit -m "Import NUX Launcher v1.1.6 as TG Launcher"
+            git push
+          fi
+
+      - name: Upload TG Launcher APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: TG-Launcher-debug
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
