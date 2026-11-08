@@ -1,12 +1,13 @@
-import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
+import { createHmac, pbkdf2Sync, timingSafeEqual } from 'node:crypto';
 
 const SESSION_COOKIE = 'tg_admin_session';
 const SESSION_TTL = 60 * 60 * 8;
 export function verifyAdminPassword(password: string) {
   const expected = process.env.ADMIN_PASSWORD_HASH || '';
-  const [scheme, salt, digest] = expected.split('$');
-  if (scheme !== 'scrypt' || !salt || !digest) return false;
-  const actual = scryptSync(password, salt, 64).toString('hex');
+  const [scheme, iterationsRaw, salt, digest] = expected.split('$');
+  const iterations = Number(iterationsRaw);
+  if (scheme !== 'pbkdf2' || !Number.isSafeInteger(iterations) || iterations < 100000 || !salt || !digest) return false;
+  const actual = pbkdf2Sync(password, salt, iterations, 64, 'sha256').toString('hex');
   const a = Buffer.from(actual, 'hex'); const b = Buffer.from(digest, 'hex');
   return a.length === b.length && timingSafeEqual(a, b);
 }
@@ -31,11 +32,11 @@ export function supabaseConfig() {
   const url = process.env.SUPABASE_URL || '';
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   if (!url || !key) throw new Error('Koneksi database belum dikonfigurasi di Vercel.');
-  return { url: url.replace(/\\/$/, ''), key };
+  return { url: url.replace(/\/$/, ''), key };
 }
 export async function db(path: string, init: RequestInit = {}) {
   const { url, key } = supabaseConfig();
-  const response = await fetch(url + '/rest/v1/' + path, { ...init, cache: 'no-store', headers: { apikey: key, Authorization: 'Bearer '+key, 'Content-Type':'application/json', ...(init.headers || {}) } });
+  const response = await fetch(url + '/rest/v1/' + path, { ...init, cache: 'no-store', headers: { apikey: key, Authorization: 'Bearer '+key, 'Content-Type':'application/json', ...((init.headers || {}) as Record<string, string>) } });
   const text = await response.text(); let data: any = null; try { data = text ? JSON.parse(text) : null; } catch { data = text; }
   if (!response.ok) throw new Error(data?.message || data?.error || 'Database request gagal ('+response.status+')');
   return data;
