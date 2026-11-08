@@ -72,10 +72,24 @@ jobs:
           chmod +x ./gradlew
           ./gradlew --no-daemon assembleDebug
 
-      - name: Upload TG Launcher APK
+      - name: Upload TG Launcher APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: TG-Launcher-debug
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publish direct APK download on GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.1.6-tg1
+          name: TG Launcher v1.1.6-tg1
+          body: |
+            TG Launcher build based on NUX Launcher v1.1.6.
+            Download the APK asset below; no ZIP extraction is required.
+          files: app/build/outputs/apk/debug/app-debug.apk
+          fail_on_unmatched_files: true
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
