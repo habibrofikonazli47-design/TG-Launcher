@@ -39,7 +39,9 @@ jobs:
             exit 1
           fi
           # Keep the Kotlin namespace intact while giving TG Launcher a distinct install identity.
-          sed -i 's/applicationId = "com.israadev.nuxlauncher"/applicationId = "com.tglauncher.launcher"/' app/build.gradle.kts
+          sed -i 's/applicationId = "com.israadev.nuxlauncher"/applicationId = "com.tg.launcher"/' app/build.gradle.kts
+          # Apply TG launcher icon to the app and all file-import shortcuts.
+          sed -i 's#@mipmap/ic_launcher_round#@drawable/tg_launcher_icon#g; s#@mipmap/ic_launcher#@drawable/tg_launcher_icon#g; s/NUX Launcher — /TG Launcher — /g' app/src/main/AndroidManifest.xml
           sed -i 's/versionCode = 17/versionCode = 18/' app/build.gradle.kts
           sed -i 's/versionName = "1.1.6"/versionName = "1.1.6-tg1"/' app/build.gradle.kts
 
