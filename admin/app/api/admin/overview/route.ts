@@ -1,0 +1,4 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { db, getCookieName, verifySession } from '@/lib/server';
+export const runtime='nodejs';
+export async function GET(req:NextRequest){ if(!verifySession(req.cookies.get(getCookieName())?.value)) return NextResponse.json({error:'Unauthorized'},{status:401}); try { const [users,licenses,plans,usage]=await Promise.all([db('profiles?select=id,status,plan'),db('licenses?select=id,status,plan'),db('plans?select=code,name,features,limits'),db('launcher_ai_usage?select=request_count')]); return NextResponse.json({users:users.length,activeUsers:users.filter((x:any)=>x.status==='active').length,premiumUsers:users.filter((x:any)=>x.plan==='premium').length,licenses:licenses.length,activeLicenses:licenses.filter((x:any)=>x.status==='active').length,plans,aiRequests:usage.reduce((n:number,x:any)=>n+(x.request_count||0),0)}); } catch(e:any){return NextResponse.json({error:e.message},{status:503});}}
