@@ -5,6 +5,9 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/import-nux-source.yml"
+      - "app/**"
+      - "*.gradle.kts"
+      - "gradle/**"
   workflow_dispatch:
 
 permissions:
@@ -35,6 +38,10 @@ jobs:
             echo "Could not update the launcher display name."
             exit 1
           fi
+          # Keep the Kotlin namespace intact while giving TG Launcher a distinct install identity.
+          sed -i 's/applicationId = "com.israadev.nuxlauncher"/applicationId = "com.tglauncher.launcher"/' app/build.gradle.kts
+          sed -i 's/versionCode = 17/versionCode = 18/' app/build.gradle.kts
+          sed -i 's/versionName = "1.1.6"/versionName = "1.1.6-tg1"/' app/build.gradle.kts
 
       - name: Commit imported source to TG Launcher
         run: |
