@@ -46,11 +46,6 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Build debug APK
-        run: |
-          chmod +x ./gradlew
-          ./gradlew --no-daemon assembleDebug
-
       - name: Commit imported source to TG Launcher
         run: |
           git config user.name "github-actions[bot]"
@@ -62,6 +57,11 @@ jobs:
             git commit -m "Import NUX Launcher v1.1.6 as TG Launcher"
             git push
           fi
+
+      - name: Build debug APK
+        run: |
+          chmod +x ./gradlew
+          ./gradlew --no-daemon assembleDebug
 
       - name: Upload TG Launcher APK
         uses: actions/upload-artifact@v4
