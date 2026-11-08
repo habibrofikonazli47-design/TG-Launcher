@@ -36,16 +36,6 @@ jobs:
             exit 1
           fi
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "17"
-          cache: gradle
-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Commit imported source to TG Launcher
         run: |
           git config user.name "github-actions[bot]"
@@ -57,6 +47,18 @@ jobs:
             git commit -m "Import NUX Launcher v1.1.6 as TG Launcher"
             git push
           fi
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
 
       - name: Build debug APK
         run: |
