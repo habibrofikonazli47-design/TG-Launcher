@@ -20,9 +20,9 @@
     <application
         android:name=".NuxApplication"
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/tg_launcher_icon"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:roundIcon="@drawable/tg_launcher_icon"
         android:supportsRtl="true"
         android:theme="@style/Theme.NuxLauncher"
         android:requestLegacyExternalStorage="true"
@@ -44,8 +44,8 @@
         <activity-alias
             android:name=".ImportModActivity"
             android:targetActivity=".MainActivity"
-            android:label="NUX Launcher — Mod"
-            android:icon="@mipmap/ic_launcher"
+            android:label="TG Launcher — Mod"
+            android:icon="@drawable/tg_launcher_icon"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -73,8 +73,8 @@
         <activity-alias
             android:name=".ImportModpackActivity"
             android:targetActivity=".MainActivity"
-            android:label="NUX Launcher — Modpack"
-            android:icon="@mipmap/ic_launcher"
+            android:label="TG Launcher — Modpack"
+            android:icon="@drawable/tg_launcher_icon"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -111,8 +111,8 @@
         <activity-alias
             android:name=".ImportResourcepackActivity"
             android:targetActivity=".MainActivity"
-            android:label="NUX Launcher — Resource Pack"
-            android:icon="@mipmap/ic_launcher"
+            android:label="TG Launcher — Resource Pack"
+            android:icon="@drawable/tg_launcher_icon"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -139,8 +139,8 @@
         <activity-alias
             android:name=".ImportShaderpackActivity"
             android:targetActivity=".MainActivity"
-            android:label="NUX Launcher — Shaderpack"
-            android:icon="@mipmap/ic_launcher"
+            android:label="TG Launcher — Shaderpack"
+            android:icon="@drawable/tg_launcher_icon"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
