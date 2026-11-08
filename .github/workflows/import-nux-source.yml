@@ -69,16 +69,33 @@ jobs:
         with:
           packages: platform-tools
 
-      - name: Build debug APK
+      - name: Build release APK
         run: |
           chmod +x ./gradlew
-          ./gradlew --no-daemon assembleDebug
+          ./gradlew --no-daemon clean assembleRelease
+
+      - name: Verify APK package, signature, and alignment
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/release/app-release.apk"
+          test -s "$APK"
+          BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          test -x "$BUILD_TOOLS/apksigner"
+          test -x "$BUILD_TOOLS/zipalign"
+          "$BUILD_TOOLS/apksigner" verify --verbose --print-certs "$APK"
+          "$BUILD_TOOLS/zipalign" -c -v 4 "$APK"
+          "$BUILD_TOOLS/aapt" dump badging "$APK" | tee /tmp/tg-badging.txt
+          grep -q "package: name='com.tg.launcher'" /tmp/tg-badging.txt
+          grep -q "application-label:'TG Launcher'" /tmp/tg-badging.txt
+          grep -q "native-code: 'arm64-v8a'" /tmp/tg-badging.txt
+          echo "APK validation passed."
 
       - name: Upload TG Launcher APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: TG-Launcher-debug
-          path: app/build/outputs/apk/debug/*.apk
+          name: TG-Launcher-release-verified
+          path: app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 14
 
@@ -90,7 +107,7 @@ jobs:
           body: |
             TG Launcher build based on NUX Launcher v1.1.6.
             Download the APK asset below; no ZIP extraction is required.
-          files: app/build/outputs/apk/debug/app-debug.apk
+          files: app/build/outputs/apk/release/app-release.apk
           fail_on_unmatched_files: true
           make_latest: true
         env:
