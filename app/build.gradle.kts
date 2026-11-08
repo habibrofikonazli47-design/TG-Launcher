@@ -24,11 +24,11 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.israadev.nuxlauncher"
+        applicationId = "com.tglauncher.launcher"
         minSdk = 26
         targetSdk = 34
-        versionCode = 17
-        versionName = "1.1.6"
+        versionCode = 18
+        versionName = "1.1.6-tg1"
 
         buildConfigField("String", "SERVER_BASE_URL", "\"$rawServerUrl\"")
         buildConfigField("String", "SERVER_API_KEY", "\"$rawServerApiKey\"")
