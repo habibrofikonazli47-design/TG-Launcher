@@ -24,7 +24,7 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.tglauncher.launcher"
+        applicationId = "com.tg.launcher"
         minSdk = 26
         targetSdk = 34
         versionCode = 18
