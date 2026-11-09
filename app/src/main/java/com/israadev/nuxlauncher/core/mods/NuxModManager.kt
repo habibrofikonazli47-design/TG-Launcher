@@ -41,7 +41,7 @@ object NuxModManager {
         .followRedirects(true)
         .build()
 
-    private const val USER_AGENT = "NUX-Launcher/1.4.0 (contact@nuxlauncher.site)"
+    private const val USER_AGENT = "TG-Launcher/1.1.6 (https://github.com/habibrofikonazli47-design/TG-Launcher)"
     private const val MODRINTH_API_BASE = "https://api.modrinth.com/v2"
 
     /**
