@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import coil.compose.AsyncImage
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -319,13 +320,24 @@ fun DashboardScreen() {
                                 )
                             }
                         } else {
-                            Image(
-                                painter = painterResource(id = R.drawable.mc_hero_bg),
-                                contentDescription = "Minecraft Scenery",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize(),
-                                alpha = if (isHomeTab) 0.45f else 0.25f
-                            )
+                            val backgroundUrl = RemoteLauncherConfig.text(remoteConfig, "appearance", "backgroundImageUrl").trim()
+                            if (backgroundUrl.startsWith("https://")) {
+                                AsyncImage(
+                                    model = backgroundUrl,
+                                    contentDescription = "TG Launcher background",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize(),
+                                    alpha = (1f - (remoteConfig?.optJSONObject("appearance")?.optInt("backgroundOverlayAlpha", 65) ?: 65) / 100f).coerceIn(0.15f, 1f)
+                                )
+                            } else {
+                                Image(
+                                    painter = painterResource(id = R.drawable.mc_hero_bg),
+                                    contentDescription = "TG Launcher background",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize(),
+                                    alpha = if (isHomeTab) 0.45f else 0.25f
+                                )
+                            }
                         }
                     }
 
