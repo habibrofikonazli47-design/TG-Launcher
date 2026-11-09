@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import com.israadev.nuxlauncher.core.lang.tr
 import com.israadev.nuxlauncher.core.lang.trStr
 import com.israadev.nuxlauncher.core.lang.NuxLanguageManager
+import com.israadev.nuxlauncher.core.account.AccountManager
 import com.israadev.nuxlauncher.core.ai.AIChatMessage
 import com.israadev.nuxlauncher.core.ai.NuxAIEngine
 import com.israadev.nuxlauncher.core.crash.AICrashAnalyzer
@@ -62,6 +63,7 @@ fun AIScreen(
     val instances by InstanceManager.instances.collectAsState()
     val settings by SettingsManager.settings.collectAsState()
     val remoteConfig by RemoteLauncherConfig.config.collectAsState()
+    val launcherUser by AccountManager.launcherUser.collectAsState()
     val aiEnabled = RemoteLauncherConfig.isEnabled(remoteConfig, "ai", "assistantEnabled")
 
     LaunchedEffect(Unit) { RemoteLauncherConfig.refresh() }
@@ -80,7 +82,7 @@ fun AIScreen(
         mutableIntStateOf(AICrashQuotaManager.getRemainingQuota(context, settings))
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(remoteConfig, settings.aiApiKey, launcherUser?.tier, launcherUser?.isActivated) {
         val synced = AICrashQuotaManager.syncQuotaFromDatabase(context, settings)
         remainingQuota = synced
     }
