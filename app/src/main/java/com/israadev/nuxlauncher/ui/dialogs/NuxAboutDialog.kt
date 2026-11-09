@@ -338,7 +338,7 @@ fun NuxAboutDialog(
                                     }
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "NUX Launcher is an Unofficial Modified Version built and adapted based on Zalith Launcher 2 and PojavLauncher. This program is NOT an official application from Zalith Launcher Team or Mojang Studios.",
+                                        text = "TG Launcher is an unofficial modified launcher adapted from NUX Launcher, Zalith Launcher 2, and PojavLauncher. TG Launcher is NOT an official application from the Zalith Launcher Team or Mojang Studios.",
                                         color = Color(0xFFE4E4E7),
                                         fontSize = 8.5.sp,
                                         lineHeight = 12.5.sp
@@ -394,13 +394,27 @@ fun NuxAboutDialog(
                                 }
                             )
 
-                            // 3. NUX Launcher Open Source Repository
+                            // 3. Original NUX Launcher upstream source repository
                             UpstreamProjectCard(
-                                title = "NUX Launcher (Source Code)",
+                                title = "NUX Launcher (Original Upstream Source)",
                                 copyright = "Copyright © 2026 IsraaDeveloper & Contributors",
                                 license = "GNU General Public License v3.0 (GPL-3.0)",
-                                description = "Open-source codebase repository of NUX Launcher. Freely licensed under GNU GPL-3.0 terms.",
+                                description = "Original upstream NUX Launcher codebase used in the TG Launcher adaptation. Licensed under GNU GPL-3.0 terms.",
                                 url = "https://github.com/IsraaDeveloper/nuxlabs",
+                                onOpenUrl = { url ->
+                                    try {
+                                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                                    } catch (_: Exception) {}
+                                }
+                            )
+
+                            // TG Launcher source repository
+                            UpstreamProjectCard(
+                                title = "TG Launcher (Source Code)",
+                                copyright = "Copyright © 2026 TG Launcher Contributors",
+                                license = "GNU General Public License v3.0 (GPL-3.0)",
+                                description = "Current TG Launcher repository containing the adapted Android launcher and its admin integration.",
+                                url = "https://github.com/habibrofikonazli47-design/TG-Launcher",
                                 onOpenUrl = { url ->
                                     try {
                                         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
