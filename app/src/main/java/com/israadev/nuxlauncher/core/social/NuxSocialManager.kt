@@ -308,21 +308,17 @@ object NuxSocialManager {
         }.toString().toRequestBody(JSON_MEDIA)
 
         try {
-            // shared_social/public_profiles/{uid}
-            val req1 = Request.Builder()
-                .url(buildUrl("shared_social/public_profiles/${user.uid}", token))
-                .patch(payload)
-                .build()
-            client.newCall(req1).execute().close()
-
-            // android/users/{uid}/profile fallback
-            val req2 = Request.Builder()
-                .url(buildUrl("android/users/${user.uid}/profile", token))
-                .patch(payload)
-                .build()
-            client.newCall(req2).execute().close()
+            val activeToken = getAuthToken(forceRefresh = false) ?: return@withContext
+            AuthService.getApi("/api/social/profile", bearerToken = activeToken)
+            val profilePayload = JSONObject().apply {
+                put("username", user.username)
+                put("avatarUrl", user.photoURL)
+                put("bio", "")
+            }.toString()
+            val result = AuthService.postApi("/api/social/profile", profilePayload, bearerToken = activeToken)
+            if (result.isFailure) Log.w(TAG, "TG Social profile sync failed", result.exceptionOrNull())
         } catch (e: Exception) {
-            Log.w(TAG, "syncProfileToPublic failed", e)
+            Log.w(TAG, "TG Social profile sync failed", e)
         }
     }
 
@@ -339,30 +335,14 @@ object NuxSocialManager {
             put("isAndroid", true)
         }.toString().toRequestBody(JSON_MEDIA)
 
-        // 1. Direct Firebase RTDB REST
         try {
-            val req1 = Request.Builder()
-                .url(buildUrl("shared_social/public_profiles/${user.uid}", token))
-                .patch(payload)
-                .build()
-            client.newCall(req1).execute().close()
-
-            val req2 = Request.Builder()
-                .url(buildUrl("android/users/${user.uid}/profile", token))
-                .patch(payload)
-                .build()
-            client.newCall(req2).execute().close()
-        } catch (_: Exception) {}
-
-        // 2. Server Backend /api/presence via Admin SDK (100% reliably updates DB)
-        try {
-            val backendPayload = JSONObject().apply {
-                put("uid", user.uid)
-                put("status", status)
-                put("platform", "android")
-            }
-            AuthService.postApi("/api/presence", backendPayload.toString())
-        } catch (_: Exception) {}
+            val activeToken = getAuthToken(forceRefresh = false) ?: return@withContext
+            val backendPayload = JSONObject().put("status", status).toString()
+            val result = AuthService.postApi("/api/social/presence", backendPayload, bearerToken = activeToken)
+            if (result.isFailure) Log.w(TAG, "TG Social presence update failed", result.exceptionOrNull())
+        } catch (e: Exception) {
+            Log.w(TAG, "TG Social presence update failed", e)
+        }
     }
 
     // =========================================================
@@ -371,89 +351,50 @@ object NuxSocialManager {
 
     suspend fun fetchFriends() = withContext(Dispatchers.IO) {
         val user = getCurrentUser() ?: return@withContext
-        val token = getAuthToken()
-
         try {
-            // Cek shared_social/friends/{uid}
-            var url = buildUrl("shared_social/friends/${user.uid}", token)
-            var resp = client.newCall(Request.Builder().url(url).get().build()).execute()
-            var body = resp.body?.string() ?: ""
-            resp.close()
-
-            // Fallback ke legacy users/{uid}/friends jika kosong
-            if (!resp.isSuccessful || body.isEmpty() || body == "null") {
-                url = buildUrl("users/${user.uid}/friends", token)
-                resp = client.newCall(Request.Builder().url(url).get().build()).execute()
-                body = resp.body?.string() ?: ""
-                resp.close()
-            }
-
-            if (body.isEmpty() || body == "null") {
-                _friends.value = emptyList()
-                return@withContext
-            }
-
-            val type = object : TypeToken<Map<String, String>>() {}.type
-            val friendsMap: Map<String, String> = gson.fromJson(body, type) ?: emptyMap()
-
+            val token = getAuthToken(forceRefresh = false) ?: return@withContext
+            val result = AuthService.getApi("/api/social/friends", bearerToken = token)
+            val body = result.getOrElse { throw it }
+            val root = JSONObject(body)
+            val items = root.optJSONArray("items") ?: org.json.JSONArray()
+            val now = System.currentTimeMillis()
             val friendList = mutableListOf<NuxFriend>()
-            val now = System.currentTimeMillis() + serverTimeOffset
-
-            for ((fUid, relStatus) in friendsMap) {
-                val profile = fetchUserProfile(fUid, token)
-                var unreadCount = 0
-                var lastMsgTime: Long? = null
-
-                // Cek chat_meta
-                try {
-                    val metaUrl = buildUrl("shared_social/chat_meta/${user.uid}/$fUid", token)
-                    val metaResp = client.newCall(Request.Builder().url(metaUrl).get().build()).execute()
-                    val metaBody = metaResp.body?.string() ?: ""
-                    metaResp.close()
-                    if (metaBody.isNotEmpty() && metaBody != "null") {
-                        val metaJson = JSONObject(metaBody)
-                        unreadCount = metaJson.optInt("unreadCount", 0)
-                        lastMsgTime = if (metaJson.has("lastMessageTime")) metaJson.optLong("lastMessageTime") else null
-                    }
-                } catch (_: Exception) {}
-
-                val pStatus = profile?.status ?: "offline"
-                val pLastOnline = profile?.lastOnline
-                val isFresh = if (pLastOnline != null) {
-                    val diff = now - pLastOnline
-                    diff in -30_000L..85_000L
-                } else false
-                val isOnline = (pStatus == "online" || pStatus == "in_game") && isFresh
-                val isInGame = pStatus == "in_game" && isFresh
-
-                friendList.add(
-                    NuxFriend(
-                        uid = fUid,
-                        username = profile?.username ?: "Pengguna",
-                        photoUrl = profile?.photoURL ?: "",
-                        status = relStatus,
-                        lastMessageTime = lastMsgTime,
-                        unreadCount = unreadCount,
-                        isOnline = isOnline,
-                        isInGame = isInGame,
-                        lastOnline = pLastOnline,
-                        presenceStatus = if (isOnline) pStatus else "offline",
-                        platform = profile?.platform ?: "windows",
-                        isAndroid = profile?.isAndroid ?: false,
-                        isVerified = profile?.isVerified ?: false,
-                        isPremium = profile?.isPremium ?: false,
-                        inGameInstance = if (isInGame) profile?.inGameInstance else null
-                    )
-                )
+            for (i in 0 until items.length()) {
+                val item = items.optJSONObject(i) ?: continue
+                val requester = item.optString("requester_id")
+                val addressee = item.optString("addressee_id")
+                val uid = if (requester == user.uid) addressee else requester
+                val rawStatus = item.optString("status", "pending")
+                val status = when {
+                    rawStatus == "accepted" -> "accepted"
+                    rawStatus == "pending" && addressee == user.uid -> "pending_received"
+                    rawStatus == "pending" -> "pending_sent"
+                    else -> rawStatus
+                }
+                val presence = item.optString("presence", "offline")
+                val lastSeen = item.optString("last_seen_at", "")
+                val lastOnline = try { java.time.Instant.parse(lastSeen).toEpochMilli() } catch (_: Exception) { null }
+                val fresh = lastOnline != null && now - lastOnline in -30_000L..85_000L
+                val online = fresh && (presence == "online" || presence == "in_game")
+                friendList.add(NuxFriend(
+                    uid = uid,
+                    username = item.optString("username", "Pengguna"),
+                    photoUrl = item.optString("avatar_url", ""),
+                    status = status,
+                    isOnline = online,
+                    isInGame = online && presence == "in_game",
+                    lastOnline = lastOnline,
+                    presenceStatus = if (online) presence else "offline",
+                    platform = item.optString("platform", "android"),
+                    isAndroid = item.optString("platform", "android") == "android"
+                ))
             }
-
             _friends.value = friendList.sortedWith(
                 compareByDescending<NuxFriend> { it.isOnline }
-                    .thenByDescending { it.lastMessageTime ?: 0L }
                     .thenBy { it.username.lowercase() }
             )
         } catch (e: Exception) {
-            Log.w(TAG, "fetchFriends error", e)
+            Log.w(TAG, "TG Social fetchFriends failed", e)
         }
     }
 
@@ -797,77 +738,57 @@ object NuxSocialManager {
     }
 
     suspend fun sendFriendRequest(targetUid: String): Result<Unit> = withContext(Dispatchers.IO) {
-        val myUid = getCurrentUser()?.uid ?: return@withContext Result.failure(Exception("Belum login"))
-        val token = getAuthToken()
-
-        try {
-            // Target receives pending_received
-            val targetReq = Request.Builder()
-                .url(buildUrl("shared_social/friends/$targetUid/$myUid", token))
-                .put("\"pending_received\"".toRequestBody(JSON_MEDIA))
-                .build()
-            client.newCall(targetReq).execute().close()
-
-            // Sender records pending_sent
-            val myReq = Request.Builder()
-                .url(buildUrl("shared_social/friends/$myUid/$targetUid", token))
-                .put("\"pending_sent\"".toRequestBody(JSON_MEDIA))
-                .build()
-            client.newCall(myReq).execute().close()
-
-            fetchFriends()
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
+        if (getCurrentUser() == null) return@withContext Result.failure(Exception("Belum login"))
+        val token = getAuthToken() ?: return@withContext Result.failure(Exception("Sesi login kedaluwarsa"))
+        val payload = JSONObject().put("action", "request").put("targetUserId", targetUid).toString()
+        AuthService.postApi("/api/social/friends", payload, bearerToken = token).map { Unit }.also {
+            if (it.isSuccess) fetchFriends()
         }
     }
 
     suspend fun acceptFriendRequest(targetUid: String): Result<Unit> = withContext(Dispatchers.IO) {
-        val myUid = getCurrentUser()?.uid ?: return@withContext Result.failure(Exception("Belum login"))
-        val token = getAuthToken()
-
+        val user = getCurrentUser() ?: return@withContext Result.failure(Exception("Belum login"))
+        val token = getAuthToken() ?: return@withContext Result.failure(Exception("Sesi login kedaluwarsa"))
         try {
-            val myReq = Request.Builder()
-                .url(buildUrl("shared_social/friends/$myUid/$targetUid", token))
-                .put("\"accepted\"".toRequestBody(JSON_MEDIA))
-                .build()
-            client.newCall(myReq).execute().close()
-
-            val targetReq = Request.Builder()
-                .url(buildUrl("shared_social/friends/$targetUid/$myUid", token))
-                .put("\"accepted\"".toRequestBody(JSON_MEDIA))
-                .build()
-            client.newCall(targetReq).execute().close()
-
-            fetchFriends()
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+            val response = AuthService.getApi("/api/social/friends", bearerToken = token).getOrElse { throw it }
+            val items = JSONObject(response).optJSONArray("items") ?: org.json.JSONArray()
+            var friendshipId = 0
+            for (i in 0 until items.length()) {
+                val item = items.optJSONObject(i) ?: continue
+                if (item.optString("requester_id") == targetUid &&
+                    item.optString("addressee_id") == user.uid &&
+                    item.optString("status") == "pending") {
+                    friendshipId = item.optInt("id")
+                    break
+                }
+            }
+            if (friendshipId <= 0) return@withContext Result.failure(Exception("Permintaan teman tidak ditemukan"))
+            val payload = JSONObject().put("action", "accept").put("id", friendshipId).toString()
+            AuthService.postApi("/api/social/friends", payload, bearerToken = token).map { Unit }.also {
+                if (it.isSuccess) fetchFriends()
+            }
+        } catch (e: Exception) { Result.failure(e) }
     }
 
     suspend fun removeFriend(targetUid: String): Result<Unit> = withContext(Dispatchers.IO) {
-        val myUid = getCurrentUser()?.uid ?: return@withContext Result.failure(Exception("Belum login"))
-        val token = getAuthToken()
-
+        val user = getCurrentUser() ?: return@withContext Result.failure(Exception("Belum login"))
+        val token = getAuthToken() ?: return@withContext Result.failure(Exception("Sesi login kedaluwarsa"))
         try {
-            val myReq = Request.Builder()
-                .url(buildUrl("shared_social/friends/$myUid/$targetUid", token))
-                .delete()
-                .build()
-            client.newCall(myReq).execute().close()
-
-            val targetReq = Request.Builder()
-                .url(buildUrl("shared_social/friends/$targetUid/$myUid", token))
-                .delete()
-                .build()
-            client.newCall(targetReq).execute().close()
-
-            fetchFriends()
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+            val response = AuthService.getApi("/api/social/friends", bearerToken = token).getOrElse { throw it }
+            val items = JSONObject(response).optJSONArray("items") ?: org.json.JSONArray()
+            var friendshipId = 0
+            for (i in 0 until items.length()) {
+                val item = items.optJSONObject(i) ?: continue
+                val matches = (item.optString("requester_id") == user.uid && item.optString("addressee_id") == targetUid) ||
+                    (item.optString("requester_id") == targetUid && item.optString("addressee_id") == user.uid)
+                if (matches) { friendshipId = item.optInt("id"); break }
+            }
+            if (friendshipId <= 0) return@withContext Result.failure(Exception("Pertemanan tidak ditemukan"))
+            val payload = JSONObject().put("action", "remove").put("id", friendshipId).toString()
+            AuthService.postApi("/api/social/friends", payload, bearerToken = token).map { Unit }.also {
+                if (it.isSuccess) fetchFriends()
+            }
+        } catch (e: Exception) { Result.failure(e) }
     }
 
     suspend fun blockUser(targetUid: String): Result<Unit> = withContext(Dispatchers.IO) {
