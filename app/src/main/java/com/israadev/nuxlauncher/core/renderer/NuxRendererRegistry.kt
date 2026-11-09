@@ -1,6 +1,7 @@
 package com.israadev.nuxlauncher.core.renderer
 
 import com.israadev.nuxlauncher.core.utils.NuxVersionUtils
+import com.israadev.nuxlauncher.core.network.RemoteLauncherConfig
 import java.io.File
 
 object NuxRendererRegistry {
@@ -188,8 +189,23 @@ object NuxRendererRegistry {
      * Seluruh daftar renderer yang dapat dipilih oleh user di Settings (bawaan + plugin eksternal).
      */
     val availableRenderers: List<NuxRendererInfo>
-        get() = synchronized(pluginRenderers) {
-            baseRenderers + pluginRenderers
+        get() {
+            val config = RemoteLauncherConfig.config.value
+            val enabledBase = baseRenderers.filter { renderer ->
+                when (renderer.id) {
+                    "gl4es" -> RemoteLauncherConfig.isEnabled(config, "renderer", "gl4esEnabled")
+                    "virgl" -> RemoteLauncherConfig.isEnabled(config, "renderer", "virglEnabled")
+                    "zink" -> RemoteLauncherConfig.isEnabled(config, "renderer", "zinkEnabled")
+                    "freedreno", "panfrost" -> RemoteLauncherConfig.isEnabled(config, "renderer", "mesaEnabled") &&
+                        (renderer.id != "panfrost" || RemoteLauncherConfig.isEnabled(config, "renderer", "experimentalRenderers", false))
+                    else -> true
+                }
+            }
+            val experimentalEnabled = RemoteLauncherConfig.isEnabled(config, "renderer", "experimentalRenderers", false)
+            val enabledPlugins = synchronized(pluginRenderers) {
+                if (experimentalEnabled) pluginRenderers.toList() else emptyList()
+            }
+            return enabledBase + enabledPlugins
         }
 
     /**
