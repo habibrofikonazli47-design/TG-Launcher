@@ -399,7 +399,7 @@ fun FriendsScreen(
                                                         Toast.makeText(context, "Fitur voice dinonaktifkan oleh administrator TG Launcher.", Toast.LENGTH_LONG).show()
                                                         return@VoiceRoomItem
                                                     }
-                                                    if (launcherUser?.isActivated != true) {
+                                                    if (launcherUser?.features?.contains("voice_rooms") != true) {
                                                         premiumInitialPrompt = "Multiplayer Voice Rooms (LiveKit WebRTC) are exclusive to NUX Premium. Upgrade your account to voice chat with friends!"
                                                         showPremiumDialog = true
                                                         return@VoiceRoomItem
