@@ -43,7 +43,7 @@ object UpdateManager {
         try {
             val reqBuilder = Request.Builder()
                 .url(UPDATE_ENDPOINT)
-                .header("User-Agent", "NuxLauncher-Android/1.0.4")
+                .header("User-Agent", "TG-Launcher-Android")
                 .get()
             val req = reqBuilder.build()
 
@@ -111,7 +111,7 @@ object UpdateManager {
                 }
 
                 if (changelogText.isBlank()) {
-                    changelogText = "• Official NUX Launcher Android Release\n• Performance Optimizations & Game Sync Improvements"
+                    changelogText = "• Official TG Launcher Android Release\n• Performance Optimizations & Game Sync Improvements"
                 }
 
                 // Local package info
@@ -127,7 +127,7 @@ object UpdateManager {
                 val isNewerCode = remoteCode > localCode
                 val isNewerVer = compareVersions(remoteVersion, localVersionName) > 0
                 val belowMinimum = forceUpdate && compareVersions(localVersionName, minimumSupportedVersion) < 0
-                val isAvailable = isNewerCode || isNewerVer || belowMinimum
+                val isAvailable = forceUpdate && (isNewerCode || isNewerVer || belowMinimum)
 
                 val updateInfo = AndroidUpdateInfo(
                     code = remoteCode,
