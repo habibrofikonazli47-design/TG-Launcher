@@ -1,7 +1,7 @@
+import { database, ensureSchema } from '@/lib/db';
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-
-import { database, ensureSchema } from '@/lib/db';
 
 export async function GET() {
   try {
@@ -38,6 +38,8 @@ export async function GET() {
     return Response.json({
       code: Number.isFinite(code) ? code : 18,
       version,
+      force_update: updatePolicy.forceUpdate === true,
+      minimum_supported_version: String(updatePolicy.minimumSupportedVersion || '1.0.0'),
       created_at: release.published_at || release.created_at || '',
       files: [{ uri: asset.browser_download_url, file_name: asset.name, size: asset.size }],
       default_body: { markdown: release.body || 'Pembaruan TG Launcher tersedia.' },
