@@ -178,6 +178,12 @@ class GameActivity : ComponentActivity(), SurfaceHolder.Callback {
     }
 
     fun requestStartScreenRecording(config: ScreenRecordConfig, onNeedPremiumDialog: () -> Unit = {}) {
+        val currentUser = com.israadev.nuxlauncher.core.account.AccountManager.launcherUser.value
+        val hasScreenRecorder = if (currentUser?.features?.isNotEmpty() == true) "screen_recorder" in currentUser.features else currentUser?.isActivated == true
+        if (!hasScreenRecorder) {
+            onNeedPremiumDialog()
+            return
+        }
         pendingRecordConfig = config
         if (config.recordAudio && ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
@@ -193,7 +199,7 @@ class GameActivity : ComponentActivity(), SurfaceHolder.Callback {
 
     fun requestStopScreenRecording() {
         ScreenRecordManager.stopRecording(this)
-        Toast.makeText(this, "Recording stopped and saved to Movies/NUX-Launcher!", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Recording stopped and saved to Movies/TG-Launcher!", Toast.LENGTH_SHORT).show()
     }
 
     private val liveLogs = mutableStateListOf<String>()
