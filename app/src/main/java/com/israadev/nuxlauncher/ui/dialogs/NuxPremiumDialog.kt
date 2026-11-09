@@ -116,6 +116,17 @@ fun NuxPremiumDialog(
     val remoteConfig by RemoteLauncherConfig.config.collectAsState()
     val premiumPurchaseUrl = RemoteLauncherConfig.text(remoteConfig, "general", "premiumPurchaseUrl")
         .ifBlank { RemoteLauncherConfig.text(remoteConfig, "premium", "purchaseUrl") }
+    val monthlyPurchaseUrl = RemoteLauncherConfig.text(remoteConfig, "general", "premiumMonthlyPurchaseUrl").ifBlank { premiumPurchaseUrl }
+    val yearlyPurchaseUrl = RemoteLauncherConfig.text(remoteConfig, "general", "premiumYearlyPurchaseUrl").ifBlank { premiumPurchaseUrl }
+    val lifetimePurchaseUrl = RemoteLauncherConfig.text(remoteConfig, "general", "premiumLifetimePurchaseUrl").ifBlank { premiumPurchaseUrl }
+    fun openPurchaseUrl(url: String) {
+        if (url.isBlank()) {
+            Toast.makeText(context, "Link pembelian paket ini belum diatur oleh admin TG Launcher.", Toast.LENGTH_LONG).show()
+        } else {
+            try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+            catch (_: Exception) { Toast.makeText(context, "Tidak dapat membuka link pembelian.", Toast.LENGTH_SHORT).show() }
+        }
+    }
 
     var licenseKeyInput by remember { mutableStateOf("") }
     var isActivating by remember { mutableStateOf(false) }
@@ -779,7 +790,7 @@ fun NuxPremiumDialog(
                                 subtext = "Try features",
                                 modifier = Modifier.weight(1f),
                                 onSelect = {
-                                    if (premiumPurchaseUrl.isBlank()) { Toast.makeText(context, "Link pembelian Premium belum diatur oleh admin TG Launcher.", Toast.LENGTH_LONG).show() } else { try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(premiumPurchaseUrl))) } catch (_: Exception) { Toast.makeText(context, "Tidak dapat membuka link pembelian.", Toast.LENGTH_SHORT).show() } }
+                                    openPurchaseUrl(monthlyPurchaseUrl)
                                 }
                             )
 
@@ -791,7 +802,7 @@ fun NuxPremiumDialog(
                                 isBestValue = true,
                                 modifier = Modifier.weight(1.15f),
                                 onSelect = {
-                                    if (premiumPurchaseUrl.isBlank()) { Toast.makeText(context, "Link pembelian Premium belum diatur oleh admin TG Launcher.", Toast.LENGTH_LONG).show() } else { try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(premiumPurchaseUrl))) } catch (_: Exception) { Toast.makeText(context, "Tidak dapat membuka link pembelian.", Toast.LENGTH_SHORT).show() } }
+                                    openPurchaseUrl(yearlyPurchaseUrl)
                                 }
                             )
 
@@ -802,7 +813,7 @@ fun NuxPremiumDialog(
                                 subtext = "One-time purchase",
                                 modifier = Modifier.weight(1f),
                                 onSelect = {
-                                    if (premiumPurchaseUrl.isBlank()) { Toast.makeText(context, "Link pembelian Premium belum diatur oleh admin TG Launcher.", Toast.LENGTH_LONG).show() } else { try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(premiumPurchaseUrl))) } catch (_: Exception) { Toast.makeText(context, "Tidak dapat membuka link pembelian.", Toast.LENGTH_SHORT).show() } }
+                                    openPurchaseUrl(lifetimePurchaseUrl)
                                 }
                             )
                         }
