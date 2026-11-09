@@ -238,9 +238,9 @@ fun NuxPremiumDialog(
                         }
                         Text(
                             text = if (isUserPremium)
-                                "Premium Membership active • All 7 exclusive features, Voice Rooms, & unlimited slots unlocked"
+                                "Premium Membership active • All 8 exclusive features, Voice Rooms, & unlimited slots unlocked"
                             else
-                                "Unlock all 7 exclusive features, multiplayer Voice Rooms, and unlimited slots",
+                                "Unlock all 8 exclusive features, multiplayer Voice Rooms, and unlimited slots",
                             color = NuxColors.GrayNeutral,
                             fontSize = 8.5.sp
                         )
@@ -309,7 +309,7 @@ fun NuxPremiumDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "7 EXCLUSIVE TG PREMIUM FEATURES:",
+                            text = "8 EXCLUSIVE TG PREMIUM FEATURES:",
                             color = NuxColors.GrayNeutral,
                             fontSize = 8.5.sp,
                             fontWeight = FontWeight.Black,
