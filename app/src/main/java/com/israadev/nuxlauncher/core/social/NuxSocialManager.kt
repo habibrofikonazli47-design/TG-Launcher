@@ -735,7 +735,7 @@ object NuxSocialManager {
                 val timestamp = try {
                     java.time.Instant.parse(item.optString("created_at")).toEpochMilli()
                 } catch (_: Exception) { 0L }
-                val image = item.optString("attachment_url").ifBlank { null }
+                val image = item.optString("attachment_url").takeIf { it.isNotBlank() }
                 messages.add(NuxChatMessage(
                     id = item.optString("id"),
                     senderId = senderId,
