@@ -240,7 +240,11 @@ fun SettingsScreen(
     }
 
     LaunchedEffect(remoteConfig, selectedRenderer) {
-        if (!isRendererAllowed(selectedRenderer)) {
+        val adminDefaultRenderer = RemoteLauncherConfig.text(remoteConfig, "renderer", "defaultRenderer", "auto")
+        if (selectedRenderer == "auto" && adminDefaultRenderer != "auto" && isRendererAllowed(adminDefaultRenderer)) {
+            selectedRenderer = adminDefaultRenderer
+            commitSettings()
+        } else if (!isRendererAllowed(selectedRenderer)) {
             selectedRenderer = "auto"
             commitSettings()
         }
