@@ -834,24 +834,13 @@ object NuxSocialManager {
         _activeChatFriend.value = friend
         val myUid = getCurrentUser()?.uid ?: return
         val friendUid = friend.uid
-        val chatId = if (myUid < friendUid) "${myUid}_${friendUid}" else "${friendUid}_${myUid}"
-
+        val chatId = if (myUid < friendUid) "dm_${myUid}_${friendUid}" else "dm_${friendUid}_${myUid}"
         chatJob?.cancel()
         chatJob = scope.launch {
-            // Reset unread count
-            val token = getAuthToken()
-            try {
-                val resetReq = Request.Builder()
-                    .url(buildUrl("shared_social/chat_meta/$myUid/$friendUid/unreadCount", token))
-                    .put("0".toRequestBody(JSON_MEDIA))
-                    .build()
-                client.newCall(resetReq).execute().close()
-            } catch (_: Exception) {}
-
             while (isActive) {
                 fetchChatMessages(chatId)
-                fetchFriendTypingStatus(chatId, friendUid)
-                delay(1200)
+                _isFriendTyping.value = false
+                delay(1800)
             }
         }
     }
@@ -865,52 +854,36 @@ object NuxSocialManager {
     }
 
     private suspend fun fetchChatMessages(chatId: String) = withContext(Dispatchers.IO) {
-        val token = getAuthToken()
         try {
-            val url = buildUrl("shared_social/chats/$chatId", token)
-            val resp = client.newCall(Request.Builder().url(url).get().build()).execute()
-            val body = resp.body?.string() ?: ""
-            resp.close()
-
-            if (!resp.isSuccessful || body.isEmpty() || body == "null") {
-                _chatMessages.value = emptyList()
-                return@withContext
+            val token = getAuthToken() ?: return@withContext
+            val encoded = java.net.URLEncoder.encode(chatId, "UTF-8")
+            val result = AuthService.getApi("/api/social/messages?conversationId=$encoded", bearerToken = token)
+            val root = JSONObject(result.getOrElse { throw it })
+            val items = root.optJSONArray("messages") ?: org.json.JSONArray()
+            val friend = _activeChatFriend.value
+            val me = getCurrentUser()
+            val messages = mutableListOf<NuxChatMessage>()
+            for (i in 0 until items.length()) {
+                val item = items.optJSONObject(i) ?: continue
+                val senderId = item.optString("sender_id")
+                val timestamp = try {
+                    java.time.Instant.parse(item.optString("created_at")).toEpochMilli()
+                } catch (_: Exception) { 0L }
+                val image = item.optString("attachment_url").ifBlank { null }
+                messages.add(NuxChatMessage(
+                    id = item.optString("id"),
+                    senderId = senderId,
+                    senderName = if (senderId == me?.uid) me.username else friend?.username.orEmpty(),
+                    senderPhotoURL = if (senderId == me?.uid) me.photoURL else friend?.photoUrl.orEmpty(),
+                    text = item.optString("body"),
+                    timestamp = timestamp,
+                    imageUrl = image
+                ))
             }
-
-            val json = JSONObject(body)
-            val msgs = mutableListOf<NuxChatMessage>()
-            for (key in json.keys()) {
-                val item = json.getJSONObject(key)
-                val replyObj = item.optJSONObject("replyTo")
-                val reply = if (replyObj != null) {
-                    NuxChatReply(
-                        id = replyObj.optString("id", ""),
-                        senderId = replyObj.optString("senderId", ""),
-                        senderName = replyObj.optString("senderName", ""),
-                        text = replyObj.optString("text", ""),
-                        isVerified = replyObj.optBoolean("isVerified", false)
-                    )
-                } else null
-
-                msgs.add(
-                    NuxChatMessage(
-                        id = key,
-                        senderId = item.optString("senderId", ""),
-                        senderName = item.optString("senderName", ""),
-                        senderPhotoURL = item.optString("senderPhotoURL", ""),
-                        text = item.optString("text", ""),
-                        timestamp = item.optLong("timestamp", 0L),
-                        imageUrl = if (item.has("imageUrl")) item.optString("imageUrl", "").ifBlank { null } else null,
-                        replyTo = reply,
-                        isVerified = item.optBoolean("isVerified", false),
-                        isPremium = item.optBoolean("isPremium", false)
-                    )
-                )
-            }
-
-            msgs.sortBy { it.timestamp }
-            _chatMessages.value = msgs
-        } catch (_: Exception) {}
+            _chatMessages.value = messages.sortedBy { it.timestamp }
+        } catch (e: Exception) {
+            Log.w(TAG, "TG Social chat sync failed", e)
+        }
     }
 
     private suspend fun fetchFriendTypingStatus(chatId: String, friendUid: String) = withContext(Dispatchers.IO) {
@@ -959,118 +932,29 @@ object NuxSocialManager {
     ): Result<Unit> = withContext(Dispatchers.IO) {
         val user = getCurrentUser() ?: return@withContext Result.failure(Exception("Belum login"))
         val friend = _activeChatFriend.value ?: return@withContext Result.failure(Exception("Chat room is not open"))
-        val token = getAuthToken()
-        val chatId = if (user.uid < friend.uid) "${user.uid}_${friend.uid}" else "${friend.uid}_${user.uid}"
-
+        val token = getAuthToken() ?: return@withContext Result.failure(Exception("Sesi login kedaluwarsa"))
         var uploadedUrl: String? = null
         if (imageBytes != null && imageBytes.isNotEmpty()) {
             val uploadRes = uploadChatImage(imageBytes)
-            if (uploadRes.isSuccess) {
-                uploadedUrl = uploadRes.getOrNull()
-            } else {
-                return@withContext Result.failure(uploadRes.exceptionOrNull() ?: Exception("Failed to upload image"))
-            }
+            if (uploadRes.isFailure) return@withContext Result.failure(uploadRes.exceptionOrNull() ?: Exception("Upload gagal"))
+            uploadedUrl = uploadRes.getOrNull()
         }
-
-        val now = System.currentTimeMillis()
+        if (text.isBlank() && uploadedUrl.isNullOrBlank()) {
+            return@withContext Result.failure(Exception("Pesan tidak boleh kosong"))
+        }
         val payload = JSONObject().apply {
-            put("senderId", user.uid)
-            put("senderName", user.username)
-            put("senderPhotoURL", user.photoURL)
-            put("text", text.trim())
-            put("timestamp", now)
-            if (!uploadedUrl.isNullOrEmpty()) {
-                put("imageUrl", uploadedUrl)
-            }
-            if (replyTo != null) {
-                put("replyTo", JSONObject().apply {
-                    put("id", replyTo.id)
-                    put("senderId", replyTo.senderId)
-                    put("senderName", replyTo.senderName)
-                    put("text", replyTo.text.take(120))
-                    put("isVerified", replyTo.isVerified)
-                })
-            }
-        }
-
-        try {
-            var activeToken = token
-            var postReq = Request.Builder()
-                .url(buildUrl("shared_social/chats/$chatId", activeToken))
-                .post(payload.toString().toRequestBody(JSON_MEDIA))
-                .build()
-            var resp = client.newCall(postReq).execute()
-
-            // Auto retry on 401 Unauthorized
-            if (resp.code == 401) {
-                resp.close()
-                activeToken = getAuthToken(forceRefresh = true)
-                if (!activeToken.isNullOrBlank()) {
-                    postReq = Request.Builder()
-                        .url(buildUrl("shared_social/chats/$chatId", activeToken))
-                        .post(payload.toString().toRequestBody(JSON_MEDIA))
-                        .build()
-                    resp = client.newCall(postReq).execute()
-                }
-            }
-
-            val isSuccess = resp.isSuccessful
-            val code = resp.code
-            resp.close()
-
-            if (!isSuccess) {
-                return@withContext Result.failure(Exception("Failed to send message (HTTP $code)"))
-            }
-
-            // Dapatkan unreadCount saat ini di pihak teman
-            var currentUnread = 0
-            try {
-                val unreadUrl = buildUrl("shared_social/chat_meta/${friend.uid}/${user.uid}/unreadCount", activeToken)
-                val unreadResp = client.newCall(Request.Builder().url(unreadUrl).get().build()).execute()
-                val unreadStr = unreadResp.body?.string()?.trim() ?: "0"
-                unreadResp.close()
-                currentUnread = unreadStr.toIntOrNull() ?: 0
-            } catch (_: Exception) {}
-            val newUnread = currentUnread + 1
-
-            // Update chat_meta user sendiri
-            val myMetaPayload = JSONObject().apply {
-                put("lastMessageTime", now)
-                put("lastMessageText", text.trim().take(60))
-            }.toString().toRequestBody(JSON_MEDIA)
-            val myMetaReq = Request.Builder()
-                .url(buildUrl("shared_social/chat_meta/${user.uid}/${friend.uid}", activeToken))
-                .patch(myMetaPayload)
-                .build()
-            client.newCall(myMetaReq).execute().close()
-
-            // Update chat_meta teman (SHARED_SOCIAL) -> Memicu Notifikasi Pesan di Windows!
-            val friendMetaPayload = JSONObject().apply {
-                put("lastMessageTime", now)
-                put("lastMessageText", text.trim().take(60))
-                put("unreadCount", newUnread)
-            }.toString().toRequestBody(JSON_MEDIA)
-            val friendMetaReq = Request.Builder()
-                .url(buildUrl("shared_social/chat_meta/${friend.uid}/${user.uid}", activeToken))
-                .patch(friendMetaPayload)
-                .build()
-            client.newCall(friendMetaReq).execute().close()
-
-            // Update legacy chatMeta untuk kompatibilitas Windows
-            try {
-                val legMetaReq = Request.Builder()
-                    .url(buildUrl("users/${friend.uid}/chatMeta/${user.uid}", activeToken))
-                    .patch(friendMetaPayload)
-                    .build()
-                client.newCall(legMetaReq).execute().close()
-            } catch (_: Exception) {}
-
-            setMyTyping(false)
-            fetchChatMessages(chatId)
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+            put("targetUserId", friend.uid)
+            put("message", text.trim())
+            if (!uploadedUrl.isNullOrBlank()) put("attachmentUrl", uploadedUrl)
+        }.toString()
+        val result = AuthService.postApi("/api/social/messages", payload, bearerToken = token)
+        result.fold(
+            onSuccess = {
+                fetchChatMessages(if (user.uid < friend.uid) "dm_${user.uid}_${friend.uid}" else "dm_${friend.uid}_${user.uid}")
+                Result.success(Unit)
+            },
+            onFailure = { Result.failure(it) }
+        )
     }
 
     private suspend fun uploadChatImage(bytes: ByteArray): Result<String> = withContext(Dispatchers.IO) {
