@@ -32,7 +32,7 @@ data class AIChatMessage(
     val timestamp: Long = System.currentTimeMillis()
 )
 
-object NuxAIEngine {
+object TGAIEngine {
 
     private val gson = Gson()
     private const val OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions"
@@ -163,7 +163,7 @@ object NuxAIEngine {
         }
 
         val systemInstruction = """
-            Kamu adalah NUX AI, Asisten Pintar & Diagnostic Engineer resmi NUX Launcher (Minecraft Java Edition di Android via Pojav runtime).
+            Kamu adalah TG AI, Asisten Pintar & Diagnostic Engineer resmi TG Launcher (Minecraft Java Edition di Android via Pojav runtime).
             
             Karakter dan Gaya Bicara:
             - Berpengetahuan luas tentang Minecraft Java, Modding (Fabric, Forge, NeoForge, Quilt), Shaders (Iris, Oculus), dan Optimasi Renderer Mobile (GL4ES, Holy GL4ES, Angle, Zink, Freedreno/Turnip).
@@ -208,8 +208,8 @@ object NuxAIEngine {
                 val request = Request.Builder()
                     .url(OPENROUTER_ENDPOINT)
                     .addHeader("Authorization", "Bearer $currentKey")
-                    .addHeader("HTTP-Referer", "https://nuxlauncher.site")
-                    .addHeader("X-Title", "NUX Launcher Mobile")
+                    .addHeader("HTTP-Referer", "https://tg-launcher-admin-habibrofikonazli.vercel.app")
+                    .addHeader("X-Title", "TG Launcher Mobile")
                     .addHeader("Content-Type", "application/json")
                     .post(payload.toString().toRequestBody("application/json".toMediaType()))
                     .build()
@@ -227,14 +227,14 @@ object NuxAIEngine {
                                 errBody.contains("No endpoints", ignoreCase = true)
 
                         if (isModelUnavailable && modelCandidate != AICrashAnalyzer.DEFAULT_MODEL) {
-                            android.util.Log.w("NuxAIEngine", "Model $modelCandidate is unavailable ($code), automatically falling back to ${AICrashAnalyzer.DEFAULT_MODEL}...")
+                            android.util.Log.w("TGAIEngine", "Model $modelCandidate is unavailable ($code), automatically falling back to ${AICrashAnalyzer.DEFAULT_MODEL}...")
                             lastErrorMessage = parseErrorMessage(errBody)
                             break // Langsung beralih ke kandidat model berikutnya di outer loop
                         }
 
                         val isLimit = code == 429 || code == 402 || code == 503 || code == 401 || code == 403
                         if (isLimit && index < keysToTry.size - 1) {
-                            android.util.Log.w("NuxAIEngine", "Key #${index + 1} terkena limit ($code). Mengalihkan ke Key cadangan #${index + 2}...")
+                            android.util.Log.w("TGAIEngine", "Key #${index + 1} terkena limit ($code). Mengalihkan ke Key cadangan #${index + 2}...")
                             continue
                         } else {
                             lastErrorMessage = "Failed to reach AI server (HTTP $code): ${parseErrorMessage(errBody)}"
@@ -284,7 +284,7 @@ object NuxAIEngine {
                     }
                 } catch (e: Exception) {
                     if (index < keysToTry.size - 1) {
-                        android.util.Log.w("NuxAIEngine", "Koneksi Key #${index + 1} terputus (${e.message}). Mengalihkan ke Key #${index + 2}...")
+                        android.util.Log.w("TGAIEngine", "Koneksi Key #${index + 1} terputus (${e.message}). Mengalihkan ke Key #${index + 2}...")
                         continue
                     }
                     lastErrorMessage = "Koneksi terputus: ${e.localizedMessage ?: "Jaringan tidak stabil"}"
