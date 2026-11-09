@@ -207,7 +207,7 @@ object NuxVoiceManager {
                     put("platform", "android")
                     put("isAndroid", true)
                     put("verified", user.isActivated)
-                    put("isPremium", false)
+                    put("isPremium", user.features.contains("premium_badge") || (user.features.isEmpty() && user.isActivated))
                 }
 
                 val encodedUid = URLEncoder.encode(user.uid, "UTF-8")
