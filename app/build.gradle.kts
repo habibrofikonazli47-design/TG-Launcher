@@ -13,11 +13,11 @@ if (localPropertiesFile.exists()) {
         localProperties.load(stream)
     }
 }
-val rawServerUrl: String = localProperties.getProperty("nux.server.url") ?: "https://tg-launcher-admin-habibrofikonazli.vercel.app"
-val rawServerApiKey: String = localProperties.getProperty("nux.server.api.key") ?: ""
-val rawAiApiKey: String = localProperties.getProperty("nux.ai.api.key") ?: ""
-val rawAiApiKey2: String = localProperties.getProperty("nux.ai.api.key2") ?: ""
-val rawAiApiKey3: String = localProperties.getProperty("nux.ai.api.key3") ?: ""
+val rawServerUrl: String = localProperties.getProperty("tg.server.url") ?: "https://tg-launcher-admin-habibrofikonazli.vercel.app"
+val rawServerApiKey: String = localProperties.getProperty("tg.server.api.key") ?: ""
+val rawAiApiKey: String = localProperties.getProperty("tg.ai.api.key") ?: ""
+val rawAiApiKey2: String = localProperties.getProperty("tg.ai.api.key2") ?: ""
+val rawAiApiKey3: String = localProperties.getProperty("tg.ai.api.key3") ?: ""
 
 android {
     namespace = "com.israadev.nuxlauncher"
@@ -26,7 +26,7 @@ android {
     defaultConfig {
         applicationId = "com.tg.launcher"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 18
         versionName = "1.1.6-tg1"
 
