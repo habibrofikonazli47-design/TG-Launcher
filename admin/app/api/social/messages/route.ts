@@ -9,7 +9,16 @@ export async function GET(req:NextRequest){
  if(!conversationId)return NextResponse.json({error:'conversationId diperlukan'},{status:400});
  try{
   await ensureSocialSchema();const sql=socialDatabase();
-  const member=await sql`SELECT 1 FROM social_conversation_members WHERE conversation_id=${conversationId} AND user_id=${user.uid} LIMIT 1`;
+  let member=await sql`SELECT 1 FROM social_conversation_members WHERE conversation_id=${conversationId} AND user_id=${user.uid} LIMIT 1`;
+  if(!member.length) {
+   const target=conversationId.startsWith('dm_') ? conversationId.slice(3).split('_').find((id:string)=>id!==user.uid) : '';
+   if(!target)return NextResponse.json({error:'Akses percakapan ditolak'},{status:403});
+   const friendship=await sql`SELECT 1 FROM social_friendships WHERE status='accepted' AND ((requester_id=${user.uid} AND addressee_id=${target}) OR (requester_id=${target} AND addressee_id=${user.uid})) LIMIT 1`;
+   if(!friendship.length)return NextResponse.json({error:'Percakapan hanya tersedia untuk teman yang diterima'},{status:403});
+   await sql`INSERT INTO social_conversations(id,conversation_type,created_by) VALUES(${conversationId},'direct',${user.uid}) ON CONFLICT(id) DO NOTHING`;
+   await sql`INSERT INTO social_conversation_members(conversation_id,user_id) VALUES(${conversationId},${user.uid}),(${conversationId},${target}) ON CONFLICT DO NOTHING`;
+   member=await sql`SELECT 1 FROM social_conversation_members WHERE conversation_id=${conversationId} AND user_id=${user.uid} LIMIT 1`;
+  }
   if(!member.length)return NextResponse.json({error:'Akses percakapan ditolak'},{status:403});
   const rows=await sql`SELECT id,sender_id,body,attachment_url,created_at,edited_at FROM social_messages WHERE conversation_id=${conversationId} AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 100`;
   return NextResponse.json({success:true,messages:rows.reverse()},{headers:{'Cache-Control':'no-store'}});
