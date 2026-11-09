@@ -29,8 +29,13 @@ async function getQuota(uid: string, consume: boolean) {
   const code = premium ? 'premium' : 'free';
   const planRows = await sql`SELECT limits FROM plans WHERE code=${code} LIMIT 1`;
   const limits = planRows[0]?.limits || {};
-  const dailyLimit = typeof limits.ai_daily === 'number' ? limits.ai_daily : (premium ? -1 : 5);
-  const usage = await sql`SELECT COALESCE(SUM(request_count),0)::int AS used_count FROM launcher_ai_usage WHERE user_id=${uid} AND created_at >= date_trunc('day', now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'`;
+  const aiSettingsRows = await sql`SELECT value FROM app_settings WHERE key='ai' LIMIT 1`;
+  const aiSettings = aiSettingsRows[0]?.value || {};
+  const configuredDailyLimit = premium ? aiSettings.premiumDailyQuota : aiSettings.freeDailyQuota;
+  const dailyLimit = Number.isInteger(configuredDailyLimit)
+    ? configuredDailyLimit
+    : (typeof limits.ai_daily === 'number' ? limits.ai_daily : (premium ? -1 : 5));
+  const usage = await sql`SELECT COALESCE(SUM(request_count),0)::int AS used_count FROM launcher_ai_usage WHERE user_id=${uid} AND created_at >= date_trunc('day', now() AT TIME ZONE 'Asia/Jakarta') AT TIME ZONE 'Asia/Jakarta'`;
   let usedCount = Number(usage[0]?.used_count || 0);
   const isUnlimited = dailyLimit < 0;
   if (consume && (isUnlimited || usedCount < dailyLimit)) {
