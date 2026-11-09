@@ -89,7 +89,35 @@ jobs:
           BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
           test -x "$BUILD_TOOLS/apksigner"
           test -x "$BUILD_TOOLS/zipalign"
-          "$BUILD_TOOLS/apksigner" verify --verbose --print-certs "$APK"
+
+          # The AGP release task on CI produced v2-only APKs despite the
+          # Gradle v1 setting. Re-sign the temporary CI build explicitly so
+          # older/OEM package installers also receive the JAR (v1) signature.
+          if [[ "$TG_SIGNING_READY" != "true" ]]; then
+            mkdir -p "$HOME/.android"
+            if [[ ! -s "$HOME/.android/debug.keystore" ]]; then
+              keytool -genkeypair -v \
+                -keystore "$HOME/.android/debug.keystore" \
+                -storepass android \
+                -alias androiddebugkey \
+                -keypass android \
+                -keyalg RSA -keysize 2048 -validity 10000 \
+                -dname "CN=Android Debug,O=Android,C=US"
+            fi
+            "$BUILD_TOOLS/apksigner" sign \
+              --ks "$HOME/.android/debug.keystore" \
+              --ks-key-alias androiddebugkey \
+              --ks-pass pass:android \
+              --key-pass pass:android \
+              --v1-signing-enabled true \
+              --v2-signing-enabled true \
+              "$APK"
+          fi
+
+          SIGNATURE_REPORT="$("$BUILD_TOOLS/apksigner" verify --verbose --print-certs "$APK")"
+          printf '%s\\n' "$SIGNATURE_REPORT"
+          grep -q "Verified using v1 scheme (JAR signing): true" <<< "$SIGNATURE_REPORT"
+          grep -q "Verified using v2 scheme (APK Signature Scheme v2): true" <<< "$SIGNATURE_REPORT"
           "$BUILD_TOOLS/zipalign" -c -v 4 "$APK"
           "$BUILD_TOOLS/aapt" dump badging "$APK" | tee /tmp/tg-badging.txt
           grep -q "package: name='com.tg.launcher'" /tmp/tg-badging.txt
