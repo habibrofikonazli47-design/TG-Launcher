@@ -71,7 +71,7 @@ fun FriendsScreen(
     val scope = rememberCoroutineScope()
     val remoteConfig by RemoteLauncherConfig.config.collectAsState()
     val friendsEnabled = RemoteLauncherConfig.isEnabled(remoteConfig, "social", "friendsEnabled")
-    val voiceEnabled = RemoteLauncherConfig.isEnabled(remoteConfig, "social", "voiceEnabled")
+    val voiceEnabled = RemoteLauncherConfig.isEnabled(remoteConfig, "social", "voiceEnabled") && RemoteLauncherConfig.isEnabled(remoteConfig, "social", "livekitEnabled", false)
 
     LaunchedEffect(Unit) { RemoteLauncherConfig.refresh() }
     DisposableEffect(friendsEnabled) {
