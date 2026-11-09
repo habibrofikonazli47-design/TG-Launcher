@@ -443,7 +443,7 @@ object AuthService {
     suspend fun refreshIdToken(refreshToken: String): String? = withContext(Dispatchers.IO) {
         if (refreshToken.isBlank()) return@withContext null
         try {
-            val apiKey = "AIzaSyDIqvaTHjuwNboBXcVDoY1JYJntS0ECsJ0"
+            val apiKey = "AIzaSyDIqvaTHjuwNboBXcVDoY1jJYntS0ECsJ0"
             val refreshUrl = "https://securetoken.googleapis.com/v1/token?key=$apiKey"
             val formBody = okhttp3.FormBody.Builder()
                 .add("grant_type", "refresh_token")
