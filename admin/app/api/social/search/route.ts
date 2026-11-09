@@ -8,7 +8,7 @@ export async function GET(req:NextRequest){
  const user=await verifySocialIdentity(req);if(!user)return NextResponse.json({error:'Token TG tidak valid'},{status:401});
  try{
   await ensureSocialSchema();const sql=socialDatabase();
-  const q=String(req.nextUrl.searchParams.get('q')||'').trim().slice(0,32);
+  const q=String(req.nextUrl.searchParams.get('q')||'').trim().toLowerCase().slice(0,32);
   const online=req.nextUrl.searchParams.get('online')==='true';
   const limit=Math.max(1,Math.min(50,Number(req.nextUrl.searchParams.get('limit')||20)||20));
   const pattern='%'+q.replace(/[\\%_]/g,'\\$&')+'%';
