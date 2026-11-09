@@ -63,6 +63,9 @@ object UpdateManager {
                     rootObj.get("version").asString.trim().removePrefix("v")
                 } else "1.0.0"
 
+                val forceUpdate = rootObj.has("force_update") && !rootObj.get("force_update").isJsonNull && rootObj.get("force_update").asBoolean
+                val minimumSupportedVersion = if (rootObj.has("minimum_supported_version") && !rootObj.get("minimum_supported_version").isJsonNull) rootObj.get("minimum_supported_version").asString.trim().removePrefix("v") else "1.0.0"
+
                 val createdAt = if (rootObj.has("created_at") && !rootObj.get("created_at").isJsonNull) {
                     rootObj.get("created_at").asString
                 } else ""
@@ -123,7 +126,8 @@ object UpdateManager {
 
                 val isNewerCode = remoteCode > localCode
                 val isNewerVer = compareVersions(remoteVersion, localVersionName) > 0
-                val isAvailable = isNewerCode || isNewerVer
+                val belowMinimum = forceUpdate && compareVersions(localVersionName, minimumSupportedVersion) < 0
+                val isAvailable = isNewerCode || isNewerVer || belowMinimum
 
                 val updateInfo = AndroidUpdateInfo(
                     code = remoteCode,
