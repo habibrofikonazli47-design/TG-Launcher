@@ -833,7 +833,7 @@ fun NuxPremiumDialog(
                                 isActivating = true
                                 activationError = null
                                 coroutineScope.launch {
-                                    val res = AuthService.activateLicense(user.uid, cleanKey, user.idToken)
+                                    val res = AuthService.activateLicense(user.uid, cleanKey, user.idToken, context)
                                     isActivating = false
                                     res.fold(
                                         onSuccess = { actResult ->
