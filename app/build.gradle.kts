@@ -13,7 +13,7 @@ if (localPropertiesFile.exists()) {
         localProperties.load(stream)
     }
 }
-val rawServerUrl: String = localProperties.getProperty("nux.server.url") ?: "https://tg-launcher-admin-habibrofikonazlis-projects.vercel.app"
+val rawServerUrl: String = localProperties.getProperty("nux.server.url") ?: "https://tg-launcher-admin-habibrofikonazli.vercel.app"
 val rawServerApiKey: String = localProperties.getProperty("nux.server.api.key") ?: ""
 val rawAiApiKey: String = localProperties.getProperty("nux.ai.api.key") ?: ""
 val rawAiApiKey2: String = localProperties.getProperty("nux.ai.api.key2") ?: ""
