@@ -13,7 +13,7 @@ const defaults:Record<string,any>={
   social:{friendsEnabled:true,voiceEnabled:true,livekitEnabled:false,uploadsEnabled:true,maximumUploadMb:20},
   updates:{autoUpdateCheck:true,stableChannel:true,betaChannel:false,forceUpdate:false,minimumSupportedVersion:'1.0.0',releaseNotes:''},
   security:{apiKeyRequired:true,rateLimitPerMinute:60,blockRootedDevices:false,sessionHours:8,allowUnknownClients:false},
-  appearance:{announcementEnabled:false,announcementTitle:'',announcementContent:'',announcementImageUrl:'',announcementLinkUrl:'',announcementTarget:'all',bannerEnabled:true,bannerImageUrl:'',bannerLinkUrl:''}
+  appearance:{backgroundImageUrl:'',backgroundOverlayAlpha:65,announcementEnabled:false,announcementTitle:'',announcementContent:'',announcementImageUrl:'',announcementLinkUrl:'',announcementTarget:'all',bannerEnabled:true,bannerImageUrl:'',bannerLinkUrl:''}
 };
 export async function GET(req:NextRequest){
  if(!verifySession(req.cookies.get(getCookieName())?.value)) return NextResponse.json({error:'Unauthorized'},{status:401});
