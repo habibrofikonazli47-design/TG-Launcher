@@ -55,12 +55,20 @@ android {
     }
 
     signingConfigs {
+        // Keep both legacy JAR (v1) and APK (v2) signatures for broader
+        // compatibility with Android/OEM package installers.
+        getByName("debug") {
+            enableV1Signing = true
+            enableV2Signing = true
+        }
         if (hasStableSigning) {
             create("tgRelease") {
                 storeFile = file(tgSigningStoreFile!!)
                 storePassword = tgSigningStorePassword
                 keyAlias = tgSigningKeyAlias
                 keyPassword = tgSigningKeyPassword
+                enableV1Signing = true
+                enableV2Signing = true
             }
         }
     }
