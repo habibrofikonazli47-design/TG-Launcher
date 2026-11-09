@@ -4,6 +4,7 @@ import android.content.Context
 import com.google.gson.Gson
 import com.israadev.nuxlauncher.core.instance.InstanceManager
 import com.israadev.nuxlauncher.core.manifest.MojangManifestService
+import com.israadev.nuxlauncher.core.network.RemoteLauncherConfig
 import com.israadev.nuxlauncher.core.models.AssetIndexContent
 import com.israadev.nuxlauncher.core.models.Instance
 import com.israadev.nuxlauncher.core.models.Library
@@ -276,23 +277,31 @@ class MinecraftDownloader(
     }
 
     private fun getMirrorUrls(url: String): List<String> {
-        val urls = mutableListOf<String>()
-        // Official Mojang CDN uses Cloudflare/Akamai/Fastly edge servers in Indonesia/SE Asia (ultra fast)
-        urls.add(url)
-        if (url.startsWith("https://piston-data.mojang.com")) {
-            urls.add(url.replace("https://piston-data.mojang.com", "https://bmclapi2.bangbang93.com"))
-        } else if (url.startsWith("https://piston-meta.mojang.com")) {
-            urls.add(url.replace("https://piston-meta.mojang.com", "https://bmclapi2.bangbang93.com"))
-        } else if (url.startsWith("https://libraries.minecraft.net")) {
-            urls.add(url.replace("https://libraries.minecraft.net", "https://bmclapi2.bangbang93.com/libraries"))
-        } else if (url.startsWith("https://resources.download.minecraft.net")) {
-            urls.add(url.replace("https://resources.download.minecraft.net", "https://bmclapi2.bangbang93.com/assets"))
-        } else if (url.startsWith("https://meta.fabricmc.net")) {
-            urls.add(url.replace("https://meta.fabricmc.net", "https://bmclapi2.bangbang93.com/fabric-meta"))
-        } else if (url.startsWith("https://maven.fabricmc.net")) {
-            urls.add(url.replace("https://maven.fabricmc.net", "https://bmclapi2.bangbang93.com/maven"))
+        val mirrorUrl = when {
+            url.startsWith("https://piston-data.mojang.com") ->
+                url.replace("https://piston-data.mojang.com", "https://bmclapi2.bangbang93.com")
+            url.startsWith("https://piston-meta.mojang.com") ->
+                url.replace("https://piston-meta.mojang.com", "https://bmclapi2.bangbang93.com")
+            url.startsWith("https://libraries.minecraft.net") ->
+                url.replace("https://libraries.minecraft.net", "https://bmclapi2.bangbang93.com/libraries")
+            url.startsWith("https://resources.download.minecraft.net") ->
+                url.replace("https://resources.download.minecraft.net", "https://bmclapi2.bangbang93.com/assets")
+            url.startsWith("https://meta.fabricmc.net") ->
+                url.replace("https://meta.fabricmc.net", "https://bmclapi2.bangbang93.com/fabric-meta")
+            url.startsWith("https://maven.fabricmc.net") ->
+                url.replace("https://maven.fabricmc.net", "https://bmclapi2.bangbang93.com/maven")
+            else -> null
         }
-        return urls
+        if (mirrorUrl == null || mirrorUrl == url) return listOf(url)
+
+        val mirrorMode = RemoteLauncherConfig.text(
+            RemoteLauncherConfig.config.value, "game", "downloadMirror", "official"
+        ).trim().lowercase()
+        return when (mirrorMode) {
+            "bmclapi", "mirror", "china" -> listOf(mirrorUrl, url)
+            "official", "mojang" -> listOf(url, mirrorUrl)
+            else -> listOf(url, mirrorUrl)
+        }
     }
 
     /**
