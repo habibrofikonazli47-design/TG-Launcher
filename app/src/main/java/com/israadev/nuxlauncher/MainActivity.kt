@@ -71,7 +71,11 @@ class MainActivity : ComponentActivity() {
                     val refreshedToken = AuthService.refreshIdToken(savedUser.refreshToken)
                     val tokenUser = if (!refreshedToken.isNullOrBlank()) savedUser.copy(idToken = refreshedToken) else savedUser
                     val syncedUser = AuthService.syncEntitlements(tokenUser)
-                    AccountManager.saveAuthUser(this@MainActivity, syncedUser)
+                    if (syncedUser.tier == "blocked") {
+                        AccountManager.logout(this@MainActivity)
+                    } else {
+                        AccountManager.saveAuthUser(this@MainActivity, syncedUser)
+                    }
                 }
             }
 
