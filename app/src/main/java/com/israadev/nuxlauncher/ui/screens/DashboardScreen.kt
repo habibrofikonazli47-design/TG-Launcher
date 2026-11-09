@@ -131,7 +131,8 @@ fun DashboardScreen() {
         if (!RemoteLauncherConfig.isEnabled(remoteConfig, "game", "allowCustomInstances")) {
             Toast.makeText(context, "Pembuatan instance dinonaktifkan oleh administrator TG Launcher.", Toast.LENGTH_LONG).show()
         } else {
-            val maxInstances = launcherUser?.limits?.get("instances") ?: if (launcherUser?.isActivated == true) -1 else 3
+            val hasUnlimitedInstances = launcherUser?.features?.contains("unlimited_instances") == true
+            val maxInstances = if (hasUnlimitedInstances) (launcherUser?.limits?.get("instances") ?: -1) else 3
             if (maxInstances >= 0 && instances.size >= maxInstances) {
                 premiumInitialPrompt = "Paket akun ini dibatasi maksimal $maxInstances instance. Ubah batas paket di Admin Panel TG Launcher untuk menyesuaikannya."
                 showPremiumDialog = true
