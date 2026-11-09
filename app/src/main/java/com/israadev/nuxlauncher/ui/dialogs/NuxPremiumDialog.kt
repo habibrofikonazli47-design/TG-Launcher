@@ -114,7 +114,8 @@ fun NuxPremiumDialog(
     val coroutineScope = rememberCoroutineScope()
     val launcherUser by AccountManager.launcherUser.collectAsState()
     val remoteConfig by RemoteLauncherConfig.config.collectAsState()
-    val premiumPurchaseUrl = RemoteLauncherConfig.text(remoteConfig, "premium", "purchaseUrl")
+    val premiumPurchaseUrl = RemoteLauncherConfig.text(remoteConfig, "general", "premiumPurchaseUrl")
+        .ifBlank { RemoteLauncherConfig.text(remoteConfig, "premium", "purchaseUrl") }
 
     var licenseKeyInput by remember { mutableStateOf("") }
     var isActivating by remember { mutableStateOf(false) }
