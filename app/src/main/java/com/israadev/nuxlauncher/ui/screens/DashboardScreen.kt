@@ -164,10 +164,10 @@ fun DashboardScreen() {
 
         // 2. Periksa ketersediaan update launcher
         try {
-            val result = UpdateManager.checkForUpdate(context)
-            result.onSuccess { info ->
-                if (info.isUpdateAvailable) {
-                    updateDialogInfo = info
+            if (RemoteLauncherConfig.isEnabled(remoteConfig, "updates", "autoUpdateCheck")) {
+                val result = UpdateManager.checkForUpdate(context)
+                result.onSuccess { info ->
+                    if (info.isUpdateAvailable) updateDialogInfo = info
                 }
             }
         } catch (e: Exception) {
