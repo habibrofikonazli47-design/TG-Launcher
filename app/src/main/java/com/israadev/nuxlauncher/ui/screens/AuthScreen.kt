@@ -456,7 +456,8 @@ fun AuthScreen(
                                     isLoading = false
                                     res.fold(
                                         onSuccess = { loginResult ->
-                                            AccountManager.saveAuthUser(context, loginResult.user)
+                                            val syncedUser = AuthService.syncEntitlements(loginResult.user)
+                                            AccountManager.saveAuthUser(context, syncedUser)
                                             if (AccountManager.accounts.value.isEmpty()) {
                                                 AccountManager.addAccount(
                                                     context,
