@@ -35,6 +35,7 @@ import com.israadev.nuxlauncher.ui.components.NuxDialog
 import com.israadev.nuxlauncher.ui.theme.LocalNuxScale
 import com.israadev.nuxlauncher.ui.theme.NuxColors
 import com.israadev.nuxlauncher.ui.theme.NuxSizes
+import com.israadev.nuxlauncher.core.network.RemoteLauncherConfig
 
 private data class OpenSourceLibrary(
     val name: String,
@@ -154,6 +155,9 @@ fun NuxAboutDialog(
     onDismissRequest: () -> Unit
 ) {
     val context = LocalContext.current
+    val remoteConfig by RemoteLauncherConfig.config.collectAsState()
+    val supportUrl = RemoteLauncherConfig.text(remoteConfig, "general", "supportUrl").trim()
+    val websiteUrl = RemoteLauncherConfig.text(remoteConfig, "general", "websiteUrl").trim()
     val isTablet = LocalNuxScale.current.isTablet
     var activeTab by remember { mutableStateOf("overview") } // "overview", "libraries", "gpl"
 
@@ -421,6 +425,44 @@ fun NuxAboutDialog(
                                     } catch (_: Exception) {}
                                 }
                             )
+
+                            if (supportUrl.startsWith("https://") || websiteUrl.startsWith("https://")) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    if (supportUrl.startsWith("https://")) {
+                                        Box(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(Color(0xFF17221F))
+                                                .border(1.dp, Color(0x334ADE80), RoundedCornerShape(8.dp))
+                                                .clickable {
+                                                    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(supportUrl))) }
+                                                }
+                                                .padding(9.dp)
+                                        ) {
+                                            Text("Dukungan TG Launcher ↗", color = NuxColors.MintGreen, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                    if (websiteUrl.startsWith("https://")) {
+                                        Box(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(Color(0xFF17221F))
+                                                .border(1.dp, Color(0x334ADE80), RoundedCornerShape(8.dp))
+                                                .clickable {
+                                                    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(websiteUrl))) }
+                                                }
+                                                .padding(9.dp)
+                                        ) {
+                                            Text("Website TG Launcher ↗", color = NuxColors.MintGreen, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                }
+                            }
 
                             // Disclaimer Card
                             Box(
