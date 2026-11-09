@@ -205,12 +205,16 @@ fun SettingsScreen(
 
     fun isRendererAllowed(rendererId: String): Boolean {
         val id = rendererId.lowercase()
+        val experimentalAllowed = RemoteLauncherConfig.isEnabled(remoteConfig, "renderer", "experimentalRenderers", false)
         return when {
+            id == "auto" -> true
             id.contains("virgl") -> RemoteLauncherConfig.isEnabled(remoteConfig, "renderer", "virglEnabled")
             id.contains("zink") -> RemoteLauncherConfig.isEnabled(remoteConfig, "renderer", "zinkEnabled")
             id == "opengles2" || id.contains("gl4es") -> RemoteLauncherConfig.isEnabled(remoteConfig, "renderer", "gl4esEnabled")
-            id.contains("freedreno") || id.contains("panfrost") || id.contains("mesa") -> RemoteLauncherConfig.isEnabled(remoteConfig, "renderer", "mesaEnabled")
-            else -> true
+            id.contains("freedreno") || id.contains("mesa") -> RemoteLauncherConfig.isEnabled(remoteConfig, "renderer", "mesaEnabled")
+            id.contains("panfrost") -> experimentalAllowed && RemoteLauncherConfig.isEnabled(remoteConfig, "renderer", "mesaEnabled")
+            id.contains("mobileglues") || id.contains("krypton") -> experimentalAllowed
+            else -> experimentalAllowed
         }
     }
 
