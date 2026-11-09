@@ -37,6 +37,10 @@ jobs:
         with:
           packages: platform-tools
 
+      - name: Set monotonic TG Launcher build number
+        shell: bash
+        run: echo "TG_BUILD_NUMBER=$((GITHUB_RUN_NUMBER + 80))" >> "$GITHUB_ENV"
+
       - name: Build release APK
         run: |
           chmod +x ./gradlew
@@ -46,7 +50,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TG_BUILD_NUMBER=$((GITHUB_RUN_NUMBER + 81))
           APK="app/build/outputs/apk/release/TG-Launcher-v1.1.6-tg${TG_BUILD_NUMBER}.apk"
           cp app/build/outputs/apk/release/app-release.apk "$APK"
           test -s "$APK"
@@ -69,20 +72,20 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: TG-Launcher-release-verified
-          path: app/build/outputs/apk/release/TG-Launcher-v1.1.6-tg${{ github.run_number + 81 }}.apk
+          path: app/build/outputs/apk/release/TG-Launcher-v1.1.6-tg${{ env.TG_BUILD_NUMBER }}.apk
           if-no-files-found: error
           retention-days: 14
 
       - name: Publish direct APK download on GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.1.6-tg${{ github.run_number + 81 }}
-          name: TG Launcher v1.1.6-tg${{ github.run_number + 81 }}
+          tag_name: v1.1.6-tg${{ env.TG_BUILD_NUMBER }}
+          name: TG Launcher v1.1.6-tg${{ env.TG_BUILD_NUMBER }}
           body: |
             TG Launcher release build.
             Download the APK asset below; no ZIP extraction is required.
           files: |
-            app/build/outputs/apk/release/TG-Launcher-v1.1.6-tg${{ github.run_number }}.apk
+            app/build/outputs/apk/release/TG-Launcher-v1.1.6-tg${{ env.TG_BUILD_NUMBER }}.apk
             app/build/outputs/apk/release/output-metadata.json
           fail_on_unmatched_files: true
           make_latest: true
