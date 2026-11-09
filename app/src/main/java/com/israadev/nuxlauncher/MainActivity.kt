@@ -33,6 +33,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.israadev.nuxlauncher.core.account.AccountManager
 import com.israadev.nuxlauncher.core.auth.AuthService
 import com.israadev.nuxlauncher.core.instance.InstanceManager
+import com.israadev.nuxlauncher.core.network.RemoteLauncherConfig
 import com.israadev.nuxlauncher.core.mods.NuxAddonImportManager
 import com.israadev.nuxlauncher.core.mods.PendingAddonImport
 import com.israadev.nuxlauncher.core.settings.SettingsManager
@@ -70,7 +71,11 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val launcherUser by AccountManager.launcherUser.collectAsState()
+            val remoteConfig by RemoteLauncherConfig.config.collectAsState()
             var mandatoryUpdate by remember { mutableStateOf<AndroidUpdateInfo?>(null) }
+
+            // Ambil konfigurasi fitur dan kebijakan TG Launcher dari admin panel.
+            LaunchedEffect(Unit) { RemoteLauncherConfig.refresh() }
 
             // Wajibkan versi terbaru sebelum launcher dapat digunakan.
             LaunchedEffect(Unit) {
@@ -112,6 +117,15 @@ class MainActivity : ComponentActivity() {
                                     onAuthSuccess = {
                                         // Sesi telah tersimpan di AccountManager, state compose otomatis ter-update
                                     }
+                                )
+                            }
+
+                            if (RemoteLauncherConfig.maintenanceEnabled(remoteConfig)) {
+                                AlertDialog(
+                                    onDismissRequest = { /* maintenance dikendalikan admin */ },
+                                    title = { Text("TG Launcher sedang maintenance") },
+                                    text = { Text(RemoteLauncherConfig.text(remoteConfig, "general", "maintenanceMessage", "Layanan sedang dalam pemeliharaan. Silakan coba lagi nanti.")) },
+                                    confirmButton = { Button(onClick = { /* dialog tidak dapat ditutup selama maintenance */ }, enabled = false) { Text("Maintenance aktif") } }
                                 )
                             }
 
