@@ -169,7 +169,7 @@ fun AuthScreen(
                                 .padding(horizontal = 9.dp, vertical = 4.dp)
                         ) {
                             Text(
-                                text = "NUX CLIENT",
+                                text = "TG CLIENT",
                                 color = NuxColors.MintGreen,
                                 fontSize = 9.sp,
                                 fontWeight = FontWeight.Black,
@@ -210,7 +210,7 @@ fun AuthScreen(
                         )
 
                         Text(
-                            text = "NUX LAUNCHER",
+                            text = "TG LAUNCHER",
                             color = Color.White,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Black,
