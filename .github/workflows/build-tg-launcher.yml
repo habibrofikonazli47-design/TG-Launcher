@@ -102,14 +102,17 @@ jobs:
           echo "APK validation passed."
 
       - name: Publish direct APK download
-        if: env.TG_SIGNING_READY == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: tg-launcher-${{ env.TG_VERSION_NAME }}
           name: TG Launcher ${{ env.TG_VERSION_NAME }}
           draft: false
-          prerelease: false
-          make_latest: true
+          prerelease: ${{ env.TG_SIGNING_READY != 'true' }}
+          make_latest: ${{ env.TG_SIGNING_READY == 'true' }}
+          body: |
+            Automated TG Launcher APK build.
+            If this release is marked as a prerelease, it uses temporary CI signing and is for testing only.
+            Do not install over an existing TG Launcher unless its signing certificate matches.
           files: app/build/outputs/apk/release/TG-Launcher-v1.1.6-tg${{ env.TG_BUILD_NUMBER }}.apk
 
       - name: Upload TG Launcher APK artifact
