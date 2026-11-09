@@ -130,7 +130,7 @@ fun NuxAddInstanceDialog(
                 "old_beta", "old_alpha" -> RemoteLauncherConfig.isEnabled(remoteConfig, "game", "showOldVersions")
                 else -> true
             }
-            val hasExperimentalAccess = if (currentLauncherUser?.features?.isNotEmpty() == true) "snapshot_beta_versions" in currentLauncherUser.features else currentLauncherUser?.isActivated == true
+            val hasExperimentalAccess = currentLauncherUser?.features?.contains("snapshot_beta_versions") == true
             val planAllowsType = item.type == "release" || hasExperimentalAccess
             val matchesCategory = when (selectedCategory) {
                 VersionCategory.ALL -> true
