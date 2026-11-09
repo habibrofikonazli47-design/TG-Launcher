@@ -463,7 +463,18 @@ object AuthService {
             val body = resp.body?.string() ?: ""
             if (resp.isSuccessful && body.isNotEmpty()) {
                 val json = gson.fromJson(body, JsonObject::class.java)
-                return@withContext json?.get("id_token")?.asString
+                val idToken = json?.get("id_token")?.asString
+                val rotatedRefreshToken = json?.get("refresh_token")?.asString
+                if (!idToken.isNullOrBlank()) {
+                    // Firebase rotates refresh tokens. Persist the NEW refresh token
+                    // together with the ID token; reusing the old token causes the
+                    // next refresh to fail and Premium activation to report an invalid session.
+                    AccountManager.updateTokens(
+                        idToken,
+                        rotatedRefreshToken?.takeIf { it.isNotBlank() } ?: refreshToken
+                    )
+                    return@withContext idToken
+                }
             }
         } catch (_: Exception) {}
         null
@@ -531,7 +542,6 @@ object AuthService {
             val refreshedToken = refreshIdToken(refreshToken)
             if (!refreshedToken.isNullOrBlank()) {
                 activeToken = refreshedToken
-                AccountManager.updateTokens(refreshedToken, refreshToken)
             }
         }
         if (activeToken.isNullOrBlank()) {
@@ -635,7 +645,6 @@ object AuthService {
             val refreshed = refreshIdToken(refreshToken)
             if (!refreshed.isNullOrBlank()) {
                 activeToken = refreshed
-                AccountManager.updateTokens(refreshed, refreshToken)
             }
         }
 
