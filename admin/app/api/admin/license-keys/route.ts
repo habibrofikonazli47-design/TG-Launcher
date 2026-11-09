@@ -6,7 +6,7 @@ export const runtime='nodejs';
 function makeKey(){const raw=randomBytes(10).toString('hex').toUpperCase();return raw.match(/.{1,5}/g)!.join('-');}
 export async function GET(req:NextRequest){
  if(!verifySession(req.cookies.get(getCookieName())?.value))return NextResponse.json({error:'Unauthorized'},{status:401});
- try{await ensureSchema();return NextResponse.json(await database()`SELECT id,license_key,plan,status,max_uses,used_count,expires_at,duration_days,max_devices,user_id,activated_at,created_at,(SELECT count(*)::int FROM license_devices d WHERE d.license_id=license_keys.id) AS device_count FROM license_keys ORDER BY created_at DESC LIMIT 300`);}
+ try{await ensureSchema();return NextResponse.json(await database()`SELECT id,license_key,plan,status,max_uses,used_count,expires_at,duration_days,max_devices,user_id,activated_at,created_at,(SELECT count(*)::int FROM license_devices d WHERE d.license_id=license_keys.id) AS device_count,(SELECT COALESCE(json_agg(json_build_object('device_id',d.device_id,'device_name',d.device_name,'last_seen_at',d.last_seen_at) ORDER BY d.last_seen_at DESC),'[]'::json) FROM license_devices d WHERE d.license_id=license_keys.id) AS devices FROM license_keys ORDER BY created_at DESC LIMIT 300`);}
  catch(e:any){return NextResponse.json({error:e.message},{status:503});}
 }
 export async function POST(req:NextRequest){
@@ -38,4 +38,18 @@ export async function PATCH(req:NextRequest){
  }
  await database()`INSERT INTO admin_audit_logs(actor,action,detail) VALUES('admin','license.status',${JSON.stringify({id:b.id,status:b.status})}::jsonb)`;
  return NextResponse.json({id:license.id,license_key:license.license_key,status:license.status});}catch(e:any){return NextResponse.json({error:e.message},{status:400});}
+}
+
+
+export async function DELETE(req:NextRequest){
+ if(!verifySession(req.cookies.get(getCookieName())?.value))return NextResponse.json({error:'Unauthorized'},{status:401});
+ try{
+  await ensureSchema();
+  const b=await req.json();
+  if(!b.licenseId||!b.deviceId)return NextResponse.json({error:'Lisensi dan perangkat wajib dipilih.'},{status:400});
+  const rows=await database()`DELETE FROM license_devices WHERE license_id=${String(b.licenseId)} AND device_id=${String(b.deviceId)} RETURNING device_name`;
+  if(!rows.length)return NextResponse.json({error:'Perangkat tidak ditemukan.'},{status:404});
+  await database()`INSERT INTO admin_audit_logs(actor,action,detail) VALUES('admin','license.device.release',${JSON.stringify({licenseId:b.licenseId,deviceName:rows[0].device_name})}::jsonb)`;
+  return NextResponse.json({success:true,message:'Perangkat berhasil dilepas dari lisensi.'});
+ }catch(e:any){return NextResponse.json({error:e.message},{status:400});}
 }
