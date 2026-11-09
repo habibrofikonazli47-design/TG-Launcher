@@ -44,7 +44,16 @@ export async function POST(req:NextRequest){
    roomName=livekitRoom;
   }else if(action==='join'){
    if(!roomName)return NextResponse.json({error:'Room voice diperlukan'},{status:400});
-   const rows=await sql`SELECT livekit_room_name FROM social_voice_rooms WHERE (id=${roomName} OR livekit_room_name=${roomName}) AND is_active=true LIMIT 1`;
+   if(!/^[A-Za-z0-9_-]{1,80}$/.test(roomName))return NextResponse.json({error:'ID voice room tidak valid'},{status:400});
+   let rows=await sql`SELECT livekit_room_name FROM social_voice_rooms WHERE (id=${roomName} OR livekit_room_name=${roomName}) AND is_active=true LIMIT 1`;
+   // Android voice rooms are created in the existing TG Social room list.
+   // Register the same room ID in the LiveKit registry on first join so the
+   // two room systems stay in sync instead of returning a false 404.
+   if(!rows.length){
+    const livekitRoomName='tg-social-'+roomName;
+    await sql`INSERT INTO social_voice_rooms(id,room_name,created_by,livekit_room_name,visibility,max_participants) VALUES(${roomName},${roomName},${user.uid},${livekitRoomName},'friends',16) ON CONFLICT(id) DO NOTHING`;
+    rows=await sql`SELECT livekit_room_name FROM social_voice_rooms WHERE (id=${roomName} OR livekit_room_name=${roomName}) AND is_active=true LIMIT 1`;
+   }
    if(!rows.length)return NextResponse.json({error:'Voice room tidak ditemukan atau sudah ditutup'},{status:404});
    roomName=String(rows[0].livekit_room_name);
   }else return NextResponse.json({error:'Aksi voice tidak didukung'},{status:400});
