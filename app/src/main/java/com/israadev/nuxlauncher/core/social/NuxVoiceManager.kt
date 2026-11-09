@@ -14,8 +14,10 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
 import java.net.URLEncoder
@@ -28,9 +30,8 @@ import java.util.concurrent.TimeUnit
 @SuppressLint("SetJavaScriptEnabled")
 object NuxVoiceManager {
     private const val TAG = "NuxVoiceManager"
-    private const val LIVEKIT_SERVER_URL = "wss://nux-launcher-9nbr9gp5.livekit.cloud"
     private val TOKEN_API_BASE: String
-        get() = NuxConfig.LIVEKIT_TOKEN_URL
+        get() = if (NuxConfig.isConfigured) "${NuxConfig.SERVER_BASE_URL}/api/social/voice/token" else ""
     private const val BRIDGE_URL = "https://appassets.androidplatform.net/assets/livekit/livekit_bridge.html"
 
     private val client = OkHttpClient.Builder()
@@ -201,39 +202,58 @@ object NuxVoiceManager {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val metaObj = JSONObject().apply {
-                    put("name", user.username)
-                    put("photoURL", user.photoURL)
-                    put("platform", "android")
-                    put("isAndroid", true)
-                    put("verified", user.isActivated)
-                    put("isPremium", user.features.contains("premium_badge") || (user.features.isEmpty() && user.isActivated))
-                }
-
-                val encodedUid = URLEncoder.encode(user.uid, "UTF-8")
-                val encodedMeta = URLEncoder.encode(metaObj.toString(), "UTF-8")
-                val tokenUrl = "$TOKEN_API_BASE?room=$roomId&participant=$encodedUid&metadata=$encodedMeta"
-                Log.i(TAG, "Requesting LiveKit token from: $tokenUrl")
-
-                val reqBuilder = Request.Builder()
-                    .url(tokenUrl)
-                    .header("User-Agent", "Mozilla/5.0 (Linux; Android) TGLauncher/1.0")
-                    .get()
-                NuxConfig.applyAuthHeaders(reqBuilder)
-                val req = reqBuilder.build()
-
-                val resp = client.newCall(req).execute()
-                val body = resp.body?.string() ?: ""
-                resp.close()
-
-                if (!resp.isSuccessful || body.isEmpty()) {
-                    Log.e(TAG, "Failed to get LiveKit token: HTTP ${resp.code} body: $body")
-                    withContext(Dispatchers.Main) {
-                        _isConnecting.value = false
-                    }
+                if (user.idToken.isBlank()) {
+                    Log.e(TAG, "Firebase ID token is missing; cannot authenticate TG Social voice request")
+                    withContext(Dispatchers.Main) { _isConnecting.value = false }
                     return@launch
                 }
 
+                val payload = JSONObject().apply {
+                    put("action", "join")
+                    put("roomName", roomId)
+                }
+                val requestBody = payload.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
+                val req = Request.Builder()
+                    .url(TOKEN_API_BASE)
+                    .header("Authorization", "Bearer ${user.idToken}")
+                    .header("Accept", "application/json")
+                    .post(requestBody)
+                    .build()
+
+                client.newCall(req).execute().use { resp ->
+                    val responseBody = resp.body?.string().orEmpty()
+                    if (!resp.isSuccessful || responseBody.isEmpty()) {
+                        Log.e(TAG, "Failed to get TG LiveKit token: HTTP ${resp.code} body: $responseBody")
+                        withContext(Dispatchers.Main) { _isConnecting.value = false }
+                        return@launch
+                    }
+                    val tokenJson = JSONObject(responseBody)
+                    val token = tokenJson.optString("token", "")
+                    val serverUrl = tokenJson.optString("serverUrl", "")
+                    if (token.isBlank() || serverUrl.isBlank()) {
+                        Log.e(TAG, "TG LiveKit token response is incomplete")
+                        withContext(Dispatchers.Main) { _isConnecting.value = false }
+                        return@launch
+                    }
+
+                    Log.i(TAG, "TG LiveKit token received. Connecting to TG server...")
+                    withContext(Dispatchers.Main) {
+                        val connectAction: () -> Unit = {
+                            Log.i(TAG, "Invoking connectVoice in WebView...")
+                            val args = JSONObject.quote(serverUrl) + "," + JSONObject.quote(token)
+                            webView?.evaluateJavascript("connectVoice($args);") { result ->
+                                Log.i(TAG, "evaluateJavascript connectVoice evaluated: $result")
+                            }
+                        }
+
+                        if (isBridgeReady && webView != null) {
+                            connectAction()
+                        } else {
+                            Log.i(TAG, "Bridge not yet ready, saving pendingConnectAction")
+                            pendingConnectAction = connectAction
+                        }
+                    }
+                }
                 val tokenJson = JSONObject(body)
                 val token = tokenJson.optString("token", "")
                 if (token.isEmpty()) {
