@@ -5,35 +5,44 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
+    await ensureSchema();
+    const sql = database();
+    const rows = await sql`SELECT key,value FROM app_settings WHERE key IN ('updates','general')`;
+    const settings = Object.fromEntries(rows.map((row: any) => [row.key, row.value || {}]));
+    const updates = settings.updates || {};
+    const general = settings.general || {};
+    const releaseEnabled = updates.releaseEnabled === true;
+    const updatePolicy = {
+      forceUpdate: updates.forceUpdate === true || general.forceUpdate === true,
+      minimumSupportedVersion: updates.forceUpdate === true
+        ? updates.minimumSupportedVersion || '1.0.0'
+        : general.forceUpdate === true
+          ? general.minimumAppVersion || updates.minimumSupportedVersion || '1.0.0'
+          : updates.minimumSupportedVersion || general.minimumAppVersion || '1.0.0',
+    };
+
+    // Do not distribute an older APK while a stable signing key/release is not approved.
+    if (!releaseEnabled) {
+      return Response.json({
+        code: 0,
+        version: '0.0.0',
+        force_update: false,
+        minimum_supported_version: String(updatePolicy.minimumSupportedVersion || '1.0.0'),
+        update_available: false,
+        created_at: '',
+        files: [],
+        default_body: { markdown: 'Distribusi pembaruan TG Launcher belum diaktifkan oleh administrator.' },
+      }, { headers: { 'Cache-Control': 'no-store, max-age=0' } });
+    }
     const response = await fetch('https://api.github.com/repos/habibrofikonazli47-design/TG-Launcher/releases/latest', {
       headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'TG-Launcher-Updater' },
       cache: 'no-store',
     });
     if (!response.ok) throw new Error('GitHub Releases tidak dapat diakses.');
     const release = await response.json();
-    const asset = (release.assets || []).find((item: any) => item.name === 'app-release.apk')
-      || (release.assets || []).find((item: any) => item.name.toLowerCase().endsWith('.apk'));
+    const asset = (release.assets || []).find((item: any) => /^TG-Launcher-.*\.apk$/i.test(item.name));
     if (!asset) return Response.json({ error: 'APK release belum tersedia.' }, { status: 404 });
     const tag = String(release.tag_name || '').replace(/^v/, '');
-    let updatePolicy = { forceUpdate: false, minimumSupportedVersion: '1.0.0' };
-    try {
-      await ensureSchema();
-      const sql = database();
-      const rows = await sql`SELECT key,value FROM app_settings WHERE key IN ('updates','general')`;
-      const settings = Object.fromEntries(rows.map((row: any) => [row.key, row.value || {}]));
-      const updates = settings.updates || {};
-      const general = settings.general || {};
-      updatePolicy = {
-        forceUpdate: updates.forceUpdate === true || general.forceUpdate === true,
-        minimumSupportedVersion: updates.forceUpdate === true
-          ? updates.minimumSupportedVersion || '1.0.0'
-          : general.forceUpdate === true
-            ? general.minimumAppVersion || updates.minimumSupportedVersion || '1.0.0'
-            : updates.minimumSupportedVersion || general.minimumAppVersion || '1.0.0',
-      };
-    } catch (policyError) {
-      console.error('[getAndroidVersion] update policy unavailable', policyError);
-    }
     let metadata: any = null;
     const metadataAsset = (release.assets || []).find((item: any) => item.name === 'output-metadata.json');
     if (metadataAsset?.browser_download_url) {
@@ -49,6 +58,7 @@ export async function GET() {
       code: Number.isFinite(code) ? code : 18,
       version,
       force_update: updatePolicy.forceUpdate === true,
+      update_available: true,
       minimum_supported_version: String(updatePolicy.minimumSupportedVersion || '1.0.0'),
       created_at: release.published_at || release.created_at || '',
       files: [{ uri: asset.browser_download_url, file_name: asset.name, size: asset.size }],
