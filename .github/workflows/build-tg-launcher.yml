@@ -114,9 +114,9 @@ jobs:
               "$APK"
           fi
 
-          # Verify v1 explicitly from API 1 so apksigner checks the legacy JAR signature,
-          # even though this app's actual minSdk is 26 and Android 7+ uses v2/v3.
-          SIGNATURE_REPORT="$("$BUILD_TOOLS/apksigner" verify --min-sdk-version 1 --verbose --print-certs "$APK")"
+          # Verify v1 from API 18: SHA-256 JAR signatures are supported from API 18,
+          # and this app's actual minSdk is 26. Android 7+ uses v2/v3.
+          SIGNATURE_REPORT="$("$BUILD_TOOLS/apksigner" verify --min-sdk-version 18 --verbose --print-certs "$APK")"
           printf '%s\\n' "$SIGNATURE_REPORT"
           grep -q "Verified using v1 scheme (JAR signing): true" <<< "$SIGNATURE_REPORT"
           grep -q "Verified using v2 scheme (APK Signature Scheme v2): true" <<< "$SIGNATURE_REPORT"
