@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ensureSocialSchema, socialDatabase } from '@/lib/social-db';
+import { ensureSocialSchema, socialDatabase, isSocialFeatureEnabled } from '@/lib/social-db';
 import { verifySocialIdentity } from '@/lib/social-auth';
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
 export async function GET(req:NextRequest){
+ if (!(await isSocialFeatureEnabled('friendsEnabled'))) return NextResponse.json({ error: 'Chat dinonaktifkan oleh admin TG.' }, { status: 403 });
  const user=await verifySocialIdentity(req); if(!user)return NextResponse.json({error:'Token TG tidak valid'},{status:401});
  const conversationId=String(req.nextUrl.searchParams.get('conversationId')||'');
  if(!conversationId)return NextResponse.json({error:'conversationId diperlukan'},{status:400});
@@ -25,6 +26,7 @@ export async function GET(req:NextRequest){
  }catch(error){console.error('[social/messages GET]',error);return NextResponse.json({error:'Gagal memuat pesan'},{status:503});}
 }
 export async function POST(req:NextRequest){
+ if (!(await isSocialFeatureEnabled('friendsEnabled'))) return NextResponse.json({ error: 'Chat dinonaktifkan oleh admin TG.' }, { status: 403 });
  const user=await verifySocialIdentity(req);if(!user)return NextResponse.json({error:'Token TG tidak valid'},{status:401});
  try{
   const body=await req.json();const target=String(body.targetUserId||'');const text=String(body.message||'').trim();const attachmentUrl=String(body.attachmentUrl||'').trim().slice(0,2048);
