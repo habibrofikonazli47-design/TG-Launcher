@@ -8,6 +8,7 @@ const defaults:any={
  runtimes:{java8Enabled:true,java17Enabled:true,java21Enabled:true,java25Enabled:true,autoSelectJava:true,preferredRuntime:'auto',runtimeMirror:'official'},
  mods:{modrinthEnabled:true,curseforgeEnabled:true,fabricEnabled:true,forgeEnabled:true,quiltEnabled:true,neoForgeEnabled:true,allowManualImport:true},
  renderer:{virglEnabled:true,gl4esEnabled:true,mesaEnabled:true,zinkEnabled:true,defaultRenderer:'auto',experimentalRenderers:false},
+ recorder:{screenRecordingEnabled:true},
  ai:{assistantEnabled:true,crashAnalyzerEnabled:true,freeDailyQuota:5,premiumDailyQuota:-1,model:'default',maxTokens:2048,customApiKeyAllowed:true},
  accounts:{offlineLoginEnabled:true,microsoftLoginEnabled:true,elybyLoginEnabled:true,registrationEnabled:true,otpEnabled:true,otpCooldownSeconds:60},
  social:{friendsEnabled:true,voiceEnabled:true,livekitEnabled:false,uploadsEnabled:true,maximumUploadMb:20},
@@ -18,10 +19,10 @@ export async function GET(){
  try{
   await ensureSchema();
   const sql=database();
-  const rows=await sql`SELECT key,value FROM app_settings WHERE key IN ('general','game','runtimes','mods','renderer','ai','accounts','social','updates','appearance')`;
+  const rows=await sql`SELECT key,value FROM app_settings WHERE key IN ('general','game','runtimes','mods','renderer','recorder','ai','accounts','social','updates','appearance')`;
   const config:any={...defaults};
   for(const row of rows){if(Object.prototype.hasOwnProperty.call(defaults,row.key)&&row.value&&typeof row.value==='object')config[row.key]={...defaults[row.key],...row.value};}
-  config.features={game:config.game.minecraftReleaseEnabled||config.game.minecraftSnapshotEnabled,runtimes:config.runtimes.java8Enabled||config.runtimes.java17Enabled||config.runtimes.java21Enabled||config.runtimes.java25Enabled,mods:config.mods.modrinthEnabled||config.mods.curseforgeEnabled||config.mods.allowManualImport,renderer:config.renderer.virglEnabled||config.renderer.gl4esEnabled||config.renderer.mesaEnabled||config.renderer.zinkEnabled,ai:config.ai.assistantEnabled,accounts:config.accounts.offlineLoginEnabled||config.accounts.microsoftLoginEnabled||config.accounts.elybyLoginEnabled,social:config.social.friendsEnabled||config.social.voiceEnabled};
+  config.features={game:config.game.minecraftReleaseEnabled||config.game.minecraftSnapshotEnabled,runtimes:config.runtimes.java8Enabled||config.runtimes.java17Enabled||config.runtimes.java21Enabled||config.runtimes.java25Enabled,mods:config.mods.modrinthEnabled||config.mods.curseforgeEnabled||config.mods.allowManualImport,renderer:config.renderer.virglEnabled||config.renderer.gl4esEnabled||config.renderer.mesaEnabled||config.renderer.zinkEnabled,recorder:config.recorder.screenRecordingEnabled,ai:config.ai.assistantEnabled,accounts:config.accounts.offlineLoginEnabled||config.accounts.microsoftLoginEnabled||config.accounts.elybyLoginEnabled,social:config.social.friendsEnabled||config.social.voiceEnabled};
   config.branding={name:'TG Launcher',adminName:'TG Launcher Control Center'};
   return NextResponse.json(config,{headers:{'Cache-Control':'no-store, max-age=0'}});
  }catch(error){console.error('[app/config]',error);return NextResponse.json({error:'Konfigurasi TG Launcher sementara tidak tersedia'},{status:503,headers:{'Cache-Control':'no-store'}});}
