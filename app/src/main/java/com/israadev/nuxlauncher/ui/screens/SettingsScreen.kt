@@ -76,6 +76,7 @@ fun SettingsScreen(
     val currentSettings by SettingsManager.settings.collectAsState()
     val launcherUser by AccountManager.launcherUser.collectAsState()
     val remoteConfig by RemoteLauncherConfig.config.collectAsState()
+    val customAiKeyAllowed = RemoteLauncherConfig.isEnabled(remoteConfig, "ai", "customApiKeyAllowed")
 
     var activeSettingsTab by remember { mutableStateOf("profile") } // "profile" or "game"
     val availableLanguages by NuxLanguageManager.availableLanguages.collectAsState()
@@ -2247,32 +2248,40 @@ fun SettingsScreen(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
 
-                            NuxTextField(
-                                value = aiApiKey,
-                                onValueChange = {
-                                    aiApiKey = it
-                                    commitSettings()
-                                },
-                                placeholder = "Leave blank = Default launcher free quota",
-                                visualTransformation = if (showApiKeyPlaintext) androidx.compose.ui.text.input.VisualTransformation.None else androidx.compose.ui.text.input.PasswordVisualTransformation(),
-                                trailingContent = {
-                                    Icon(
-                                        imageVector = if (showApiKeyPlaintext) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
-                                        contentDescription = null,
-                                        tint = NuxColors.GrayNeutral,
-                                        modifier = Modifier
-                                            .size(16.dp)
-                                            .clickable { showApiKeyPlaintext = !showApiKeyPlaintext }
-                                    )
-                                }
-                            )
-
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "Supports OpenRouter 'sk-or-v1-...' format. If empty, launcher uses built-in free quota.",
-                                fontSize = 8.5.sp,
-                                color = NuxColors.GrayNeutral
-                            )
+                            if (customAiKeyAllowed) {
+                                NuxTextField(
+                                    value = aiApiKey,
+                                    onValueChange = {
+                                        aiApiKey = it
+                                        commitSettings()
+                                    },
+                                    placeholder = "Leave blank = Default launcher free quota",
+                                    visualTransformation = if (showApiKeyPlaintext) androidx.compose.ui.text.input.VisualTransformation.None else androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                                    trailingContent = {
+                                        Icon(
+                                            imageVector = if (showApiKeyPlaintext) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                                            contentDescription = null,
+                                            tint = NuxColors.GrayNeutral,
+                                            modifier = Modifier
+                                                .size(16.dp)
+                                                .clickable { showApiKeyPlaintext = !showApiKeyPlaintext }
+                                        )
+                                    }
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "Supports OpenRouter 'sk-or-v1-...' format. If empty, launcher uses built-in free quota.",
+                                    fontSize = 8.5.sp,
+                                    color = NuxColors.GrayNeutral
+                                )
+                            } else {
+                                Text(
+                                    text = "Penggunaan API key pribadi dinonaktifkan oleh administrator. TG AI menggunakan konfigurasi server.",
+                                    fontSize = 9.sp,
+                                    color = NuxColors.GrayNeutral,
+                                    lineHeight = 13.sp
+                                )
+                            }
                         }
 
                         // Test Connection & Save Action
