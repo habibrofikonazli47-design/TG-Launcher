@@ -3,6 +3,8 @@ package com.israadev.nuxlauncher.core.instance
 import android.content.Context
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import android.widget.Toast
+import com.israadev.nuxlauncher.core.account.AccountManager
 import com.israadev.nuxlauncher.core.models.Instance
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -389,6 +391,12 @@ object InstanceManager {
 
 
     fun createInstance(context: Context, instance: Instance) {
+        val launcherUser = AccountManager.getActiveUser()
+        val maxInstances = launcherUser?.limits?.get("instances") ?: if (launcherUser?.isActivated == true) -1 else 3
+        if (maxInstances >= 0 && _instances.value.size >= maxInstances) {
+            Toast.makeText(context, "Paket Free dibatasi maksimal $maxInstances instance. Upgrade ke Premium untuk tanpa batas.", Toast.LENGTH_LONG).show()
+            return
+        }
         // Create isolated instance folder structure
         val instDir = getInstanceDir(context, instance)
         val gameDir = getInstanceGameDir(context, instance)
