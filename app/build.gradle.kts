@@ -20,6 +20,11 @@ val rawAiApiKey2: String = localProperties.getProperty("tg.ai.api.key2") ?: ""
 val rawAiApiKey3: String = localProperties.getProperty("tg.ai.api.key3") ?: ""
 val tgVersionCode: Int = System.getenv("TG_VERSION_CODE")?.toIntOrNull() ?: 18
 val tgVersionName: String = System.getenv("TG_VERSION_NAME") ?: "1.1.6-tg1"
+val tgSigningStoreFile: String? = System.getenv("TG_SIGNING_STORE_FILE")
+val tgSigningStorePassword: String? = System.getenv("TG_SIGNING_STORE_PASSWORD")
+val tgSigningKeyAlias: String? = System.getenv("TG_SIGNING_KEY_ALIAS")
+val tgSigningKeyPassword: String? = System.getenv("TG_SIGNING_KEY_PASSWORD")
+val hasStableSigning = listOf(tgSigningStoreFile, tgSigningStorePassword, tgSigningKeyAlias, tgSigningKeyPassword).all { !it.isNullOrBlank() }
 
 android {
     namespace = "com.israadev.nuxlauncher"
@@ -49,10 +54,23 @@ android {
         }
     }
 
+    signingConfigs {
+        if (hasStableSigning) {
+            create("tgRelease") {
+                storeFile = file(tgSigningStoreFile!!)
+                storePassword = tgSigningStorePassword
+                keyAlias = tgSigningKeyAlias
+                keyPassword = tgSigningKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("debug")
+            // Use the persistent release key when configured. Debug signing is CI-only fallback;
+            // it must never be published as an install-over-update release.
+            signingConfig = if (hasStableSigning) signingConfigs.getByName("tgRelease") else signingConfigs.getByName("debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
