@@ -274,6 +274,9 @@ object AuthService {
                     if (response.code == 403) {
                         return@withContext user.copy(isActivated = false, tier = "blocked", features = emptyList(), limits = emptyMap())
                     }
+                    if (response.code == 401) {
+                        return@withContext user.copy(isActivated = false, tier = "free", features = listOf("base_launcher"), limits = mapOf("instances" to 3, "accounts" to 2, "ai_daily" to 5))
+                    }
                     return@withContext user
                 }
                 val obj = gson.fromJson(body, JsonObject::class.java) ?: return@withContext user
