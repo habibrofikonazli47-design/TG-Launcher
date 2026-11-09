@@ -178,8 +178,14 @@ object NuxSocialManager {
     }
 
     /** Admin-controlled social switches. Fail closed until remote config is available. */
-    private fun isSocialFeatureEnabled(key: String): Boolean =
-        RemoteLauncherConfig.isEnabled(RemoteLauncherConfig.config.value, "social", key, false)
+    private fun isSocialFeatureEnabled(key: String): Boolean {
+        val adminEnabled = RemoteLauncherConfig.isEnabled(RemoteLauncherConfig.config.value, "social", key, false)
+        if (!adminEnabled) return false
+        if (key.contains("voice", ignoreCase = true) || key.contains("room", ignoreCase = true)) {
+            return AccountManager.getActiveUser()?.features?.contains("voice_rooms") == true
+        }
+        return true
+    }
 
 
     // =========================================================
