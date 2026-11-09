@@ -102,7 +102,9 @@ jobs:
           body: |
             TG Launcher build based on NUX Launcher v1.1.6.
             Download the APK asset below; no ZIP extraction is required.
-          files: app/build/outputs/apk/release/app-release.apk
+          files: |
+            app/build/outputs/apk/release/app-release.apk
+            app/build/outputs/apk/release/output-metadata.json
           fail_on_unmatched_files: true
           make_latest: true
         env:
