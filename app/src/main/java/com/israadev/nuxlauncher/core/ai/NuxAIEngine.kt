@@ -32,7 +32,7 @@ data class AIChatMessage(
     val timestamp: Long = System.currentTimeMillis()
 )
 
-object TGAIEngine {
+object NuxAIEngine {
 
     private val gson = Gson()
     private const val OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions"
