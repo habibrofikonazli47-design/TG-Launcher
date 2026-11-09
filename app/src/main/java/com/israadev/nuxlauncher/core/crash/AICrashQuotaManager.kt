@@ -4,6 +4,7 @@ import android.content.Context
 import com.israadev.nuxlauncher.core.account.AccountManager
 import com.israadev.nuxlauncher.core.auth.AuthService
 import com.israadev.nuxlauncher.core.models.LauncherSettings
+import com.israadev.nuxlauncher.core.network.RemoteLauncherConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
@@ -24,6 +25,7 @@ object AICrashQuotaManager {
     private const val KEY_DATE = "quota_date"
     private const val KEY_USED_COUNT = "quota_used_count"
     private const val KEY_REMAINING_QUOTA = "quota_remaining"
+    private const val KEY_DAILY_LIMIT = "quota_daily_limit"
 
     /**
      * Mendapatkan string tanggal hari ini dalam format YYYY-MM-DD
@@ -39,7 +41,20 @@ object AICrashQuotaManager {
      * Memeriksa apakah user menggunakan custom API key sendiri.
      */
     fun isUsingCustomKey(settings: LauncherSettings?): Boolean {
-        return !settings?.aiApiKey.isNullOrBlank()
+        val customKeyAllowed = RemoteLauncherConfig.isEnabled(
+            RemoteLauncherConfig.config.value, "ai", "customApiKeyAllowed"
+        )
+        return customKeyAllowed && !settings?.aiApiKey.isNullOrBlank()
+    }
+
+    private fun getConfiguredDailyLimit(context: Context): Int {
+        val ai = RemoteLauncherConfig.config.value?.optJSONObject("ai")
+        val key = if (isVipUser()) "premiumDailyQuota" else "freeDailyQuota"
+        val configured = ai?.optInt(key, if (isVipUser()) -1 else DAILY_LIMIT)
+            ?: if (isVipUser()) -1 else DAILY_LIMIT
+        val cached = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            .getInt(KEY_DAILY_LIMIT, Int.MIN_VALUE)
+        return if (cached != Int.MIN_VALUE) cached else configured
     }
 
     /**
@@ -78,30 +93,35 @@ object AICrashQuotaManager {
                     .putString(KEY_DATE, info.date.ifBlank { today })
                     .putInt(KEY_USED_COUNT, safeUsed)
                     .putInt(KEY_REMAINING_QUOTA, safeRemaining)
+                    .putInt(KEY_DAILY_LIMIT, info.dailyLimit)
                     .apply()
                 return@withContext safeRemaining
             }
         }
 
         // Fallback jika belum login, offline, atau database belum tersinkron
+        val configuredLimit = getConfiguredDailyLimit(context)
         val savedDate = prefs.getString(KEY_DATE, "") ?: ""
         if (savedDate != today) {
             prefs.edit()
                 .putString(KEY_DATE, today)
                 .putInt(KEY_USED_COUNT, 0)
-                .putInt(KEY_REMAINING_QUOTA, DAILY_LIMIT)
+                .putInt(KEY_REMAINING_QUOTA, configuredLimit)
+                .putInt(KEY_DAILY_LIMIT, configuredLimit)
                 .apply()
-            return@withContext DAILY_LIMIT
+            return@withContext configuredLimit
         }
 
         val used = prefs.getInt(KEY_USED_COUNT, 0)
+        val dailyLimit = prefs.getInt(KEY_DAILY_LIMIT, configuredLimit)
+        if (dailyLimit < 0) return@withContext -1
         if (used <= 0) {
-            prefs.edit().putInt(KEY_REMAINING_QUOTA, DAILY_LIMIT).apply()
-            return@withContext DAILY_LIMIT
+            prefs.edit().putInt(KEY_REMAINING_QUOTA, dailyLimit).apply()
+            return@withContext dailyLimit
         }
 
         val cached = prefs.getInt(KEY_REMAINING_QUOTA, -99)
-        return@withContext if (cached >= 0) cached else (DAILY_LIMIT - used).coerceAtLeast(0)
+        return@withContext if (cached >= 0) cached else (dailyLimit - used).coerceAtLeast(0)
     }
 
     /**
@@ -131,18 +151,22 @@ object AICrashQuotaManager {
         val savedDate = prefs.getString(KEY_DATE, "") ?: ""
         val today = getTodayJakartaDate()
 
+        val configuredLimit = getConfiguredDailyLimit(context)
         if (savedDate != today) {
             prefs.edit()
                 .putString(KEY_DATE, today)
                 .putInt(KEY_USED_COUNT, 0)
-                .putInt(KEY_REMAINING_QUOTA, DAILY_LIMIT)
+                .putInt(KEY_REMAINING_QUOTA, configuredLimit)
+                .putInt(KEY_DAILY_LIMIT, configuredLimit)
                 .apply()
-            return DAILY_LIMIT
+            return configuredLimit
         }
 
+        val dailyLimit = prefs.getInt(KEY_DAILY_LIMIT, configuredLimit)
+        if (dailyLimit < 0) return -1
         val used = prefs.getInt(KEY_USED_COUNT, 0)
         if (used <= 0) {
-            return DAILY_LIMIT // Belum pernah digunakan hari ini, kuota pasti penuh
+            return dailyLimit
         }
 
         val cachedRem = prefs.getInt(KEY_REMAINING_QUOTA, -99)
@@ -158,8 +182,7 @@ object AICrashQuotaManager {
      */
     fun hasQuota(context: Context, settings: LauncherSettings?): Boolean {
         if (isUsingCustomKey(settings) || isVipUser()) return true
-        if (getUsedCount(context) <= 0) return true
-        return getRemainingQuota(context, settings) > 0
+        return getRemainingQuota(context, settings) != 0
     }
 
     /**
@@ -181,8 +204,9 @@ object AICrashQuotaManager {
             0
         }
 
-        // Cek limit lokal sebelum request
-        if (currentUsed >= DAILY_LIMIT) {
+        // Cek limit lokal sebelum request, mengikuti batas yang ditetapkan admin/server.
+        val dailyLimit = getConfiguredDailyLimit(context)
+        if (dailyLimit == 0 || (dailyLimit > 0 && currentUsed >= dailyLimit)) {
             return@withContext false
         }
 
@@ -198,6 +222,7 @@ object AICrashQuotaManager {
                     .putString(KEY_DATE, info.date.ifBlank { today })
                     .putInt(KEY_USED_COUNT, info.usedCount)
                     .putInt(KEY_REMAINING_QUOTA, info.remainingQuota)
+                    .putInt(KEY_DAILY_LIMIT, info.dailyLimit)
                     .apply()
                 return@withContext true
             } else {
@@ -216,11 +241,12 @@ object AICrashQuotaManager {
 
         // Fallback / Guest local counter
         currentUsed += 1
-        val newRemaining = (DAILY_LIMIT - currentUsed).coerceAtLeast(0)
+        val newRemaining = if (dailyLimit < 0) -1 else (dailyLimit - currentUsed).coerceAtLeast(0)
         prefs.edit()
             .putString(KEY_DATE, today)
             .putInt(KEY_USED_COUNT, currentUsed)
             .putInt(KEY_REMAINING_QUOTA, newRemaining)
+            .putInt(KEY_DAILY_LIMIT, dailyLimit)
             .apply()
 
         return@withContext true
