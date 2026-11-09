@@ -42,8 +42,10 @@ jobs:
           sed -i 's/applicationId = "com.israadev.nuxlauncher"/applicationId = "com.tg.launcher"/' app/build.gradle.kts
           # Apply TG launcher icon to the app and all file-import shortcuts.
           sed -i 's#@mipmap/ic_launcher_round#@drawable/tg_launcher_icon#g; s#@mipmap/ic_launcher#@drawable/tg_launcher_icon#g; s/NUX Launcher — /TG Launcher — /g' app/src/main/AndroidManifest.xml
-          sed -i 's/versionCode = 17/versionCode = 18/' app/build.gradle.kts
-          sed -i 's/versionName = "1.1.6"/versionName = "1.1.6-tg1"/' app/build.gradle.kts
+          TG_VERSION_CODE=$((17 + GITHUB_RUN_NUMBER))
+          TG_VERSION_NAME="1.1.6-tg${GITHUB_RUN_NUMBER}"
+          sed -i "s/versionCode = 17/versionCode = ${TG_VERSION_CODE}/" app/build.gradle.kts
+          sed -i "s/versionName = \"1.1.6\"/versionName = \"${TG_VERSION_NAME}\"/" app/build.gradle.kts
           # Route launcher backend and update checks to the TG Vercel service by default.
           sed -i 's#val rawServerUrl: String = localProperties.getProperty("nux.server.url") ?: ""#val rawServerUrl: String = localProperties.getProperty("nux.server.url") ?: "https://tg-launcher-admin-habibrofikonazlis-projects.vercel.app"#' app/build.gradle.kts
 
@@ -104,8 +106,8 @@ jobs:
       - name: Publish direct APK download on GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.1.6-tg1
-          name: TG Launcher v1.1.6-tg1
+          tag_name: v1.1.6-tg${{ github.run_number }}
+          name: TG Launcher v1.1.6-tg${{ github.run_number }}
           body: |
             TG Launcher build based on NUX Launcher v1.1.6.
             Download the APK asset below; no ZIP extraction is required.
