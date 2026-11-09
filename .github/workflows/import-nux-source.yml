@@ -44,6 +44,8 @@ jobs:
           sed -i 's#@mipmap/ic_launcher_round#@drawable/tg_launcher_icon#g; s#@mipmap/ic_launcher#@drawable/tg_launcher_icon#g; s/NUX Launcher — /TG Launcher — /g' app/src/main/AndroidManifest.xml
           sed -i 's/versionCode = 17/versionCode = 18/' app/build.gradle.kts
           sed -i 's/versionName = "1.1.6"/versionName = "1.1.6-tg1"/' app/build.gradle.kts
+          # Route launcher backend and update checks to the TG Vercel service by default.
+          sed -i 's#val rawServerUrl: String = localProperties.getProperty("nux.server.url") ?: ""#val rawServerUrl: String = localProperties.getProperty("nux.server.url") ?: "https://tg-launcher-admin-habibrofikonazlis-projects.vercel.app"#' app/build.gradle.kts
 
       - name: Commit imported source to TG Launcher
         run: |
