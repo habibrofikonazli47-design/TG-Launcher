@@ -24,7 +24,7 @@
         android:label="@string/app_name"
         android:roundIcon="@drawable/tg_launcher_icon"
         android:supportsRtl="true"
-        android:theme="@style/Theme.NuxLauncher"
+        android:theme="@style/Theme.TGLauncher"
         android:requestLegacyExternalStorage="true"
         android:allowNativeHeapPointerTagging="false"
         android:usesCleartextTraffic="true">
