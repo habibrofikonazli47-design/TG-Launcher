@@ -80,6 +80,7 @@ fun NuxAddInstanceDialog(
     var premiumInitialPrompt by remember { mutableStateOf<String?>(null) }
 
     val launcherUser by com.israadev.nuxlauncher.core.account.AccountManager.launcherUser.collectAsState()
+    val currentLauncherUser = launcherUser
     val remoteConfig by RemoteLauncherConfig.config.collectAsState()
     val langVersion by NuxLanguageManager.languageVersion.collectAsState()
 
@@ -121,7 +122,7 @@ fun NuxAddInstanceDialog(
                 "old_beta", "old_alpha" -> RemoteLauncherConfig.isEnabled(remoteConfig, "game", "showOldVersions")
                 else -> true
             }
-            val hasExperimentalAccess = if (launcherUser?.features?.isNotEmpty() == true) "snapshot_beta_versions" in launcherUser.features else launcherUser?.isActivated == true
+            val hasExperimentalAccess = if (currentLauncherUser?.features?.isNotEmpty() == true) "snapshot_beta_versions" in currentLauncherUser.features else currentLauncherUser?.isActivated == true
             val planAllowsType = item.type == "release" || hasExperimentalAccess
             val matchesCategory = when (selectedCategory) {
                 VersionCategory.ALL -> true
@@ -618,7 +619,7 @@ fun NuxAddInstanceDialog(
                                                     VersionCategory.OLD_BETA, VersionCategory.OLD_ALPHA -> RemoteLauncherConfig.isEnabled(remoteConfig, "game", "showOldVersions")
                                                     VersionCategory.ALL -> true
                                                 }
-                                                val hasExperimentalAccess = if (launcherUser?.features?.isNotEmpty() == true) "snapshot_beta_versions" in launcherUser.features else launcherUser?.isActivated == true
+                                                val hasExperimentalAccess = if (currentLauncherUser?.features?.isNotEmpty() == true) "snapshot_beta_versions" in currentLauncherUser.features else currentLauncherUser?.isActivated == true
                                                 if (!adminAllowsCategory) {
                                                     premiumInitialPrompt = "Kategori versi ini dinonaktifkan oleh administrator TG Launcher."
                                                     showPremiumDialog = true
