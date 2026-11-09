@@ -71,8 +71,8 @@ object UpdateManager {
                 } else ""
 
                 // Extract download files info
-                var downloadUrl = NuxConfig.getDownloadUrl("uploads/installers/NuxLauncher.apk")
-                var fileName = "NuxLauncher-Android.apk"
+                var downloadUrl = NuxConfig.getDownloadUrl("uploads/installers/TG-Launcher.apk")
+                var fileName = "TG-Launcher-Android.apk"
                 var fileSize = 0L
 
                 if (rootObj.has("files") && rootObj.get("files").isJsonArray) {
