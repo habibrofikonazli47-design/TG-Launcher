@@ -1,7 +1,7 @@
 name: Build TG Launcher
 
 # Release builds use the persistent TG Launcher signing key from repository secrets.
-# Build trigger refreshed after the previous GitHub Actions run failed before job creation.
+# Publish to the beta channel because the Admin Panel currently enables beta and disables stable.
 
 on:
   push:
@@ -141,12 +141,12 @@ jobs:
           tag_name: tg-launcher-${{ env.TG_VERSION_NAME }}
           name: TG Launcher ${{ env.TG_VERSION_NAME }}
           draft: false
-          prerelease: ${{ env.TG_SIGNING_READY != 'true' }}
-          make_latest: ${{ env.TG_SIGNING_READY == 'true' }}
+          prerelease: true
+          make_latest: false
           body: |
-            Automated TG Launcher APK build.
-            If this release is marked as a prerelease, it uses temporary CI signing and is for testing only.
-            Do not install over an existing TG Launcher unless its signing certificate matches.
+            Automated TG Launcher beta-channel APK build.
+            This APK is signed with the persistent TG Launcher release key when repository signing secrets are configured.
+            Install over an existing TG Launcher only when the signing certificate matches.
           files: app/build/outputs/apk/release/TG-Launcher-v1.1.6-tg${{ env.TG_BUILD_NUMBER }}.apk
 
       - name: Upload TG Launcher APK artifact
