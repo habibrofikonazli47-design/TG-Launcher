@@ -177,6 +177,11 @@ object NuxSocialManager {
         }
     }
 
+    /** Admin-controlled social switches. Fail closed until remote config is available. */
+    private fun isSocialFeatureEnabled(key: String): Boolean =
+        RemoteLauncherConfig.isEnabled(RemoteLauncherConfig.config.value, "social", key, false)
+
+
     // =========================================================
     // 1. PRESENCE & SINKRONISASI
     // =========================================================
@@ -887,6 +892,10 @@ object NuxSocialManager {
     // =========================================================
 
     suspend fun fetchVoiceRooms() = withContext(Dispatchers.IO) {
+        if (!isSocialFeatureEnabled("voiceEnabled")) {
+            _voiceRooms.value = emptyList()
+            return@withContext
+        }
         var token = getAuthToken()
         try {
             var url = buildUrl("shared_social/voice_rooms", token)
@@ -1002,6 +1011,7 @@ object NuxSocialManager {
     }
 
     suspend fun createVoiceRoom(name: String, password: String, maxUsers: Int): Result<NuxVoiceRoom> = withContext(Dispatchers.IO) {
+        if (!isSocialFeatureEnabled("voiceEnabled")) return@withContext Result.failure(Exception("Voice Room dinonaktifkan oleh administrator TG Launcher."))
         val user = getCurrentUser() ?: return@withContext Result.failure(Exception("Belum login"))
         var token = getAuthToken()
         if (token.isNullOrBlank()) {
@@ -1100,6 +1110,7 @@ object NuxSocialManager {
     }
 
     suspend fun joinVoiceRoom(room: NuxVoiceRoom, inputPassword: String = ""): Result<Unit> = withContext(Dispatchers.IO) {
+        if (!isSocialFeatureEnabled("voiceEnabled")) return@withContext Result.failure(Exception("Voice Room dinonaktifkan oleh administrator TG Launcher."))
         val user = getCurrentUser() ?: return@withContext Result.failure(Exception("Belum login"))
         var token = getAuthToken()
 
@@ -1281,6 +1292,7 @@ object NuxSocialManager {
     }
 
     suspend fun sendVoiceRoomMessage(text: String): Result<Unit> = withContext(Dispatchers.IO) {
+        if (!isSocialFeatureEnabled("voiceEnabled")) return@withContext Result.failure(Exception("Voice Room dinonaktifkan oleh administrator TG Launcher."))
         val user = getCurrentUser() ?: return@withContext Result.failure(Exception("Belum login"))
         val room = _activeVoiceRoom.value ?: return@withContext Result.failure(Exception("Not in a voice room"))
         var token = getAuthToken()
