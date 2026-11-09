@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
       await sql`INSERT INTO profiles(id,email,display_name,plan,status) VALUES(${identity.localId},${identity.email},${identity.displayName || identity.email.split('@')[0]},'free','active') ON CONFLICT (id) DO NOTHING`;
     }
 
-    const rows = await sql`SELECT id,email,plan,status,expires_at FROM profiles WHERE id=${identity.localId} LIMIT 1`;
+    const rows = await sql`SELECT id,email,plan,status,expires_at,license_id FROM profiles WHERE id=${identity.localId} LIMIT 1`;
     if (!rows.length) return NextResponse.json({ error: 'Profil akun tidak ditemukan' }, { status: 404 });
     const profile = rows[0];
     if (profile.status === 'blocked') {
@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
     }
     const expiry = profile.expires_at ? new Date(profile.expires_at) : null;
     const isExpired = !!expiry && expiry.getTime() <= Date.now();
-    const isPremium = profile.plan === 'premium' && profile.status === 'active' && !isExpired;
+    const linkedLicense = profile.license_id ? await sql`SELECT status FROM license_keys WHERE id=${profile.license_id} AND user_id=${identity.localId} LIMIT 1` : null;\n    const licenseAllowed = !profile.license_id || (linkedLicense?.[0]?.status === 'active');\n    const isPremium = profile.plan === 'premium' && profile.status === 'active' && !isExpired && licenseAllowed;
     const planCode = isPremium ? 'premium' : 'free';
     const plans = await sql`SELECT code,name,features,limits FROM plans WHERE code=${planCode} LIMIT 1`;
     const plan = plans[0] || { code: planCode, name: isPremium ? 'Premium' : 'Free', features: ['base_launcher'], limits: { instances: 3, accounts: 2, ai_daily: 5 } };
