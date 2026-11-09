@@ -3,10 +3,10 @@ package com.israadev.nuxlauncher.core.network
 import com.israadev.nuxlauncher.BuildConfig
 
 /**
- * Konfigurasi Endpoint Server Nux Launcher.
+ * Konfigurasi endpoint server TG Launcher.
  *
  * Nilai dasar diambil dari BuildConfig.SERVER_BASE_URL yang diinjeksi saat build
- * dari file `local.properties` (properti: `nux.server.url`).
+ * dari file `local.properties` (properti: `tg.server.url`).
  *
  * Jika proyek di-clone tanpa local.properties, nilai SERVER_BASE_URL akan kosong (""),
  * sehingga endpoint private produksi tidak bocor ke publik atau disalahgunakan di fork publik.
