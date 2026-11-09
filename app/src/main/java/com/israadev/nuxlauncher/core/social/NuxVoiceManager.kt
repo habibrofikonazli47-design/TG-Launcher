@@ -96,9 +96,8 @@ object NuxVoiceManager {
     }
 
     private fun initWebView(wv: WebView, context: Context) {
-        try {
-            WebView.setWebContentsDebuggingEnabled(true)
-        } catch (_: Exception) {}
+        // Keep remote WebView debugging disabled in production builds.
+        // The bridge exposes an Android JavaScript interface and must not be inspectable remotely.
 
         val assetLoader = WebViewAssetLoader.Builder()
             .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(context.applicationContext))
@@ -110,8 +109,9 @@ object NuxVoiceManager {
             databaseEnabled = true
             mediaPlaybackRequiresUserGesture = false
             cacheMode = WebSettings.LOAD_DEFAULT
-            allowFileAccess = true
-            allowContentAccess = true
+            // Assets are served through WebViewAssetLoader; direct file/content access is unnecessary.
+            allowFileAccess = false
+            allowContentAccess = false
         }
 
         wv.webChromeClient = object : WebChromeClient() {
