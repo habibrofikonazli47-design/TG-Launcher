@@ -47,6 +47,9 @@ export async function GET(req: NextRequest) {
     const rows = await sql`SELECT id,email,plan,status,expires_at FROM profiles WHERE id=${identity.localId} LIMIT 1`;
     if (!rows.length) return NextResponse.json({ error: 'Profil akun tidak ditemukan' }, { status: 404 });
     const profile = rows[0];
+    if (profile.status === 'blocked') {
+      return NextResponse.json({ error: 'Akun ini diblokir oleh administrator', status: 'blocked' }, { status: 403, headers: { 'Cache-Control': 'no-store' } });
+    }
     const expiry = profile.expires_at ? new Date(profile.expires_at) : null;
     const isExpired = !!expiry && expiry.getTime() <= Date.now();
     const isPremium = profile.plan === 'premium' && profile.status === 'active' && !isExpired;
