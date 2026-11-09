@@ -49,8 +49,15 @@ async function ensureProfile(uid: string, email: string, displayName: string) {
   const sql = database();
   const existing = await sql`SELECT id FROM profiles WHERE id=${uid} OR lower(email)=${email} LIMIT 1`;
   if (existing.length) {
-    if (String(existing[0].id) !== uid) {
-      await sql`UPDATE profiles SET id=${uid},email=${email},updated_at=now() WHERE id=${existing[0].id}`;
+    const previousUid = String(existing[0].id);
+    if (previousUid !== uid) {
+      // Keep all Premium ownership references aligned when a legacy profile row
+      // is reconciled to the Firebase UID. Without this, a valid key can appear
+      // to belong to a different account after login.
+      await sql`UPDATE license_keys SET user_id=${uid} WHERE user_id=${previousUid}`;
+      await sql`UPDATE licenses SET user_id=${uid} WHERE user_id=${previousUid}`;
+      await sql`UPDATE license_devices SET user_id=${uid} WHERE user_id=${previousUid}`;
+      await sql`UPDATE profiles SET id=${uid},email=${email},updated_at=now() WHERE id=${previousUid}`;
     }
   } else {
     await sql`INSERT INTO profiles(id,email,display_name,plan,status) VALUES(${uid},${email},${displayName},'free','active') ON CONFLICT (id) DO NOTHING`;
