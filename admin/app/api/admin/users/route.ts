@@ -5,7 +5,7 @@ export const runtime='nodejs';
 export async function GET(req:NextRequest){
  if(!verifySession(req.cookies.get(getCookieName())?.value))return NextResponse.json({error:'Unauthorized'},{status:401});
  try {await ensureSchema();const q=new URL(req.url).searchParams.get('q')||'';const sql=database();
- const rows=q?await sql`SELECT id,email,display_name,role,plan,status,expires_at,feature_overrides,limit_overrides,created_at FROM profiles WHERE email ILIKE ${'%'+q+'%'} OR display_name ILIKE ${'%'+q+'%'} ORDER BY created_at DESC LIMIT 200`:await sql`SELECT id,email,display_name,role,plan,status,expires_at,created_at FROM profiles ORDER BY created_at DESC LIMIT 200`;
+ const rows=q?await sql`SELECT id,email,display_name,role,plan,status,expires_at,feature_overrides,limit_overrides,created_at FROM profiles WHERE email ILIKE ${'%'+q+'%'} OR display_name ILIKE ${'%'+q+'%'} ORDER BY created_at DESC LIMIT 200`:await sql`SELECT id,email,display_name,role,plan,status,expires_at,feature_overrides,limit_overrides,created_at FROM profiles ORDER BY created_at DESC LIMIT 200`;
  return NextResponse.json(rows);
  }catch(e:any){return NextResponse.json({error:e.message},{status:503});}
 }
