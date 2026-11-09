@@ -270,7 +270,12 @@ object AuthService {
                 .build()
             client.newCall(request).execute().use { response ->
                 val body = response.body?.string().orEmpty()
-                if (!response.isSuccessful) return@withContext user
+                if (!response.isSuccessful) {
+                    if (response.code == 403) {
+                        return@withContext user.copy(isActivated = false, tier = "blocked", features = emptyList(), limits = emptyMap())
+                    }
+                    return@withContext user
+                }
                 val obj = gson.fromJson(body, JsonObject::class.java) ?: return@withContext user
                 if (!obj.get("success").asBooleanOrDefault(false)) return@withContext user
                 val features = try {
