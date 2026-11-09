@@ -89,6 +89,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ path: 
         email: String(body.email || '').trim().toLowerCase(), password: String(body.password || ''), returnSecureToken: true,
       });
       const profile = await ensureProfile(String(auth.localId), String(auth.email).toLowerCase(), String(auth.displayName || auth.email.split('@')[0]));
+      if (profile.status === 'blocked') return NextResponse.json({ error: 'Akun ini diblokir oleh administrator.' }, { status: 403 });
       return NextResponse.json(await userResponse(profile, { idToken: auth.idToken, refreshToken: auth.refreshToken, message: 'Login berhasil.' }));
     }
 
