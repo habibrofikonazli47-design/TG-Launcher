@@ -42,6 +42,7 @@ import com.israadev.nuxlauncher.core.crash.AICrashQuotaManager
 import com.israadev.nuxlauncher.core.crash.AIStreamState
 import com.israadev.nuxlauncher.core.instance.InstanceManager
 import com.israadev.nuxlauncher.core.settings.SettingsManager
+import com.israadev.nuxlauncher.core.network.RemoteLauncherConfig
 import com.israadev.nuxlauncher.ui.components.NuxButton
 import com.israadev.nuxlauncher.ui.components.NuxMarkdownView
 import com.israadev.nuxlauncher.ui.theme.NuxColors
@@ -60,6 +61,10 @@ fun AIScreen(
 
     val instances by InstanceManager.instances.collectAsState()
     val settings by SettingsManager.settings.collectAsState()
+    val remoteConfig by RemoteLauncherConfig.config.collectAsState()
+    val aiEnabled = RemoteLauncherConfig.isEnabled(remoteConfig, "ai", "assistantEnabled")
+
+    LaunchedEffect(Unit) { RemoteLauncherConfig.refresh() }
 
     // Instance aktif yang dipilih untuk konteks AI
     var selectedInstanceIndex by remember { mutableIntStateOf(0) }
@@ -108,6 +113,10 @@ fun AIScreen(
     }
 
     fun sendMessage(userText: String) {
+        if (!aiEnabled) {
+            Toast.makeText(context, "Fitur AI dinonaktifkan oleh administrator TG Launcher.", Toast.LENGTH_LONG).show()
+            return
+        }
         val trimmed = userText.trim()
         if (trimmed.isBlank() || streamState is AIStreamState.Connecting || streamState is AIStreamState.Streaming) {
             return
@@ -665,6 +674,7 @@ fun AIScreen(
                     BasicTextField(
                         value = currentInputText,
                         onValueChange = { currentInputText = it },
+                        enabled = aiEnabled,
                         textStyle = TextStyle(
                             color = Color.White,
                             fontSize = 8.5.sp,
@@ -684,13 +694,13 @@ fun AIScreen(
                         .height(24.dp)
                         .clip(RoundedCornerShape(6.dp))
                         .background(
-                            if (isBusy || currentInputText.isBlank()) {
+                            if (!aiEnabled || isBusy || currentInputText.isBlank()) {
                                 Brush.horizontalGradient(listOf(Color(0xFF1E293B), Color(0xFF1E293B)))
                             } else {
                                 Brush.horizontalGradient(listOf(Color(0xFF059669), Color(0xFF10B981)))
                             }
                         )
-                        .clickable(enabled = !isBusy && currentInputText.isNotBlank()) {
+                        .clickable(enabled = aiEnabled && !isBusy && currentInputText.isNotBlank()) {
                             sendMessage(currentInputText)
                         }
                         .padding(horizontal = 8.dp),
@@ -708,7 +718,7 @@ fun AIScreen(
                                 text = tr("ai.btn_send"),
                                 fontWeight = FontWeight.Black,
                                 fontSize = 8.sp,
-                                color = if (currentInputText.isNotBlank()) Color.White else Color(0xFF64748B)
+                                color = if (aiEnabled && currentInputText.isNotBlank()) Color.White else Color(0xFF64748B)
                             )
                             Spacer(modifier = Modifier.width(3.dp))
                             Icon(
