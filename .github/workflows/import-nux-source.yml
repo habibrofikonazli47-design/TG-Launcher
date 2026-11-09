@@ -1,4 +1,4 @@
-name: Import NUX Launcher v1.1.6 and build TG Launcher
+name: Build TG Launcher
 
 on:
   push:
@@ -22,55 +22,8 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Check out upstream NUX Launcher v1.1.6
-        uses: actions/checkout@v4
-        with:
-          repository: IsraaDeveloper/nuxlabs
-          ref: v1.1.6
-          path: nux-source
-
-      - name: Import upstream source while preserving TG project metadata
-        run: |
-          rsync -a --exclude='.git/' --exclude='README.md' --exclude='app/src/main/java/com/israadev/nuxlauncher/MainActivity.kt' --exclude='app/src/main/java/com/israadev/nuxlauncher/core/auth/AuthService.kt' --exclude='app/src/main/java/com/israadev/nuxlauncher/ui/screens/AuthScreen.kt' --exclude='app/src/main/java/com/israadev/nuxlauncher/core/instance/InstanceManager.kt' --exclude='app/src/main/java/com/israadev/nuxlauncher/ui/screens/AccountsScreen.kt' --exclude='app/src/main/java/com/israadev/nuxlauncher/core/update/UpdateManager.kt' --exclude='app/src/main/java/com/israadev/nuxlauncher/core/network/NuxConfig.kt' \
-            --exclude='app/src/main/java/com/israadev/nuxlauncher/core/network/RemoteLauncherConfig.kt' \
-            --exclude='app/src/main/java/com/israadev/nuxlauncher/ui/screens/DashboardScreen.kt' \
-            --exclude='app/src/main/java/com/israadev/nuxlauncher/ui/screens/SettingsScreen.kt' \
-            --exclude='app/src/main/java/com/israadev/nuxlauncher/ui/components/NuxSidebar.kt' \
-            --exclude='app/src/main/java/com/israadev/nuxlauncher/ui/dialogs/NuxPremiumDialog.kt' \
-            --exclude='app/src/main/java/com/israadev/nuxlauncher/core/announcement/AnnouncementManager.kt' \
-            --exclude='app/src/main/java/com/israadev/nuxlauncher/core/download/MinecraftDownloader.kt' \
-            --exclude='app/src/main/java/com/israadev/nuxlauncher/core/social/NuxVoiceManager.kt' \
-            --exclude='app/src/main/java/com/israadev/nuxlauncher/core/runtime/JavaRuntimeManager.kt' \
-            --exclude='app/src/main/java/com/israadev/nuxlauncher/ui/screens/ModsScreen.kt' \
-            --exclude='app/src/main/java/com/israadev/nuxlauncher/ui/dialogs/NuxAddInstanceDialog.kt' \
-            --exclude='app/src/main/java/com/israadev/nuxlauncher/GameActivity.kt' nux-source/ ./
-          rm -rf nux-source
-          sed -i 's#<string name="app_name">NUX Launcher</string>#<string name="app_name">TG Launcher</string>#' app/src/main/res/values/strings.xml
-          if ! grep -q '<string name="app_name">TG Launcher</string>' app/src/main/res/values/strings.xml; then
-            echo "Could not update the launcher display name."
-            exit 1
-          fi
-          # Keep the Kotlin namespace intact while giving TG Launcher a distinct install identity.
-          sed -i 's/applicationId = "com.israadev.nuxlauncher"/applicationId = "com.tg.launcher"/' app/build.gradle.kts
-          # Build against the stable Android 15 SDK, not the Android 17 preview platform.
-          sed -i 's/compileSdk = 35/compileSdk = 37/' app/build.gradle.kts
-          sed -i 's/targetSdk = 34/targetSdk = 35/' app/build.gradle.kts
-          grep -q 'compileSdk = 37' app/build.gradle.kts
-          grep -q 'targetSdk = 35' app/build.gradle.kts
-          # Apply TG launcher icon to the app and all file-import shortcuts.
-          sed -i 's#@mipmap/ic_launcher_round#@drawable/tg_launcher_icon#g; s#@mipmap/ic_launcher#@drawable/tg_launcher_icon#g; s/NUX Launcher — /TG Launcher — /g' app/src/main/AndroidManifest.xml
-          TG_VERSION_CODE=$((17 + GITHUB_RUN_NUMBER))
-          TG_VERSION_NAME="1.1.6-tg${GITHUB_RUN_NUMBER}"
-          # Replace the current metadata regardless of the previous TG build's values.
-          sed -i -E "s/versionCode = [0-9]+/versionCode = ${TG_VERSION_CODE}/" app/build.gradle.kts
-          sed -i -E "s/versionName = \"[^\"]+\"/versionName = \"${TG_VERSION_NAME}\"/" app/build.gradle.kts
-          grep -q "versionCode = ${TG_VERSION_CODE}" app/build.gradle.kts
-          grep -q "versionName = \"${TG_VERSION_NAME}\"" app/build.gradle.kts
-          # Route launcher backend and update checks to the TG Vercel service by default.
-          sed -i 's#val rawServerUrl: String = localProperties.getProperty("nux.server.url") ?: ""#val rawServerUrl: String = localProperties.getProperty("nux.server.url") ?: "https://tg-launcher-admin-habibrofikonazli.vercel.app"#' app/build.gradle.kts
-
-      - name: Keep imported source in build workspace
-        run: echo "TG Launcher branding and version metadata are applied in this build only."
+      - name: Verify TG Launcher project metadata
+        run: echo "Building the TG Launcher source repository directly; no external launcher source is imported."
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -125,7 +78,7 @@ jobs:
           tag_name: v1.1.6-tg${{ github.run_number }}
           name: TG Launcher v1.1.6-tg${{ github.run_number }}
           body: |
-            TG Launcher build based on NUX Launcher v1.1.6.
+            TG Launcher release build.
             Download the APK asset below; no ZIP extraction is required.
           files: |
             app/build/outputs/apk/release/TG-Launcher-v1.1.6-tg${{ github.run_number }}.apk
