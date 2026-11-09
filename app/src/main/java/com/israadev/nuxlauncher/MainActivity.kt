@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.app.ActivityCompat
@@ -24,6 +25,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.israadev.nuxlauncher.core.account.AccountManager
+import com.israadev.nuxlauncher.core.auth.AuthService
 import com.israadev.nuxlauncher.core.instance.InstanceManager
 import com.israadev.nuxlauncher.core.mods.NuxAddonImportManager
 import com.israadev.nuxlauncher.core.mods.PendingAddonImport
@@ -60,6 +62,18 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val launcherUser by AccountManager.launcherUser.collectAsState()
+
+            // Refresh token dan paket server saat aplikasi dibuka agar perubahan admin berlaku
+            // tanpa pengguna harus logout/login ulang.
+            LaunchedEffect(Unit) {
+                val savedUser = AccountManager.getActiveUser()
+                if (savedUser != null) {
+                    val refreshedToken = AuthService.refreshIdToken(savedUser.refreshToken)
+                    val tokenUser = if (!refreshedToken.isNullOrBlank()) savedUser.copy(idToken = refreshedToken) else savedUser
+                    val syncedUser = AuthService.syncEntitlements(tokenUser)
+                    AccountManager.saveAuthUser(this@MainActivity, syncedUser)
+                }
+            }
 
             // Pengguna yang sudah login (baik Free maupun Premium) langsung masuk ke Dashboard
             val isLoggedIn = launcherUser != null
