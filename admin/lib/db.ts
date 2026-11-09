@@ -50,10 +50,26 @@ export async function ensureSchema() {
     )`;
     await sql`CREATE INDEX IF NOT EXISTS profiles_created_at_idx ON profiles(created_at DESC)`;
     await sql`CREATE INDEX IF NOT EXISTS licenses_status_idx ON licenses(status)`;
+    // Paket bawaan mengikuti fitur Premium/Free yang benar-benar tercantum di NuxPremiumDialog.kt.
+    // Migrasi hanya menyentuh seed lama yang masih persis default; perubahan admin tidak ditimpa.
     await sql`INSERT INTO plans(code,name,features,limits) VALUES
-      ('free','Free','["Launcher dasar","Manajemen versi"]'::jsonb,'{"ai_requests":10}'::jsonb),
-      ('premium','Premium','["Semua fitur Free","Fitur Premium"]'::jsonb,'{"ai_requests":1000}'::jsonb)
+      ('free','Free','["base_launcher"]'::jsonb,'{"instances":3,"accounts":2,"ai_daily":5}'::jsonb),
+      ('premium','Premium','["base_launcher","screen_recorder","voice_rooms","unlimited_instances","custom_video_hero","premium_badge","snapshot_beta_versions","unlimited_accounts","turbo_downloader"]'::jsonb,'{"instances":-1,"accounts":-1,"ai_daily":-1,"download_workers":48}'::jsonb)
       ON CONFLICT (code) DO NOTHING`;
+    await sql`UPDATE plans SET
+      features='["base_launcher"]'::jsonb,
+      limits='{"instances":3,"accounts":2,"ai_daily":5}'::jsonb,
+      updated_at=now()
+      WHERE code='free'
+      AND features='["Launcher dasar","Manajemen versi"]'::jsonb
+      AND limits='{"ai_requests":10}'::jsonb`;
+    await sql`UPDATE plans SET
+      features='["base_launcher","screen_recorder","voice_rooms","unlimited_instances","custom_video_hero","premium_badge","snapshot_beta_versions","unlimited_accounts","turbo_downloader"]'::jsonb,
+      limits='{"instances":-1,"accounts":-1,"ai_daily":-1,"download_workers":48}'::jsonb,
+      updated_at=now()
+      WHERE code='premium'
+      AND features='["Semua fitur Free","Fitur Premium"]'::jsonb
+      AND limits='{"ai_requests":1000}'::jsonb`;
   })().catch(err => { schemaReady = null; throw err; });
   return schemaReady;
 }
