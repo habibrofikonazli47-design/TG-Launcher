@@ -90,9 +90,8 @@ jobs:
           test -x "$BUILD_TOOLS/apksigner"
           test -x "$BUILD_TOOLS/zipalign"
 
-          # The AGP release task on CI produced v2-only APKs despite the
-          # Gradle v1 setting. Re-sign the temporary CI build explicitly so
-          # older/OEM package installers also receive the JAR (v1) signature.
+          # Re-sign the temporary CI build explicitly. Android 7+ devices,
+          # including Android 15, verify the APK Signature Scheme v2/v3.
           if [[ "$TG_SIGNING_READY" != "true" ]]; then
             mkdir -p "$HOME/.android"
             if [[ ! -s "$HOME/.android/debug.keystore" ]]; then
@@ -109,15 +108,16 @@ jobs:
               --ks-key-alias androiddebugkey \
               --ks-pass pass:android \
               --key-pass pass:android \
-              --v1-signing-enabled true \
+              --v1-signing-enabled false \
               --v2-signing-enabled true \
+              --v3-signing-enabled true \
               "$APK"
           fi
 
           SIGNATURE_REPORT="$("$BUILD_TOOLS/apksigner" verify --verbose --print-certs "$APK")"
           printf '%s\\n' "$SIGNATURE_REPORT"
-          grep -q "Verified using v1 scheme (JAR signing): true" <<< "$SIGNATURE_REPORT"
           grep -q "Verified using v2 scheme (APK Signature Scheme v2): true" <<< "$SIGNATURE_REPORT"
+          grep -q "Verified using v3 scheme (APK Signature Scheme v3): true" <<< "$SIGNATURE_REPORT"
           "$BUILD_TOOLS/zipalign" -c -v 4 "$APK"
           "$BUILD_TOOLS/aapt" dump badging "$APK" | tee /tmp/tg-badging.txt
           grep -q "package: name='com.tg.launcher'" /tmp/tg-badging.txt
