@@ -11,15 +11,16 @@ export async function POST(req:NextRequest){
  if(!token)return NextResponse.json({error:'Bearer token diperlukan.'},{status:401});
  try{
   const user=await identity(token);if(!user)return NextResponse.json({error:'Sesi akun tidak valid.'},{status:401});
-  const body=await req.json(),key=String(body.licenseKey||'').trim().toUpperCase();
+  const body=await req.json(),key=String(body.licenseKey||'').replace(/[^a-f0-9]/gi,'').toUpperCase();
   if(!key)return NextResponse.json({error:'Masukkan kode aktivasi.'},{status:400});
+  if(!/^[A-F0-9]{16}$/.test(key))return NextResponse.json({error:'Format kode tidak valid. Gunakan 16 karakter (XXXX-XXXX-XXXX-XXXX).'}, {status:400});
   const deviceId=String(body.deviceId||'').trim(),deviceName=String(body.deviceName||'Android device').trim().slice(0,120);
   if(!/^[a-f0-9]{64}$/i.test(deviceId))return NextResponse.json({error:'Identitas perangkat tidak valid.'},{status:400});
   await ensureSchema();const sql=database();
   const profile=await sql`SELECT id,email,status FROM profiles WHERE id=${user.id} OR lower(email)=${user.email} ORDER BY CASE WHEN id=${user.id} THEN 0 ELSE 1 END LIMIT 1`;
   if(!profile.length)return NextResponse.json({error:'Profil member tidak ditemukan.'},{status:404});
   if(profile[0].status==='blocked')return NextResponse.json({error:'Akun diblokir.'},{status:403});
-  const keys=await sql`SELECT * FROM license_keys WHERE license_key=${key} LIMIT 1`;
+  const keys=await sql`SELECT * FROM license_keys WHERE regexp_replace(upper(license_key), '[^A-F0-9]', '', 'g')=${key} LIMIT 1`;
   if(!keys.length)return NextResponse.json({error:'Kode aktivasi tidak ditemukan.'},{status:404});
   const license=keys[0];
   if(license.status==='revoked')return NextResponse.json({error:'Kode aktivasi telah dinonaktifkan.'},{status:403});
