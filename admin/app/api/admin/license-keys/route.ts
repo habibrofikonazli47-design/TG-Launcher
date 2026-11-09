@@ -23,7 +23,7 @@ export async function POST(req:NextRequest){
 }
 export async function PATCH(req:NextRequest){
  if(!verifySession(req.cookies.get(getCookieName())?.value))return NextResponse.json({error:'Unauthorized'},{status:401});
- try{await ensureSchema();const b=await req.json();if(!b.id||!['active','revoked','unused'].includes(b.status))return NextResponse.json({error:'Status lisensi tidak valid.'},{status:400});
+ try{await ensureSchema();const b=await req.json();if(!b.id||!['active','revoked'].includes(b.status))return NextResponse.json({error:'Status lisensi tidak valid.'},{status:400});
  const rows=await database()`UPDATE license_keys SET status=${b.status} WHERE id=${String(b.id)} RETURNING id,license_key,status`;
  if(!rows.length)return NextResponse.json({error:'Kode tidak ditemukan.'},{status:404});
  await database()`INSERT INTO admin_audit_logs(actor,action,detail) VALUES('admin','license.status',${JSON.stringify({id:b.id,status:b.status})}::jsonb)`;
