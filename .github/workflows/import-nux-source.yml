@@ -31,7 +31,7 @@ jobs:
 
       - name: Import upstream source while preserving TG project metadata
         run: |
-          rsync -a --exclude='.git/' --exclude='README.md' nux-source/ ./
+          rsync -a --exclude='.git/' --exclude='README.md' --exclude='app/src/main/java/com/israadev/nuxlauncher/MainActivity.kt' --exclude='app/src/main/java/com/israadev/nuxlauncher/core/auth/AuthService.kt' --exclude='app/src/main/java/com/israadev/nuxlauncher/ui/screens/AuthScreen.kt' nux-source/ ./
           rm -rf nux-source
           sed -i 's#<string name="app_name">NUX Launcher</string>#<string name="app_name">TG Launcher</string>#' app/src/main/res/values/strings.xml
           if ! grep -q '<string name="app_name">TG Launcher</string>' app/src/main/res/values/strings.xml; then
