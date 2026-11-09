@@ -51,7 +51,7 @@ val NUX_NAV_ITEMS = listOf(
 )
 
 /**
- * NUX Black Sidebar with right-side radius and flush left side, matching reference screenshot
+ * TG Launcher navigation sidebar with right-side radius and flush left side.
  */
 @Composable
 fun NuxSidebar(
@@ -60,6 +60,7 @@ fun NuxSidebar(
     onOpenAbout: () -> Unit = {},
     currentAccount: UserAccount? = null,
     launcherUser: AuthUser? = null,
+    enabledTabs: Set<String> = NUX_NAV_ITEMS.map { it.id }.toSet(),
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
@@ -79,7 +80,7 @@ fun NuxSidebar(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        // TOP BRAND LOGO (Official NUX Icon)
+        // TG Launcher brand icon
         val logoShape = RoundedCornerShape((10.dp).resp())
         Box(
             modifier = Modifier
@@ -92,7 +93,7 @@ fun NuxSidebar(
         ) {
             Image(
                 painter = painterResource(id = R.drawable.nux_icon),
-                contentDescription = "NUX Logo",
+                contentDescription = "TG Launcher Logo",
                 modifier = Modifier.size((24.dp).resp())
             )
         }
@@ -111,7 +112,7 @@ fun NuxSidebar(
             verticalArrangement = Arrangement.spacedBy((8.dp).resp()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            NUX_NAV_ITEMS.forEach { item ->
+            NUX_NAV_ITEMS.filter { it.id in enabledTabs }.forEach { item ->
                 val isSelected = activeTab == item.id
                 val pillShape = RoundedCornerShape((14.dp).resp())
 
