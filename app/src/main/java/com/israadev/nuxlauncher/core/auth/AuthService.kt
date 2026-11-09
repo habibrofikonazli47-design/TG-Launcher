@@ -1,5 +1,7 @@
 package com.israadev.nuxlauncher.core.auth
 
+import com.israadev.nuxlauncher.BuildConfig
+
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -266,12 +268,13 @@ object AuthService {
             val request = Request.Builder()
                 .url("$ENTITLEMENTS_BASE_URL/api/app/entitlements")
                 .header("Authorization", "Bearer ${user.idToken}")
+                .header("X-TG-App-Version", BuildConfig.VERSION_NAME)
                 .get()
                 .build()
             client.newCall(request).execute().use { response ->
                 val body = response.body?.string().orEmpty()
                 if (!response.isSuccessful) {
-                    if (response.code == 403) {
+                    if (response.code == 403 || response.code == 426) {
                         return@withContext user.copy(isActivated = false, tier = "blocked", features = emptyList(), limits = emptyMap())
                     }
                     if (response.code == 401) {
