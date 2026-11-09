@@ -50,6 +50,13 @@ export async function ensureSchema() {
     await sql`ALTER TABLE license_keys ADD COLUMN IF NOT EXISTS user_id text`;
     await sql`ALTER TABLE license_keys ADD COLUMN IF NOT EXISTS activated_at timestamptz`;
     await sql`ALTER TABLE license_keys ADD COLUMN IF NOT EXISTS tier text NOT NULL DEFAULT 'premium'`;
+    await sql`CREATE TABLE IF NOT EXISTS license_devices (
+      license_id text NOT NULL REFERENCES license_keys(id) ON DELETE CASCADE,
+      user_id text NOT NULL, device_id text NOT NULL, device_name text NOT NULL DEFAULT '',
+      first_seen_at timestamptz NOT NULL DEFAULT now(), last_seen_at timestamptz NOT NULL DEFAULT now(),
+      PRIMARY KEY (license_id, device_id)
+    )`;
+    await sql`CREATE INDEX IF NOT EXISTS license_devices_user_idx ON license_devices(user_id)`;
     await sql`CREATE TABLE IF NOT EXISTS admin_audit_logs (
       id bigserial PRIMARY KEY, actor text NOT NULL DEFAULT 'admin', action text NOT NULL,
       detail jsonb NOT NULL DEFAULT '{}'::jsonb, created_at timestamptz NOT NULL DEFAULT now()
