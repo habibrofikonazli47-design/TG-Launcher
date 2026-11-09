@@ -39,3 +39,13 @@ export async function POST(req:NextRequest){
   return NextResponse.json({success:true,serverUrl,roomName,token,expiresIn:3600},{headers:{'Cache-Control':'no-store'}});
  }catch(error){console.error('[tg-social-voice-token]',error);return NextResponse.json({error:'Gagal membuat token voice TG'},{status:503});}
 }
+
+export async function GET(req:NextRequest){
+ const user=await verifySocialIdentity(req);if(!user)return NextResponse.json({error:'Token TG tidak valid'},{status:401});
+ if(!(await isSocialFeatureEnabled('voiceEnabled',true)))return NextResponse.json({error:'Voice TG dinonaktifkan oleh admin.'},{status:403});
+ try{
+  await ensureSocialSchema();const sql=socialDatabase();
+  const rows=await sql`SELECT r.id,r.room_name,r.created_by,r.visibility,r.max_participants,r.created_at,p.username AS host_name FROM social_voice_rooms r LEFT JOIN social_profiles p ON p.user_id=r.created_by WHERE r.is_active=true ORDER BY r.created_at DESC LIMIT 100`;
+  return NextResponse.json({success:true,rooms:rows},{headers:{'Cache-Control':'no-store'}});
+ }catch(error){console.error('[tg-social-voice-list]',error);return NextResponse.json({error:'Gagal memuat voice room TG'},{status:503});}
+}
