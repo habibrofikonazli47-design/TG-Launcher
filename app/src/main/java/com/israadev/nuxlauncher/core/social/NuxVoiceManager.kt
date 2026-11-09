@@ -9,6 +9,7 @@ import android.webkit.*
 import androidx.webkit.WebViewAssetLoader
 import com.israadev.nuxlauncher.core.auth.AuthUser
 import com.israadev.nuxlauncher.core.network.NuxConfig
+import com.israadev.nuxlauncher.core.network.RemoteLauncherConfig
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -176,9 +177,20 @@ object NuxVoiceManager {
     }
 
     /**
-     * Terhubung ke voice room menggunakan token dari server NUX
+     * Terhubung ke voice room TG Launcher setelah memeriksa kebijakan admin dan hak paket.
      */
     fun joinVoiceRoom(roomId: String, user: AuthUser) {
+        val config = RemoteLauncherConfig.config.value
+        if (!RemoteLauncherConfig.isEnabled(config, "social", "voiceEnabled") ||
+            !RemoteLauncherConfig.isEnabled(config, "social", "livekitEnabled")) {
+            Log.w(TAG, "Voice rooms are disabled by TG Launcher administrator")
+            return
+        }
+        val canUseVoice = if (user.features.isNotEmpty()) "voice_rooms" in user.features else user.isActivated
+        if (!canUseVoice) {
+            Log.w(TAG, "Voice rooms are not included in this account plan")
+            return
+        }
         Log.i(TAG, "joinVoiceRoom called for roomId: $roomId, user: ${user.username}")
         if (TOKEN_API_BASE.isBlank()) {
             Log.w(TAG, "LiveKit token API is not configured in local.properties")
@@ -205,7 +217,7 @@ object NuxVoiceManager {
 
                 val reqBuilder = Request.Builder()
                     .url(tokenUrl)
-                    .header("User-Agent", "Mozilla/5.0 (Linux; Android) NuxLauncher/2.5")
+                    .header("User-Agent", "Mozilla/5.0 (Linux; Android) TGLauncher/1.0")
                     .get()
                 NuxConfig.applyAuthHeaders(reqBuilder)
                 val req = reqBuilder.build()
