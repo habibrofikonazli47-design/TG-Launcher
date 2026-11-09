@@ -84,6 +84,14 @@ fun NuxAddInstanceDialog(
     val remoteConfig by RemoteLauncherConfig.config.collectAsState()
     val langVersion by NuxLanguageManager.languageVersion.collectAsState()
 
+    LaunchedEffect(remoteConfig) {
+        if (selectedLoader == "fabric" &&
+            !RemoteLauncherConfig.isEnabled(remoteConfig, "mods", "fabricEnabled")
+        ) {
+            selectedLoader = "vanilla"
+        }
+    }
+
     LaunchedEffect(Unit) {
         val result = MojangManifestService.getVersionManifest()
         val manifest = result.getOrNull()
