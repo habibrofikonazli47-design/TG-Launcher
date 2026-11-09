@@ -45,6 +45,8 @@ export async function ensureSchema() {
       created_at timestamptz NOT NULL DEFAULT now()
     )`;
     await sql`ALTER TABLE profiles ADD COLUMN IF NOT EXISTS license_id text`;
+    await sql`ALTER TABLE profiles ADD COLUMN IF NOT EXISTS feature_overrides jsonb`;
+    await sql`ALTER TABLE profiles ADD COLUMN IF NOT EXISTS limit_overrides jsonb NOT NULL DEFAULT '{}'::jsonb`;
     await sql`ALTER TABLE license_keys ADD COLUMN IF NOT EXISTS duration_days integer`;
     await sql`ALTER TABLE license_keys ADD COLUMN IF NOT EXISTS max_devices integer NOT NULL DEFAULT 1`;
     await sql`ALTER TABLE license_keys ADD COLUMN IF NOT EXISTS user_id text`;
