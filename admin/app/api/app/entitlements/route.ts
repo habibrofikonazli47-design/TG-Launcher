@@ -37,10 +37,16 @@ export async function GET(req: NextRequest) {
 
     await ensureSchema();
     const sql = database();
-    const policyRows = await sql`SELECT value FROM app_settings WHERE key='updates' LIMIT 1`;
-    const updatePolicy = policyRows[0]?.value || {};
-    const minimumVersion = String(updatePolicy.minimumSupportedVersion || '1.0.0').replace(/^v/, '');
-    const forceUpdate = updatePolicy.forceUpdate === true;
+    const policyRows = await sql`SELECT key,value FROM app_settings WHERE key IN ('updates','general')`;
+    const settings = Object.fromEntries(policyRows.map((row: any) => [row.key, row.value || {}]));
+    const updates = settings.updates || {};
+    const general = settings.general || {};
+    const forceUpdate = updates.forceUpdate === true || general.forceUpdate === true;
+    const minimumVersion = String(
+      updates.forceUpdate === true ? updates.minimumSupportedVersion || '1.0.0'
+        : general.forceUpdate === true ? general.minimumAppVersion || updates.minimumSupportedVersion || '1.0.0'
+          : updates.minimumSupportedVersion || general.minimumAppVersion || '1.0.0',
+    ).replace(/^v/, '');
     const clientVersion = String(req.headers.get('x-tg-app-version') || '').trim().replace(/^v/, '');
     const compareVersion = (a: string, b: string) => {
       const partsA = a.split(/[.-]/).map(part => Number(part.replace(/\D/g, '')) || 0);
