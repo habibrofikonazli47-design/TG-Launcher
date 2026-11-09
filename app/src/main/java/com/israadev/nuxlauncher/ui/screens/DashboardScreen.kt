@@ -257,7 +257,7 @@ fun DashboardScreen() {
             modifier = Modifier.fillMaxSize()
         )
     } else {
-        // Outer Container: NUX Launcher Cyber-Emerald Green space
+        // Outer Container: TG Launcher Cyber-Emerald Green space
         Box(
             modifier = Modifier
                 .fillMaxSize()
