@@ -118,7 +118,19 @@ object NuxVoiceManager {
             override fun onPermissionRequest(request: PermissionRequest?) {
                 Log.i(TAG, "WebChromeClient onPermissionRequest: ${request?.resources?.joinToString()}")
                 try {
-                    request?.grant(request.resources)
+                    val activity = context as? Activity
+                    val hasMicPermission = activity != null &&
+                        androidx.core.content.ContextCompat.checkSelfPermission(
+                            activity,
+                            android.Manifest.permission.RECORD_AUDIO
+                        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                    val audioResource = PermissionRequest.RESOURCE_AUDIO_CAPTURE
+                    if (request != null && hasMicPermission && request.resources.contains(audioResource)) {
+                        request.grant(arrayOf(audioResource))
+                    } else {
+                        Log.w(TAG, "Denying WebView media permission: microphone permission is not granted")
+                        request?.deny()
+                    }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error granting WebChromeClient permission", e)
                 }
