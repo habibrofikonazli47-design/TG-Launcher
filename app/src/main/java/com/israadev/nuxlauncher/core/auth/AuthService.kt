@@ -530,41 +530,58 @@ object AuthService {
             addProperty("deviceName", deviceName)
         }
 
-        // Refresh Firebase ID token before activation. Stored tokens can expire
-        // while the launcher remains open, which otherwise looks like an invalid session.
+        // Resolve a fresh Firebase session before activation. The active account can
+        // outlive its short-lived ID token, so never rely on the token captured by the UI.
         val activeUser = AccountManager.getActiveUser()
         if (activeUser != null && activeUser.uid != uid) {
             return@withContext Result.failure(Exception("Akun aktif berubah. Silakan buka ulang sesi akun."))
         }
-        val storedToken = activeUser?.idToken?.takeIf { it.isNotBlank() }
-        val suppliedToken = userToken?.takeIf { it.isNotBlank() }
-        var activeToken = storedToken ?: suppliedToken
-        val refreshToken = activeUser?.refreshToken.orEmpty()
-        if (refreshToken.isNotBlank()) {
-            // Prefer refreshing directly from Firebase. If the device cannot reach
-            // Secure Token reliably, retry through our backend session-token endpoint.
-            val refreshedToken = refreshIdToken(refreshToken)
-            if (!refreshedToken.isNullOrBlank()) {
-                activeToken = refreshedToken
-            } else {
-                val serverSession = requestSessionToken(uid)
-                if (serverSession != null && serverSession.first.isNotBlank()) {
-                    activeToken = serverSession.first
-                    AccountManager.updateTokens(
-                        serverSession.first,
-                        serverSession.second.ifBlank { refreshToken }
-                    )
-                }
+
+        suspend fun obtainFreshActivationToken(): String? {
+            val latest = AccountManager.getActiveUser()
+            val latestRefreshToken = latest?.refreshToken.orEmpty()
+            if (latestRefreshToken.isNotBlank()) {
+                val refreshed = refreshIdToken(latestRefreshToken)
+                if (!refreshed.isNullOrBlank()) return refreshed
             }
-        } else if (activeToken.isNullOrBlank()) {
-            activeToken = suppliedToken
+
+            // Also ask the auth backend for a new session when the local refresh token
+            // is absent/expired. This covers older persisted sessions and rotated tokens.
+            val serverSession = requestSessionToken(uid)
+            if (serverSession != null && serverSession.first.isNotBlank()) {
+                AccountManager.updateTokens(
+                    serverSession.first,
+                    serverSession.second.ifBlank { latestRefreshToken }
+                )
+                return serverSession.first
+            }
+            return null
         }
+
+        val suppliedToken = userToken?.takeIf { it.isNotBlank() }
+        val storedToken = activeUser?.idToken?.takeIf { it.isNotBlank() }
+        val freshToken = obtainFreshActivationToken()
+        var activeToken = freshToken ?: storedToken ?: suppliedToken
         if (activeToken.isNullOrBlank()) {
             return@withContext Result.failure(Exception("Sesi akun tidak tersedia. Silakan login ulang."))
         }
 
-        // 1. Coba verifikasi & aktivasi via API backend
-        val result = postApi("/api/auth/android/activate", payload.toString(), bearerToken = activeToken)
+        // First activation attempt with the newest available token.
+        val payloadJson = payload.toString()
+        var result = postApi("/api/auth/android/activate", payloadJson, bearerToken = activeToken)
+
+        // If the API specifically rejects the Firebase session, refresh/request a new
+        // token once and retry. Do not retry invalid keys, device limits, or other errors.
+        val firstError = result.exceptionOrNull()?.message.orEmpty()
+        if (firstError.contains("Sesi akun tidak valid", ignoreCase = true) ||
+            firstError.contains("Server merespon kode: 401", ignoreCase = true)) {
+            val retryToken = obtainFreshActivationToken()
+            if (!retryToken.isNullOrBlank() && retryToken != activeToken) {
+                activeToken = retryToken
+                result = postApi("/api/auth/android/activate", payloadJson, bearerToken = activeToken)
+            }
+        }
+
         result.fold(
             onSuccess = { json ->
                 try {
@@ -597,7 +614,13 @@ object AuthService {
                 }
             },
             onFailure = { apiErr ->
-                Result.failure(apiErr)
+                val message = apiErr.message.orEmpty()
+                if (message.contains("Sesi akun tidak valid", ignoreCase = true) ||
+                    message.contains("Server merespon kode: 401", ignoreCase = true)) {
+                    Result.failure(Exception("Sesi login sudah kedaluwarsa dan server belum dapat memperbaruinya. Silakan keluar lalu login kembali, kemudian aktifkan Premium lagi."))
+                } else {
+                    Result.failure(apiErr)
+                }
             }
         )
     }
