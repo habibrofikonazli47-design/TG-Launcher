@@ -98,6 +98,7 @@ dependencies {
     implementation(libs.xz)
     implementation(libs.bytehook)
     implementation("androidx.webkit:webkit:1.12.1")
+    implementation("io.coil-kt:coil-compose:2.7.0")
 
     debugImplementation(libs.androidx.ui.tooling)
 }
