@@ -519,8 +519,27 @@ object AuthService {
             addProperty("deviceName", deviceName)
         }
 
+        // Refresh Firebase ID token before activation. Stored tokens can expire
+        // while the launcher remains open, which otherwise looks like an invalid session.
+        val activeUser = AccountManager.getActiveUser()
+        if (activeUser != null && activeUser.uid != uid) {
+            return@withContext Result.failure(Exception("Akun aktif berubah. Silakan buka ulang sesi akun."))
+        }
+        var activeToken = userToken?.takeIf { it.isNotBlank() } ?: activeUser?.idToken
+        val refreshToken = activeUser?.refreshToken.orEmpty()
+        if (refreshToken.isNotBlank()) {
+            val refreshedToken = refreshIdToken(refreshToken)
+            if (!refreshedToken.isNullOrBlank()) {
+                activeToken = refreshedToken
+                AccountManager.updateTokens(refreshedToken, refreshToken)
+            }
+        }
+        if (activeToken.isNullOrBlank()) {
+            return@withContext Result.failure(Exception("Sesi akun tidak tersedia. Silakan login ulang."))
+        }
+
         // 1. Coba verifikasi & aktivasi via API backend
-        val result = postApi("/api/auth/android/activate", payload.toString(), bearerToken = userToken)
+        val result = postApi("/api/auth/android/activate", payload.toString(), bearerToken = activeToken)
         result.fold(
             onSuccess = { json ->
                 try {
