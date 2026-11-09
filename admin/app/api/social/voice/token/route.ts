@@ -3,6 +3,7 @@ import { createHmac,randomUUID } from 'node:crypto';
 import { ensureSocialSchema,socialDatabase,isSocialFeatureEnabled } from '@/lib/social-db';
 import { database,ensureSchema } from '@/lib/db';
 import { verifySocialIdentity } from '@/lib/social-auth';
+import { decryptLiveKitSecret } from '@/lib/livekit-config';
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
 function b64(value:unknown){return Buffer.from(JSON.stringify(value)).toString('base64url');}
@@ -25,8 +26,11 @@ export async function POST(req:NextRequest){
  const active=account?.status==='active'&&(!expiry||expiry>Date.now());
  if(!active||(!features.includes('voice_rooms')&&account?.plan!=='premium'))return NextResponse.json({error:'Voice Room TG hanya tersedia untuk akun Premium yang aktif.'},{status:403});
 
- const serverUrl=process.env.TG_LIVEKIT_URL,apiKey=process.env.TG_LIVEKIT_API_KEY,secret=process.env.TG_LIVEKIT_API_SECRET;
- if(!serverUrl||!apiKey||!secret)return NextResponse.json({error:'Server LiveKit TG belum dikonfigurasi.'},{status:503});
+ const configRows=await database()`SELECT value FROM app_settings WHERE key='social' LIMIT 1`;
+ const config=(configRows[0]?.value||{}) as Record<string,any>;
+ const serverUrl=String(config.livekitServerUrl||'').trim(),apiKey=String(config.livekitApiKey||'').trim();
+ let secret='';try{secret=config.livekitApiSecretEncrypted?decryptLiveKitSecret(String(config.livekitApiSecretEncrypted)):'';}catch(error){console.error('[tg-livekit-config-decrypt]',error);}
+ if(!serverUrl||!apiKey||!secret)return NextResponse.json({error:'Konfigurasi LiveKit belum lengkap. Hubungi admin TG Launcher.'},{status:503});
  try{
   await ensureSocialSchema();const sql=socialDatabase();const body=await req.json();
   const action=String(body.action||'join');let roomName=String(body.roomName||'').trim().slice(0,80);
