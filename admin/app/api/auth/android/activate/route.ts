@@ -1,7 +1,7 @@
 import { NextRequest,NextResponse } from 'next/server';
 import { database,ensureSchema } from '@/lib/db';
 export const runtime='nodejs';
-const FIREBASE_WEB_API_KEY='AIzaSyDIqvaTHjuwNboBXcVDoY1JYJntS0ECsJ0';
+const FIREBASE_WEB_API_KEY='AIzaSyDIqvaTHjuwNboBXcVDoY1jYJntS0ECsJ0';
 async function identity(token:string){
  const r=await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${FIREBASE_WEB_API_KEY}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({idToken:token}),cache:'no-store'});
  if(!r.ok)return null;const j=await r.json(),u=j?.users?.[0];return u?.localId&&u?.email?{id:String(u.localId),email:String(u.email).toLowerCase()}:null;
