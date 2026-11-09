@@ -93,7 +93,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          APK="app/build/outputs/apk/release/app-release.apk"
+          APK="app/build/outputs/apk/release/TG-Launcher-v1.1.6-tg${GITHUB_RUN_NUMBER}.apk"
+          cp app/build/outputs/apk/release/app-release.apk "$APK"
           test -s "$APK"
           BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
           test -x "$BUILD_TOOLS/apksigner"
@@ -114,7 +115,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: TG-Launcher-release-verified
-          path: app/build/outputs/apk/release/app-release.apk
+          path: app/build/outputs/apk/release/TG-Launcher-v1.1.6-tg${{ github.run_number }}.apk
           if-no-files-found: error
           retention-days: 14
 
@@ -127,7 +128,7 @@ jobs:
             TG Launcher build based on NUX Launcher v1.1.6.
             Download the APK asset below; no ZIP extraction is required.
           files: |
-            app/build/outputs/apk/release/app-release.apk
+            app/build/outputs/apk/release/TG-Launcher-v1.1.6-tg${{ github.run_number }}.apk
             app/build/outputs/apk/release/output-metadata.json
           fail_on_unmatched_files: true
           make_latest: true
