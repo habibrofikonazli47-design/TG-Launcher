@@ -20,6 +20,13 @@ export async function POST(req:NextRequest){
   const profile=await sql`SELECT id,email,status FROM profiles WHERE id=${user.id} OR lower(email)=${user.email} ORDER BY CASE WHEN id=${user.id} THEN 0 ELSE 1 END LIMIT 1`;
   if(!profile.length)return NextResponse.json({error:'Profil member tidak ditemukan.'},{status:404});
   if(profile[0].status==='blocked')return NextResponse.json({error:'Akun diblokir.'},{status:403});
+  if(String(profile[0].id)!==user.id){
+   const previousUid=String(profile[0].id);
+   await sql`UPDATE license_keys SET user_id=${user.id} WHERE user_id=${previousUid}`;
+   await sql`UPDATE licenses SET user_id=${user.id} WHERE user_id=${previousUid}`;
+   await sql`UPDATE license_devices SET user_id=${user.id} WHERE user_id=${previousUid}`;
+   await sql`UPDATE profiles SET id=${user.id},email=${user.email},updated_at=now() WHERE id=${previousUid}`;
+  }
   const keys=await sql`SELECT * FROM license_keys WHERE regexp_replace(upper(license_key), '[^A-F0-9]', '', 'g')=${key} LIMIT 1`;
   if(!keys.length)return NextResponse.json({error:'Kode aktivasi tidak ditemukan.'},{status:404});
   const license=keys[0];
