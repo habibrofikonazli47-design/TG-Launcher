@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.israadev.nuxlauncher.core.account.AccountManager
+import com.israadev.nuxlauncher.core.network.RemoteLauncherConfig
 import com.israadev.nuxlauncher.core.social.*
 import com.israadev.nuxlauncher.ui.components.NuxBadge
 import com.israadev.nuxlauncher.ui.components.NuxNetworkImage
@@ -57,7 +58,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 /**
- * NUX Launcher Social & Voice Hub (Android Landscape Optimized)
+ * TG Launcher Social & Voice Hub (Android Landscape Optimized)
  * Clean Neo-Brutalist Soft Green palette matching Windows & Android Dashboard
  */
 @Composable
@@ -68,10 +69,17 @@ fun FriendsScreen(
     val context = LocalContext.current
     val langVersion by NuxLanguageManager.languageVersion.collectAsState()
     val scope = rememberCoroutineScope()
+    val remoteConfig by RemoteLauncherConfig.config.collectAsState()
+    val friendsEnabled = RemoteLauncherConfig.isEnabled(remoteConfig, "social", "friendsEnabled")
+    val voiceEnabled = RemoteLauncherConfig.isEnabled(remoteConfig, "social", "voiceEnabled")
 
-    DisposableEffect(Unit) {
-        NuxSocialManager.startSync()
+    LaunchedEffect(Unit) { RemoteLauncherConfig.refresh() }
+    DisposableEffect(friendsEnabled) {
+        if (friendsEnabled) NuxSocialManager.startSync()
         onDispose {}
+    }
+    LaunchedEffect(voiceEnabled, selectedTab) {
+        if (!voiceEnabled && selectedTab == "rooms") selectedTab = "friends"
     }
 
     val friends by NuxSocialManager.friends.collectAsState()
@@ -195,7 +203,7 @@ fun FriendsScreen(
                 }
 
                 // Button: Buat Voice Room
-                Box(
+                if (voiceEnabled) Box(
                     modifier = Modifier
                         .height(26.dp)
                         .clip(RoundedCornerShape(6.dp))
@@ -203,7 +211,7 @@ fun FriendsScreen(
                         .border(1.dp, NuxColors.ForestGreen.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
                         .clickable {
                             if (launcherUser?.isActivated != true) {
-                                premiumInitialPrompt = "Real-time voice rooms (LiveKit WebRTC) are exclusive to NUX Premium. Upgrade your account to create and join voice rooms!"
+                                premiumInitialPrompt = "Real-time voice rooms (LiveKit WebRTC) are exclusive to TG Premium. Upgrade your account to create and join voice rooms!"
                                 showPremiumDialog = true
                             } else {
                                 showCreateRoomDialog = true
@@ -263,7 +271,7 @@ fun FriendsScreen(
                             onClick = { selectedTab = "friends" },
                             modifier = Modifier.weight(1f)
                         )
-                        PillTab(
+                        if (voiceEnabled) PillTab(
                             title = "VOICE",
                             count = voiceRooms.size,
                             isSelected = selectedTab == "rooms",
@@ -386,6 +394,10 @@ fun FriendsScreen(
                                                 room = room,
                                                 isJoined = activeVoiceRoom?.id == room.id,
                                                 onJoin = {
+                                                    if (!voiceEnabled) {
+                                                        Toast.makeText(context, "Fitur voice dinonaktifkan oleh administrator TG Launcher.", Toast.LENGTH_LONG).show()
+                                                        return@VoiceRoomItem
+                                                    }
                                                     if (launcherUser?.isActivated != true) {
                                                         premiumInitialPrompt = "Multiplayer Voice Rooms (LiveKit WebRTC) are exclusive to NUX Premium. Upgrade your account to voice chat with friends!"
                                                         showPremiumDialog = true
@@ -589,7 +601,7 @@ fun FriendsScreen(
     }
 
     // 2. Dialog Buat Voice Room Baru (Landscape 2-Column Compact)
-    if (showCreateRoomDialog) {
+    if (showCreateRoomDialog && voiceEnabled) {
         CreateVoiceRoomDialog(
             onCreate = { name, pass, max ->
                 scope.launch {
@@ -607,7 +619,7 @@ fun FriendsScreen(
     }
 
     // 3. Dialog Input Password Room
-    if (roomToJoinWithPassword != null) {
+    if (roomToJoinWithPassword != null && voiceEnabled) {
         JoinPasswordDialog(
             room = roomToJoinWithPassword!!,
             onJoin = { pass ->
