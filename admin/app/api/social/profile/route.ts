@@ -33,3 +33,5 @@ export async function PATCH(req: NextRequest) {
     console.error('[social/profile PATCH]',error); return NextResponse.json({error:'Gagal memperbarui profil'},{status:503});
   }
 }
+
+export async function POST(req: NextRequest) { return PATCH(req); }
