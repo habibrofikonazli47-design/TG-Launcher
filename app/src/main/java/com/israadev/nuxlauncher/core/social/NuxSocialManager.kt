@@ -314,7 +314,7 @@ object NuxSocialManager {
             put("status", "online")
             put("lastOnline", now)
             put("verified", false)
-            put("isPremium", false)
+            put("isPremium", user.features.contains("premium_badge"))
             put("updatedAt", now)
         }.toString().toRequestBody(JSON_MEDIA)
 
