@@ -39,12 +39,16 @@ jobs:
 
       - name: Set monotonic TG Launcher build number
         shell: bash
-        run: echo "TG_BUILD_NUMBER=$((GITHUB_RUN_NUMBER + 80))" >> "$GITHUB_ENV"
+        run: |
+          TG_BUILD_NUMBER=$((GITHUB_RUN_NUMBER + 80))
+          echo "TG_BUILD_NUMBER=$TG_BUILD_NUMBER" >> "$GITHUB_ENV"
+          echo "TG_VERSION_CODE=$((TG_BUILD_NUMBER + 17))" >> "$GITHUB_ENV"
+          echo "TG_VERSION_NAME=1.1.6-tg${TG_BUILD_NUMBER}" >> "$GITHUB_ENV"
 
       - name: Build release APK
         run: |
           chmod +x ./gradlew
-          ./gradlew --no-daemon clean assembleRelease
+          ./gradlew --no-daemon clean assembleRelease -PTG_VERSION_CODE="$TG_VERSION_CODE" -PTG_VERSION_NAME="$TG_VERSION_NAME"
 
       - name: Verify APK package, signature, and alignment
         shell: bash
