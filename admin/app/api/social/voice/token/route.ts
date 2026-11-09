@@ -1,6 +1,7 @@
 import { NextRequest,NextResponse } from 'next/server';
 import { createHmac,randomUUID } from 'node:crypto';
 import { ensureSocialSchema,socialDatabase,isSocialFeatureEnabled } from '@/lib/social-db';
+import { database,ensureSchema } from '@/lib/db';
 import { verifySocialIdentity } from '@/lib/social-auth';
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
@@ -16,6 +17,14 @@ function signLiveKitToken(apiKey:string,secret:string,identity:string,room:strin
 export async function POST(req:NextRequest){
  const user=await verifySocialIdentity(req);if(!user)return NextResponse.json({error:'Token TG tidak valid'},{status:401});
  if(!(await isSocialFeatureEnabled('voiceEnabled',true))||!(await isSocialFeatureEnabled('livekitEnabled',false)))return NextResponse.json({error:'Voice TG belum diaktifkan oleh admin.'},{status:403});
+ await ensureSchema();
+ const entitlement=await database()`SELECT p.plan,p.status,p.expires_at,pl.features FROM profiles p LEFT JOIN plans pl ON pl.code=p.plan WHERE p.id=${user.uid} LIMIT 1`;
+ const account=entitlement[0];
+ const features=Array.isArray(account?.features)?account.features:[];
+ const expiry=account?.expires_at?new Date(account.expires_at).getTime():null;
+ const active=account?.status==='active'&&(!expiry||expiry>Date.now());
+ if(!active||(!features.includes('voice_rooms')&&account?.plan!=='premium'))return NextResponse.json({error:'Voice Room TG hanya tersedia untuk akun Premium yang aktif.'},{status:403});
+
  const serverUrl=process.env.TG_LIVEKIT_URL,apiKey=process.env.TG_LIVEKIT_API_KEY,secret=process.env.TG_LIVEKIT_API_SECRET;
  if(!serverUrl||!apiKey||!secret)return NextResponse.json({error:'Server LiveKit TG belum dikonfigurasi.'},{status:503});
  try{
