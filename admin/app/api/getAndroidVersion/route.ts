@@ -20,7 +20,7 @@ export async function GET() {
       if (metadataResponse.ok) metadata = await metadataResponse.json();
     }
     const element = metadata?.elements?.[0] || {};
-    const tagMatch = tag.match(/(?:tg|build)?(\\d+)$/i);
+    const tagMatch = tag.match(/(?:tg|build)?(\d+)$/i);
     const fallbackCode = tagMatch ? 17 + Number(tagMatch[1]) : 18;
     const code = Number(element.versionCode) || fallbackCode;
     const version = String(element.versionName || tag || release.name || '1.1.6');
