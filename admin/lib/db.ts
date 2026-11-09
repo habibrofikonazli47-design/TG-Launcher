@@ -28,6 +28,26 @@ export async function ensureSchema() {
       id bigserial PRIMARY KEY, user_id text, request_count integer NOT NULL DEFAULT 1,
       created_at timestamptz NOT NULL DEFAULT now()
     )`;
+    await sql`CREATE TABLE IF NOT EXISTS app_settings (
+      key text PRIMARY KEY, value jsonb NOT NULL DEFAULT '{}'::jsonb,
+      updated_at timestamptz NOT NULL DEFAULT now(), updated_by text
+    )`;
+    await sql`CREATE TABLE IF NOT EXISTS announcements (
+      id text PRIMARY KEY, title text NOT NULL DEFAULT '', content text NOT NULL DEFAULT '',
+      image_url text NOT NULL DEFAULT '', link_url text NOT NULL DEFAULT '',
+      enabled boolean NOT NULL DEFAULT false, target_platform text NOT NULL DEFAULT 'all',
+      starts_at timestamptz, ends_at timestamptz, updated_at timestamptz NOT NULL DEFAULT now()
+    )`;
+    await sql`CREATE TABLE IF NOT EXISTS license_keys (
+      id text PRIMARY KEY, license_key text UNIQUE NOT NULL, plan text NOT NULL DEFAULT 'premium',
+      status text NOT NULL DEFAULT 'unused', max_uses integer NOT NULL DEFAULT 1,
+      used_count integer NOT NULL DEFAULT 0, expires_at timestamptz,
+      created_at timestamptz NOT NULL DEFAULT now()
+    )`;
+    await sql`CREATE TABLE IF NOT EXISTS admin_audit_logs (
+      id bigserial PRIMARY KEY, actor text NOT NULL DEFAULT 'admin', action text NOT NULL,
+      detail jsonb NOT NULL DEFAULT '{}'::jsonb, created_at timestamptz NOT NULL DEFAULT now()
+    )`;
     await sql`CREATE INDEX IF NOT EXISTS profiles_created_at_idx ON profiles(created_at DESC)`;
     await sql`CREATE INDEX IF NOT EXISTS licenses_status_idx ON licenses(status)`;
     await sql`INSERT INTO plans(code,name,features,limits) VALUES
