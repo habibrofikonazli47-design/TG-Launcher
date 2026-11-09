@@ -25,7 +25,7 @@ export async function POST(req:NextRequest){
   const now=new Date(),expires=license.duration_days===null?null:new Date(now.getTime()+Number(license.duration_days)*86400000);
   const expiresAt=expires?expires.toISOString():null;
   await sql`UPDATE license_keys SET status='active',user_id=${user.id},activated_at=COALESCE(activated_at,now()),expires_at=${expiresAt} WHERE id=${license.id} AND (status='unused' OR user_id=${user.id})`;
-  await sql`UPDATE profiles SET id=${user.id},email=${user.email},plan='premium',status='active',expires_at=${expiresAt},updated_at=now() WHERE id=${profile[0].id}`;
+  await sql`UPDATE profiles SET id=${user.id},email=${user.email},license_id=${String(license.id)},plan='premium',status='active',expires_at=${expiresAt},updated_at=now() WHERE id=${profile[0].id}`;
   await sql`INSERT INTO licenses(id,user_id,email,plan,status,expires_at) VALUES(${String(license.id)},${user.id},${user.email},'premium','active',${expiresAt}) ON CONFLICT(id) DO UPDATE SET user_id=EXCLUDED.user_id,email=EXCLUDED.email,status='active',expires_at=EXCLUDED.expires_at`;
   await sql`INSERT INTO admin_audit_logs(actor,action,detail) VALUES(${user.id},'license.activate',${JSON.stringify({licenseId:license.id,expiresAt})}::jsonb)`;
   return NextResponse.json({success:true,isActivated:true,tier:license.tier||'premium',expiresAt:expiresAt||'lifetime',message:'Premium berhasil diaktifkan.'});
