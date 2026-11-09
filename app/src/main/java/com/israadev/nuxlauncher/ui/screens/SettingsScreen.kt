@@ -49,6 +49,7 @@ import com.israadev.nuxlauncher.core.account.AccountManager
 import com.israadev.nuxlauncher.core.auth.AuthService
 import com.israadev.nuxlauncher.core.crash.AICrashAnalyzer
 import com.israadev.nuxlauncher.core.models.LauncherSettings
+import com.israadev.nuxlauncher.core.network.RemoteLauncherConfig
 import com.israadev.nuxlauncher.core.renderer.NuxRendererRegistry
 import com.israadev.nuxlauncher.core.renderer.NuxRendererPluginManager
 import com.israadev.nuxlauncher.core.renderer.NuxRendererInfo
@@ -74,6 +75,7 @@ fun SettingsScreen(
     val scope = rememberCoroutineScope()
     val currentSettings by SettingsManager.settings.collectAsState()
     val launcherUser by AccountManager.launcherUser.collectAsState()
+    val remoteConfig by RemoteLauncherConfig.config.collectAsState()
 
     var activeSettingsTab by remember { mutableStateOf("profile") } // "profile" or "game"
     val availableLanguages by NuxLanguageManager.availableLanguages.collectAsState()
@@ -193,9 +195,27 @@ fun SettingsScreen(
     var selectedConfigRenderer by remember { mutableStateOf<NuxRendererInfo?>(null) }
     var showAdrenoWarningDialog by remember { mutableStateOf(false) }
 
+    LaunchedEffect(remoteConfig, selectedRenderer) {
+        if (!isRendererAllowed(selectedRenderer)) {
+            selectedRenderer = "auto"
+            commitSettings()
+        }
+    }
+
     val totalRamMb = remember { SettingsManager.getTotalDeviceMemoryMb(context) }
     val maxAllocatableRam = remember(totalRamMb) { (totalRamMb * 0.85f).toInt().coerceAtLeast(1024) }
     val cpuCores = remember { SettingsManager.getCpuCoreCount() }
+
+    fun isRendererAllowed(rendererId: String): Boolean {
+        val id = rendererId.lowercase()
+        return when {
+            id.contains("virgl") -> RemoteLauncherConfig.isEnabled(remoteConfig, "renderer", "virglEnabled")
+            id.contains("zink") -> RemoteLauncherConfig.isEnabled(remoteConfig, "renderer", "zinkEnabled")
+            id == "opengles2" || id.contains("gl4es") -> RemoteLauncherConfig.isEnabled(remoteConfig, "renderer", "gl4esEnabled")
+            id.contains("freedreno") || id.contains("panfrost") || id.contains("mesa") -> RemoteLauncherConfig.isEnabled(remoteConfig, "renderer", "mesaEnabled")
+            else -> true
+        }
+    }
 
     fun commitSettings() {
         val updated = currentSettings.copy(
@@ -681,11 +701,11 @@ fun SettingsScreen(
                                 )
                             }
 
-                            // Tombol Buka Showcase & Upgrade NUX Premium
+                            // Tombol Buka Showcase & Upgrade TG Premium
                             val isUserVip = launcherUser?.isActivated == true
                             NuxButton(
                                 onClick = {
-                                    premiumInitialPrompt = if (isUserVip) "Your NUX Premium status is currently active!" else null
+                                    premiumInitialPrompt = if (isUserVip) "Your TG Premium status is currently active!" else null
                                     showPremiumDialog = true
                                 },
                                 backgroundColor = if (isUserVip) Color(0xFF1E1710) else Color(0xFFF59E0B),
@@ -2617,7 +2637,7 @@ fun SettingsScreen(
                             .fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        items(NuxRendererRegistry.availableRenderers) { rendererItem ->
+                        items(NuxRendererRegistry.availableRenderers.filter { isRendererAllowed(it.id) }) { rendererItem ->
                             val isSelected = selectedRenderer.equals(rendererItem.id, ignoreCase = true)
                             Box(
                                 modifier = Modifier
