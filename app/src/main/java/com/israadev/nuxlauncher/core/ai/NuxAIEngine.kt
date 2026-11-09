@@ -195,6 +195,7 @@ object NuxAIEngine {
         val payload = JsonObject().apply {
             addProperty("model", candidateModels.first())
             add("messages", messagesArray)
+            addProperty("max_tokens", AICrashAnalyzer.getAdminMaxTokens())
             addProperty("stream", true)
         }
 
