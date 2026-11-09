@@ -1,4 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, getCookieName, verifySession } from '@/lib/server';
+import { database, ensureSchema } from '@/lib/db';
+import { getCookieName, verifySession } from '@/lib/server';
 export const runtime='nodejs';
-export async function GET(req:NextRequest){ if(!verifySession(req.cookies.get(getCookieName())?.value)) return NextResponse.json({error:'Unauthorized'},{status:401}); try { const [users,licenses,plans,usage]=await Promise.all([db('profiles?select=id,status,plan'),db('licenses?select=id,status,plan'),db('plans?select=code,name,features,limits'),db('launcher_ai_usage?select=request_count')]); return NextResponse.json({users:users.length,activeUsers:users.filter((x:any)=>x.status==='active').length,premiumUsers:users.filter((x:any)=>x.plan==='premium').length,licenses:licenses.length,activeLicenses:licenses.filter((x:any)=>x.status==='active').length,plans,aiRequests:usage.reduce((n:number,x:any)=>n+(x.request_count||0),0)}); } catch(e:any){return NextResponse.json({error:e.message},{status:503});}}
+export async function GET(req:NextRequest){
+ if(!verifySession(req.cookies.get(getCookieName())?.value)) return NextResponse.json({error:'Unauthorized'},{status:401});
+ try { await ensureSchema(); const sql=database();
+ const [u,l,p,a]=await Promise.all([
+  sql`SELECT count(*)::int AS total, count(*) FILTER (WHERE status='active')::int AS active, count(*) FILTER (WHERE plan='premium')::int AS premium FROM profiles`,
+  sql`SELECT count(*)::int AS total, count(*) FILTER (WHERE status='active')::int AS active FROM licenses`,
+  sql`SELECT code,name,features,limits FROM plans ORDER BY code`,
+  sql`SELECT COALESCE(sum(request_count),0)::int AS total FROM launcher_ai_usage`
+ ]);
+ return NextResponse.json({users:u[0].total,activeUsers:u[0].active,premiumUsers:u[0].premium,licenses:l[0].total,activeLicenses:l[0].active,plans:p,aiRequests:a[0].total});
+ } catch(e:any){return NextResponse.json({error:e.message},{status:503});}
+}
