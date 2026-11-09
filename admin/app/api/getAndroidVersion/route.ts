@@ -1,6 +1,8 @@
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+import { database, ensureSchema } from '@/lib/db';
+
 export async function GET() {
   try {
     const response = await fetch('https://api.github.com/repos/habibrofikonazli47-design/TG-Launcher/releases/latest', {
@@ -13,6 +15,15 @@ export async function GET() {
       || (release.assets || []).find((item: any) => item.name.toLowerCase().endsWith('.apk'));
     if (!asset) return Response.json({ error: 'APK release belum tersedia.' }, { status: 404 });
     const tag = String(release.tag_name || '').replace(/^v/, '');
+    let updatePolicy = { forceUpdate: false, minimumSupportedVersion: '1.0.0' };
+    try {
+      await ensureSchema();
+      const sql = database();
+      const rows = await sql`SELECT value FROM app_settings WHERE key='updates' LIMIT 1`;
+      if (rows.length && rows[0].value) updatePolicy = { ...updatePolicy, ...rows[0].value };
+    } catch (policyError) {
+      console.error('[getAndroidVersion] update policy unavailable', policyError);
+    }
     let metadata: any = null;
     const metadataAsset = (release.assets || []).find((item: any) => item.name === 'output-metadata.json');
     if (metadataAsset?.browser_download_url) {
