@@ -1,14 +1,23 @@
 # TG Launcher
 
-TG Launcher is a new Android launcher project based on the upstream NUX Launcher source, release `v1.1.6`.
+TG Launcher is an Android Minecraft Java launcher built from and modified from the open-source NUX Launcher v1.1.6 codebase. The installed application identity, product interface, backend and admin console are branded TG Launcher.
 
-## Upstream source
-- Repository: https://github.com/IsraaDeveloper/nuxlabs
+## Upstream attribution and license
+- Upstream source: https://github.com/IsraaDeveloper/nuxlabs
 - Base release: `v1.1.6`
-- License: GNU GPL-3.0. Preserve upstream license notices and comply with the license when distributing modified source.
+- License: GNU GPL-3.0. Upstream copyright notices, license texts and required attribution are retained. TG Launcher is an independent modified project and is not presented as the upstream NUX product.
 
-## Project status
-This repository is being prepared for the TG Launcher source import and Android build workflow. The upstream application source has not yet been imported, and no APK has been built from this repository.
+## TG Launcher services
+- Android application package: `com.tg.launcher`
+- Admin control center: `https://tg-launcher-admin-habibrofikonazli.vercel.app`
+- Backend database: Neon PostgreSQL
+- Public app configuration: `/api/app/config`
+- Admin-controlled settings are stored in Neon and exposed to the Android client through the uncached configuration endpoint. Feature visibility, maintenance mode and account registration policy are connected to this configuration.
 
-## Build baseline
-The upstream Android project uses Kotlin, Android SDK 37, minimum SDK 26, and JDK 17 for the Android build. Changes should be incremental and preserve NUX Launcher functionality unless explicitly requested.
+## Build
+- Android SDK 37
+- Minimum Android SDK 26
+- JDK 17
+- Main build workflow: GitHub Actions (`.github/workflows/import-nux-source.yml`)
+
+Changes should preserve upstream license compliance and TG Launcher branding.
