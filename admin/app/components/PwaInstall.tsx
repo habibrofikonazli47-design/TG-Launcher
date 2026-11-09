@@ -24,7 +24,7 @@ export default function PwaInstall() {
     window.addEventListener('beforeinstallprompt', onPrompt);
     window.addEventListener('appinstalled', onInstalled);
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch(() => undefined); }, { once: true });
+      navigator.serviceWorker.register('/sw.js').catch(() => undefined);
     }
     return () => {
       media.removeEventListener?.('change', syncInstalled);
