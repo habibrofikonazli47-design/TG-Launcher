@@ -1,5 +1,5 @@
 <resources>
-    <style name="Theme.NuxLauncher" parent="android:Theme.Material.NoActionBar.Fullscreen">
+    <style name="Theme.TGLauncher" parent="android:Theme.Material.NoActionBar.Fullscreen">
         <item name="android:statusBarColor">#09090B</item>
         <item name="android:navigationBarColor">#09090B</item>
         <item name="android:windowBackground">#09090B</item>
