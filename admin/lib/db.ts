@@ -44,7 +44,7 @@ export async function ensureSchema() {
       used_count integer NOT NULL DEFAULT 0, expires_at timestamptz,
       created_at timestamptz NOT NULL DEFAULT now()
     )`;
-    await sql`ALTER TABLE license_keys ADD COLUMN IF NOT EXISTS duration_days integer`;
+    await sql`ALTER TABLE profiles ADD COLUMN IF NOT EXISTS license_id text`;\n    await sql`ALTER TABLE license_keys ADD COLUMN IF NOT EXISTS duration_days integer`;
     await sql`ALTER TABLE license_keys ADD COLUMN IF NOT EXISTS max_devices integer NOT NULL DEFAULT 1`;
     await sql`ALTER TABLE license_keys ADD COLUMN IF NOT EXISTS user_id text`;
     await sql`ALTER TABLE license_keys ADD COLUMN IF NOT EXISTS activated_at timestamptz`;
