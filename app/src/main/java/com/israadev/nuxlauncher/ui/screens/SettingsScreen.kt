@@ -196,7 +196,10 @@ fun SettingsScreen(
     var showAdrenoWarningDialog by remember { mutableStateOf(false) }
 
     val totalRamMb = remember { SettingsManager.getTotalDeviceMemoryMb(context) }
-    val maxAllocatableRam = remember(totalRamMb) { (totalRamMb * 0.85f).toInt().coerceAtLeast(1024) }
+    val adminMaxMemoryMb = remoteConfig?.optJSONObject("game")?.optInt("maxMemoryMb", 8192) ?: 8192
+    val maxAllocatableRam = remember(totalRamMb, adminMaxMemoryMb) {
+        minOf((totalRamMb * 0.85f).toInt().coerceAtLeast(1024), adminMaxMemoryMb.coerceAtLeast(512))
+    }
     val cpuCores = remember { SettingsManager.getCpuCoreCount() }
 
     fun isRendererAllowed(rendererId: String): Boolean {
@@ -239,7 +242,11 @@ fun SettingsScreen(
         SettingsManager.updateSettings(context, updated)
     }
 
-    LaunchedEffect(remoteConfig, selectedRenderer) {
+    LaunchedEffect(remoteConfig, selectedRenderer, maxAllocatableRam) {
+        if (ramMb > maxAllocatableRam) {
+            ramMb = maxAllocatableRam
+            commitSettings()
+        }
         val adminDefaultRenderer = RemoteLauncherConfig.text(remoteConfig, "renderer", "defaultRenderer", "auto")
         if (selectedRenderer == "auto" && adminDefaultRenderer != "auto" && isRendererAllowed(adminDefaultRenderer)) {
             selectedRenderer = adminDefaultRenderer
