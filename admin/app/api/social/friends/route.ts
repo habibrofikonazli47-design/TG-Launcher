@@ -47,7 +47,11 @@ export async function POST(req: NextRequest) {
    const result=await sql`UPDATE social_friendships SET status='accepted',updated_at=now() WHERE id=${id} AND addressee_id=${user.uid} AND status='pending' RETURNING id,status`;
    return result.length?NextResponse.json({success:true,friendship:result[0]}):NextResponse.json({error:'Permintaan tidak ditemukan'},{status:404});
   }
-  if(action==='decline'||action==='remove') {
+  if(action==='block') {
+   const result=await sql`UPDATE social_friendships SET status='blocked',updated_at=now() WHERE id=${id} AND (requester_id=${user.uid} OR addressee_id=${user.uid}) RETURNING id,status`;
+   return result.length?NextResponse.json({success:true,friendship:result[0]}):NextResponse.json({error:'Relasi tidak ditemukan'},{status:404});
+  }
+  if(action==='decline'||action==='remove'||action==='unblock') {
    const result=await sql`DELETE FROM social_friendships WHERE id=${id} AND (requester_id=${user.uid} OR addressee_id=${user.uid}) RETURNING id`;
    return result.length?NextResponse.json({success:true}):NextResponse.json({error:'Pertemanan tidak ditemukan'},{status:404});
   }
