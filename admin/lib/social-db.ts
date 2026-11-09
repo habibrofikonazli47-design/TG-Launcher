@@ -21,14 +21,6 @@ export async function isSocialFeatureEnabled(feature: 'friendsEnabled' | 'voiceE
   }
 }
 
-let schemaReady: Promise<void> | null = null;
-
-export function socialDatabase() {
-  const url = process.env.TG_SOCIAL_DATABASE_URL;
-  if (!url) throw new Error('TG_SOCIAL_DATABASE_URL belum dikonfigurasi.');
-  return neon(url);
-}
-
 export async function ensureSocialSchema() {
   if (!schemaReady) schemaReady = (async () => {
     const sql = socialDatabase();
