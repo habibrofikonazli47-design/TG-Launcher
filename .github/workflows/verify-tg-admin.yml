@@ -1,0 +1,38 @@
+name: Verify TG Launcher Admin
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "admin/**"
+      - ".github/workflows/verify-tg-admin.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "admin/**"
+      - ".github/workflows/verify-tg-admin.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: tg-launcher-admin-ci
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: admin
+    steps:
+      - name: Check out TG Launcher
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund --no-package-lock
+      - name: Build admin panel
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: npm run build
