@@ -28,20 +28,39 @@ export async function POST(req:NextRequest){
   if(license.status==='unused'&&license.user_id&&license.user_id!==user.id)return NextResponse.json({error:'Kode ini pernah terikat ke akun lain dan tidak dapat dipindahkan.'},{status:409});
   if(license.status!=='unused'&&!alreadyActivatedByUser)return NextResponse.json({error:'Kode sudah digunakan oleh akun lain.'},{status:409});
   if(license.status==='unused'&&Number(license.used_count||0)>=Number(license.max_uses||1))return NextResponse.json({error:'Batas penggunaan kode aktivasi telah tercapai.'},{status:409});
+  if(!alreadyActivatedByUser&&license.expires_at&&new Date(license.expires_at).getTime()<=Date.now())return NextResponse.json({error:'Kode aktivasi sudah kedaluwarsa.'},{status:403});
   if(alreadyActivatedByUser&&license.expires_at&&new Date(license.expires_at).getTime()<=Date.now())return NextResponse.json({error:'Masa aktif kode ini sudah berakhir. Hubungi admin untuk perpanjangan.'},{status:403});
-  const bound=await sql`SELECT device_id FROM license_devices WHERE license_id=${license.id} AND user_id=${user.id} AND device_id=${deviceId} LIMIT 1`;
-  if(!bound.length){
-   const countRows=await sql`SELECT count(*)::int AS total FROM license_devices WHERE license_id=${license.id}`;
-   const maxDevices=Math.max(1,Number(license.max_devices)||1);
-   if(Number(countRows[0]?.total||0)>=maxDevices)return NextResponse.json({error:`Batas perangkat lisensi tercapai (maksimal ${maxDevices} perangkat). Hubungi admin untuk mengatur ulang perangkat.`},{status:403});
-  }
-  // Durasi ditetapkan sekali saat aktivasi pertama. Redeem ulang oleh akun yang sama
-  // tidak boleh mengatur ulang hitung mundur masa Premium.
+
+  // Claim key and reserve device in one conditional UPDATE. This prevents two
+  // simultaneous requests from different accounts consuming the same unused key,
+  // and enforces the device limit after PostgreSQL serializes updates to this row.
+  const maxDevices=Math.max(1,Number(license.max_devices)||1);
   const expiresAt=alreadyActivatedByUser
    ? (license.expires_at?new Date(license.expires_at).toISOString():null)
    : (license.duration_days===null?null:new Date(Date.now()+Number(license.duration_days)*86400000).toISOString());
+  const claimed=await sql`UPDATE license_keys SET
+    status='active',
+    user_id=${user.id},
+    activated_at=COALESCE(activated_at,now()),
+    expires_at=${expiresAt},
+    used_count=CASE WHEN status='unused' THEN used_count+1 ELSE used_count END
+    WHERE id=${String(license.id)}
+      AND (status='unused' OR (status='active' AND user_id=${user.id}))
+      AND (expires_at IS NULL OR expires_at>now() OR (status='active' AND user_id=${user.id}))
+      AND (
+        EXISTS(SELECT 1 FROM license_devices d WHERE d.license_id=license_keys.id AND d.user_id=${user.id} AND d.device_id=${deviceId})
+        OR (SELECT count(*) FROM license_devices d WHERE d.license_id=license_keys.id) < ${maxDevices}
+      )
+    RETURNING id`;
+  if(!claimed.length){
+   const latest=await sql`SELECT status,user_id,expires_at FROM license_keys WHERE id=${String(license.id)} LIMIT 1`;
+   if(latest[0]?.user_id&&latest[0].user_id!==user.id)return NextResponse.json({error:'Kode sudah digunakan oleh akun lain.'},{status:409});
+   const deviceCount=await sql`SELECT count(*)::int AS total FROM license_devices WHERE license_id=${String(license.id)}`;
+   if(Number(deviceCount[0]?.total||0)>=maxDevices)return NextResponse.json({error:`Batas perangkat lisensi tercapai (maksimal ${maxDevices} perangkat). Hubungi admin untuk mengatur ulang perangkat.`},{status:403});
+   return NextResponse.json({error:'Kode aktivasi tidak dapat digunakan atau sudah kedaluwarsa.'},{status:409});
+  }
   await sql`INSERT INTO license_devices(license_id,user_id,device_id,device_name) VALUES(${String(license.id)},${user.id},${deviceId},${deviceName}) ON CONFLICT(license_id,device_id) DO UPDATE SET device_name=EXCLUDED.device_name,last_seen_at=now()`;
-  await sql`UPDATE license_keys SET status='active',user_id=${user.id},activated_at=COALESCE(activated_at,now()),expires_at=${expiresAt},used_count=CASE WHEN status='unused' THEN used_count+1 ELSE used_count END WHERE id=${license.id} AND (status='unused' OR (status='active' AND user_id=${user.id}))`;
+  await sql`INSERT INTO admin_audit_logs(actor,action,detail) VALUES(${user.id},'license.activate',${JSON.stringify({licenseId:license.id,expiresAt})}::jsonb)`;
   await sql`UPDATE profiles SET id=${user.id},email=${user.email},license_id=${String(license.id)},plan='premium',status='active',expires_at=${expiresAt},updated_at=now() WHERE id=${profile[0].id}`;
   await sql`INSERT INTO licenses(id,user_id,email,plan,status,expires_at) VALUES(${String(license.id)},${user.id},${user.email},'premium','active',${expiresAt}) ON CONFLICT(id) DO UPDATE SET user_id=EXCLUDED.user_id,email=EXCLUDED.email,status='active',expires_at=EXCLUDED.expires_at`;
   await sql`INSERT INTO admin_audit_logs(actor,action,detail) VALUES(${user.id},'license.activate',${JSON.stringify({licenseId:license.id,expiresAt})}::jsonb)`;
