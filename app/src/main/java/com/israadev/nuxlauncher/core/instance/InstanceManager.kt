@@ -399,7 +399,7 @@ object InstanceManager {
         }
         val launcherUser = AccountManager.getActiveUser()
         val hasUnlimitedInstances = launcherUser?.features?.contains("unlimited_instances") == true
-        val maxInstances = launcherUser?.limits?.get("instances") ?: if (hasUnlimitedInstances) -1 else 3
+        val maxInstances = if (hasUnlimitedInstances) (launcherUser?.limits?.get("instances") ?: -1) else 3
         if (maxInstances >= 0 && _instances.value.size >= maxInstances) {
             Toast.makeText(context, "Paket Free dibatasi maksimal $maxInstances instance. Upgrade ke Premium untuk tanpa batas.", Toast.LENGTH_LONG).show()
             return
