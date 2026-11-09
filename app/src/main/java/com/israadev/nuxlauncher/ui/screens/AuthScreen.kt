@@ -762,7 +762,7 @@ fun AuthScreen(
                                     coroutineScope.launch {
                                         val token = user?.idToken?.takeIf { it.isNotBlank() }
                                             ?: AccountManager.getActiveUser()?.idToken?.takeIf { it.isNotBlank() }
-                                        val res = AuthService.activateLicense(uid, key, token)
+                                        val res = AuthService.activateLicense(uid, key, token, context)
                                         isLoading = false
                                         res.fold(
                                             onSuccess = { actResult ->
