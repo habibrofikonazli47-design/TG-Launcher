@@ -23,7 +23,11 @@ export async function POST(req:NextRequest){
 }
 export async function PATCH(req:NextRequest){
  if(!verifySession(req.cookies.get(getCookieName())?.value))return NextResponse.json({error:'Unauthorized'},{status:401});
- try{await ensureSchema();const b=await req.json();if(!b.id||!['active','revoked'].includes(b.status))return NextResponse.json({error:'Status lisensi tidak valid.'},{status:400});
+ try{await ensureSchema();const b=await req.json();if(!b.id||!['active','revoked','unused'].includes(b.status))return NextResponse.json({error:'Status lisensi tidak valid.'},{status:400});
+ const current=await database()`SELECT id,user_id,used_count FROM license_keys WHERE id=${String(b.id)} LIMIT 1`;
+ if(!current.length)return NextResponse.json({error:'Kode tidak ditemukan.'},{status:404});
+ if(b.status==='unused'&&(current[0].user_id||Number(current[0].used_count||0)>0))return NextResponse.json({error:'Kode yang pernah digunakan tidak dapat direset ke status belum dipakai.'},{status:409});
+ if(b.status==='active'&&!current[0].user_id)return NextResponse.json({error:'Kode belum pernah diaktifkan. Gunakan status belum dipakai.'},{status:409});
  const rows=await database()`UPDATE license_keys SET status=${b.status} WHERE id=${String(b.id)} RETURNING id,license_key,status,user_id`;
  if(!rows.length)return NextResponse.json({error:'Kode tidak ditemukan.'},{status:404});
  const license=rows[0];
