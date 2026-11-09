@@ -85,10 +85,7 @@ object AICrashQuotaManager {
             val result = AuthService.fetchAiQuota(uid)
             result.onSuccess { info ->
                 val safeUsed = info.usedCount.coerceAtLeast(0)
-                val safeRemaining = if (info.isUnlimited) -1 else {
-                    if (safeUsed == 0 && info.remainingQuota <= 0) DAILY_LIMIT
-                    else info.remainingQuota
-                }
+                val safeRemaining = if (info.isUnlimited) -1 else info.remainingQuota.coerceAtLeast(0)
                 prefs.edit()
                     .putString(KEY_DATE, info.date.ifBlank { today })
                     .putInt(KEY_USED_COUNT, safeUsed)
@@ -173,7 +170,7 @@ object AICrashQuotaManager {
         return if (cachedRem >= 0) {
             cachedRem
         } else {
-            (DAILY_LIMIT - used).coerceAtLeast(0)
+            (dailyLimit - used).coerceAtLeast(0)
         }
     }
 
@@ -230,8 +227,9 @@ object AICrashQuotaManager {
                 if (err.contains("Batas", ignoreCase = true) || err.contains("429")) {
                     prefs.edit()
                         .putString(KEY_DATE, today)
-                        .putInt(KEY_USED_COUNT, DAILY_LIMIT)
+                        .putInt(KEY_USED_COUNT, dailyLimit.coerceAtLeast(0))
                         .putInt(KEY_REMAINING_QUOTA, 0)
+                        .putInt(KEY_DAILY_LIMIT, dailyLimit)
                         .apply()
                     return@withContext false
                 }
