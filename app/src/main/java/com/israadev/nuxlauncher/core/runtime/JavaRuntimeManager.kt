@@ -106,7 +106,7 @@ object JavaRuntimeManager {
 
     /**
      * Resolves recommended OpenJDK runtime based on Mojang manifest metadata or Minecraft version prefix.
-     * Matches NUX Launcher Windows logic identically.
+     * Matches the upstream Windows launcher logic identically.
      */
     fun getRecommendedRuntime(mcVersion: String, javaMajorVersion: Int? = null): String {
         getAdminPreferredRuntime().takeIf { it != "auto" }?.let { return it }
