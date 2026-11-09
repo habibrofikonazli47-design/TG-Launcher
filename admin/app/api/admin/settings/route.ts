@@ -3,7 +3,7 @@ import { database, ensureSchema } from '@/lib/db';
 import { getCookieName, verifySession } from '@/lib/server';
 export const runtime='nodejs';
 const defaults:Record<string,any>={
-  general:{maintenanceMode:false,maintenanceMessage:'TG Launcher sedang dalam pemeliharaan.',minimumAppVersion:'1.0.0',forceUpdate:false,allowRegistration:true,defaultPlan:'free',supportUrl:'',websiteUrl:''},
+  general:{maintenanceMode:false,maintenanceMessage:'TG Launcher sedang dalam pemeliharaan.',minimumAppVersion:'1.0.0',forceUpdate:false,allowRegistration:true,defaultPlan:'free',supportUrl:'',websiteUrl:'',premiumPurchaseUrl:''},
   game:{minecraftReleaseEnabled:true,minecraftSnapshotEnabled:true,showOldVersions:true,defaultMemoryMb:2048,maxMemoryMb:8192,downloadMirror:'official',allowCustomInstances:true},
   runtimes:{java8Enabled:true,java17Enabled:true,java21Enabled:true,java25Enabled:true,autoSelectJava:true,preferredRuntime:'auto',runtimeMirror:'official'},
   mods:{modrinthEnabled:true,curseforgeEnabled:true,fabricEnabled:true,forgeEnabled:true,quiltEnabled:true,neoForgeEnabled:true,allowManualImport:true},
