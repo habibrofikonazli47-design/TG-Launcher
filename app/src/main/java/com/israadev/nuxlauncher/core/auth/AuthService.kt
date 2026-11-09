@@ -538,6 +538,17 @@ object AuthService {
      */
     suspend fun fetchSubscriptionInfo(uid: String, idToken: String? = null): SubscriptionInfo? = withContext(Dispatchers.IO) {
         if (uid.isBlank()) return@withContext null
+        val activeUser = AccountManager.getActiveUser()
+        if (activeUser != null && activeUser.uid == uid) {
+            val synced = syncEntitlements(activeUser.copy(idToken = idToken?.takeIf { it.isNotBlank() } ?: activeUser.idToken))
+            return@withContext SubscriptionInfo(
+                isActivated = synced.isActivated,
+                tier = synced.tier,
+                activatedAt = synced.activatedAt,
+                expiresAt = synced.expiresAt,
+                redeemedKey = synced.redeemedKey
+            )
+        }
         try {
             val url = if (!idToken.isNullOrBlank()) {
                 "$RTDB_BASE/android/users/$uid/subscription.json?auth=$idToken"
