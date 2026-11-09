@@ -44,6 +44,11 @@ export async function ensureSchema() {
       used_count integer NOT NULL DEFAULT 0, expires_at timestamptz,
       created_at timestamptz NOT NULL DEFAULT now()
     )`;
+    await sql`ALTER TABLE license_keys ADD COLUMN IF NOT EXISTS duration_days integer`;
+    await sql`ALTER TABLE license_keys ADD COLUMN IF NOT EXISTS max_devices integer NOT NULL DEFAULT 1`;
+    await sql`ALTER TABLE license_keys ADD COLUMN IF NOT EXISTS user_id text`;
+    await sql`ALTER TABLE license_keys ADD COLUMN IF NOT EXISTS activated_at timestamptz`;
+    await sql`ALTER TABLE license_keys ADD COLUMN IF NOT EXISTS tier text NOT NULL DEFAULT 'premium'`;
     await sql`CREATE TABLE IF NOT EXISTS admin_audit_logs (
       id bigserial PRIMARY KEY, actor text NOT NULL DEFAULT 'admin', action text NOT NULL,
       detail jsonb NOT NULL DEFAULT '{}'::jsonb, created_at timestamptz NOT NULL DEFAULT now()
