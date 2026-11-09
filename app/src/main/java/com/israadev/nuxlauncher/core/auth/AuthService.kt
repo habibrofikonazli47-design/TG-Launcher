@@ -372,7 +372,11 @@ object AuthService {
                 username = userObj?.get("username").asStringOrNull() ?: username,
                 photoURL = userObj?.get("photoURL").asStringOrNull() ?: "",
                 platform = "android",
-                isActivated = isActivated
+                isActivated = isActivated,
+                tier = userObj?.get("tier").asStringOrNull() ?: "free",
+                expiresAt = userObj?.get("expiresAt").asStringOrNull(),
+                idToken = obj.get("idToken").asStringOrNull() ?: "",
+                refreshToken = obj.get("refreshToken").asStringOrNull() ?: ""
             )
             RegisterResult(
                 success = obj.get("success").asBooleanOrDefault(true),
