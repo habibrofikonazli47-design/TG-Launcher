@@ -50,7 +50,7 @@ jobs:
           grep -q "versionCode = ${TG_VERSION_CODE}" app/build.gradle.kts
           grep -q "versionName = \"${TG_VERSION_NAME}\"" app/build.gradle.kts
           # Route launcher backend and update checks to the TG Vercel service by default.
-          sed -i 's#val rawServerUrl: String = localProperties.getProperty("nux.server.url") ?: ""#val rawServerUrl: String = localProperties.getProperty("nux.server.url") ?: "https://tg-launcher-admin-habibrofikonazlis-projects.vercel.app"#' app/build.gradle.kts
+          sed -i 's#val rawServerUrl: String = localProperties.getProperty("nux.server.url") ?: ""#val rawServerUrl: String = localProperties.getProperty("nux.server.url") ?: "https://tg-launcher-admin-habibrofikonazli.vercel.app"#' app/build.gradle.kts
 
       - name: Keep imported source in build workspace
         run: echo "TG Launcher branding and version metadata are applied in this build only."
