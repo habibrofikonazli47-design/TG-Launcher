@@ -28,8 +28,8 @@ export async function POST(req:NextRequest){
 
  const configRows=await database()`SELECT value FROM app_settings WHERE key='social' LIMIT 1`;
  const config=(configRows[0]?.value||{}) as Record<string,any>;
- const serverUrl=String(config.livekitServerUrl||'').trim(),apiKey=String(config.livekitApiKey||'').trim();
- let secret='';try{secret=config.livekitApiSecretEncrypted?decryptLiveKitSecret(String(config.livekitApiSecretEncrypted)):'';}catch(error){console.error('[tg-livekit-config-decrypt]',error);}
+ const serverUrl=String(config.livekitServerUrl||'').trim();
+ let apiKey='',secret='';try{apiKey=config.livekitApiKeyEncrypted?decryptLiveKitSecret(String(config.livekitApiKeyEncrypted)):'';secret=config.livekitApiSecretEncrypted?decryptLiveKitSecret(String(config.livekitApiSecretEncrypted)):'';}catch(error){console.error('[tg-livekit-config-decrypt]',error);}
  if(!serverUrl||!apiKey||!secret)return NextResponse.json({error:'Konfigurasi LiveKit belum lengkap. Hubungi admin TG Launcher.'},{status:503});
  try{
   await ensureSocialSchema();const sql=socialDatabase();const body=await req.json();
