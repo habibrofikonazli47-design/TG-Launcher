@@ -23,16 +23,10 @@ object ScreenRecordManager {
         _recordState.value = state
     }
 
-    /**
-     * Exclusive feature for NUX Premium members
-     */
-    fun isUserPremium(): Boolean {
-        if (AccountManager.isSessionActivated()) return true
-        if (AccountManager.launcherUser.value?.isActivated == true) return true
-        if (AccountManager.accounts.value.any { it.isActivated }) return true
-        if (AccountManager.currentAccount.value?.isActivated == true) return true
-        return false
-    }
+    /** Check the server-assigned entitlement for the signed-in launcher account. */
+    fun hasFeature(feature: String): Boolean = AccountManager.getActiveUser()?.features?.contains(feature) == true
+
+    fun isUserPremium(): Boolean = AccountManager.getActiveUser()?.isActivated == true
 
     fun startRecording(
         context: Context,
@@ -45,7 +39,7 @@ object ScreenRecordManager {
             Toast.makeText(context, "Screen Recorder dinonaktifkan oleh administrator TG Launcher.", Toast.LENGTH_LONG).show()
             return
         }
-        if (!isUserPremium()) {
+        if (!hasFeature("screen_recorder")) {
             Toast.makeText(context, "Screen Recorder hanya tersedia untuk akun Premium aktif.", Toast.LENGTH_LONG).show()
             return
         }
