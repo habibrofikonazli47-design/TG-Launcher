@@ -678,6 +678,8 @@ fun NuxPremiumDialog(
                             fontSize = 8.sp,
                             lineHeight = 11.sp
                         )
+                            }
+                        }
                     } else {
                         // ==========================================
                         // STATE B: PENGGUNA FREE (UPGRADE PLANS + KEY)
