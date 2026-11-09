@@ -112,7 +112,7 @@ object AuthService {
         .retryOnConnectionFailure(true)
         .build()
 
-    // Endpoint server Keystore NUX Launcher (diinjeksi dari local.properties via NuxConfig)
+    // Endpoint backend TG Launcher (diinjeksi dari local.properties via NuxConfig)
     private val CANDIDATE_BASES: List<String>
         get() = NuxConfig.CANDIDATE_BASES
 
@@ -489,7 +489,6 @@ object AuthService {
         null
     }
 
-    private const val RTDB_BASE = "https://nux-production-default-rtdb.asia-southeast1.firebasedatabase.app"
 
     /**
      * 4. Aktivasi Akun Menggunakan Key Lisensi
@@ -545,56 +544,20 @@ object AuthService {
     }
 
     /**
-     * Dapatkan rincian paket langganan aktif dari Firebase Realtime Database
+     * Dapatkan rincian paket langganan aktif dari backend TG Launcher
      */
     suspend fun fetchSubscriptionInfo(uid: String, idToken: String? = null): SubscriptionInfo? = withContext(Dispatchers.IO) {
         if (uid.isBlank()) return@withContext null
         val activeUser = AccountManager.getActiveUser()
-        if (activeUser != null && activeUser.uid == uid) {
-            val synced = syncEntitlements(activeUser.copy(idToken = idToken?.takeIf { it.isNotBlank() } ?: activeUser.idToken))
-            return@withContext SubscriptionInfo(
-                isActivated = synced.isActivated,
-                tier = synced.tier,
-                activatedAt = synced.activatedAt,
-                expiresAt = synced.expiresAt,
-                redeemedKey = synced.redeemedKey
-            )
-        }
-        try {
-            val url = if (!idToken.isNullOrBlank()) {
-                "$RTDB_BASE/android/users/$uid/subscription.json?auth=$idToken"
-            } else {
-                "$RTDB_BASE/android/users/$uid/subscription.json"
-            }
-            val req = Request.Builder().url(url).get().build()
-            val resp = client.newCall(req).execute()
-            val body = resp.body?.string() ?: ""
-            if (resp.isSuccessful && body.isNotBlank() && body != "null") {
-                val obj = gson.fromJson(body, JsonObject::class.java)
-                val isActivated = obj.get("isActivated")?.asBoolean ?: false
-                val tier = obj.get("tier")?.asString ?: "unactivated"
-                val activatedAt = if (obj.has("activatedAt") && !obj.get("activatedAt").isJsonNull) {
-                    obj.get("activatedAt").asLong
-                } else null
-                val expiresAt = if (obj.has("expiresAt") && !obj.get("expiresAt").isJsonNull) {
-                    obj.get("expiresAt").asString
-                } else null
-                val redeemedKey = if (obj.has("redeemedKey") && !obj.get("redeemedKey").isJsonNull) {
-                    obj.get("redeemedKey").asString
-                } else null
-
-                return@withContext SubscriptionInfo(
-                    isActivated = isActivated,
-                    tier = tier,
-                    activatedAt = activatedAt,
-                    expiresAt = expiresAt,
-                    redeemedKey = redeemedKey
-                )
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        null
+        if (activeUser == null || activeUser.uid != uid) return@withContext null
+        val synced = syncEntitlements(activeUser.copy(idToken = idToken?.takeIf { it.isNotBlank() } ?: activeUser.idToken))
+        SubscriptionInfo(
+            isActivated = synced.isActivated,
+            tier = synced.tier,
+            activatedAt = synced.activatedAt,
+            expiresAt = synced.expiresAt,
+            redeemedKey = synced.redeemedKey
+        )
     }
 
     /**
