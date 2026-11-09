@@ -109,6 +109,7 @@ object JavaRuntimeManager {
      * Matches NUX Launcher Windows logic identically.
      */
     fun getRecommendedRuntime(mcVersion: String, javaMajorVersion: Int? = null): String {
+        getAdminPreferredRuntime().takeIf { it != "auto" }?.let { return it }
         if (javaMajorVersion != null) {
             return when {
                 javaMajorVersion >= 25 -> "jre-25"
@@ -124,6 +125,13 @@ object JavaRuntimeManager {
             mcVersion.startsWith("1.20") || mcVersion.startsWith("1.19") || mcVersion.startsWith("1.18") || mcVersion.startsWith("1.17") -> "jre-17"
             else -> "jre-8"
         }
+    }
+
+    fun getAdminPreferredRuntime(): String {
+        val config = RemoteLauncherConfig.config.value
+        val autoSelect = RemoteLauncherConfig.isEnabled(config, "runtimes", "autoSelectJava")
+        val preferred = RemoteLauncherConfig.text(config, "runtimes", "preferredRuntime", "auto")
+        return if (!autoSelect && preferred != "auto" && isRuntimeEnabled(preferred)) preferred else "auto"
     }
 
     fun isRuntimeEnabled(runtimeName: String): Boolean {
