@@ -1,6 +1,7 @@
 name: Build TG Launcher
 
 # Release builds use the persistent TG Launcher signing key from repository secrets.
+# Build trigger refreshed after the previous GitHub Actions run failed before job creation.
 
 on:
   push:
