@@ -6,6 +6,7 @@ import com.google.gson.reflect.TypeToken
 import android.widget.Toast
 import com.israadev.nuxlauncher.core.account.AccountManager
 import com.israadev.nuxlauncher.core.models.Instance
+import com.israadev.nuxlauncher.core.network.RemoteLauncherConfig
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -391,6 +392,11 @@ object InstanceManager {
 
 
     fun createInstance(context: Context, instance: Instance) {
+        val remoteConfig = RemoteLauncherConfig.config.value
+        if (!RemoteLauncherConfig.isEnabled(remoteConfig, "game", "allowCustomInstances", true)) {
+            Toast.makeText(context, "Pembuatan instance kustom dinonaktifkan oleh administrator TG Launcher.", Toast.LENGTH_LONG).show()
+            return
+        }
         val launcherUser = AccountManager.getActiveUser()
         val maxInstances = launcherUser?.limits?.get("instances") ?: if (launcherUser?.isActivated == true) -1 else 3
         if (maxInstances >= 0 && _instances.value.size >= maxInstances) {
