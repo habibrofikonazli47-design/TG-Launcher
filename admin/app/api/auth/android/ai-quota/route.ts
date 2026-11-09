@@ -43,7 +43,7 @@ async function getQuota(uid: string, consume: boolean) {
     usedCount += 1;
   }
   const remainingQuota = isUnlimited ? -1 : Math.max(0, dailyLimit - usedCount);
-  return { success: true, date: new Date().toISOString().slice(0,10), usedCount, remainingQuota, dailyLimit, isUnlimited, allowed: isUnlimited || usedCount <= dailyLimit };
+  return { success: true, date: new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10), usedCount, remainingQuota, dailyLimit, isUnlimited, allowed: isUnlimited || usedCount <= dailyLimit };
 }
 
 async function authorized(req: NextRequest) {
