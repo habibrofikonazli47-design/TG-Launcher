@@ -37,6 +37,27 @@ export async function GET(req: NextRequest) {
 
     await ensureSchema();
     const sql = database();
+    const policyRows = await sql`SELECT value FROM app_settings WHERE key='updates' LIMIT 1`;
+    const updatePolicy = policyRows[0]?.value || {};
+    const minimumVersion = String(updatePolicy.minimumSupportedVersion || '1.0.0').replace(/^v/, '');
+    const forceUpdate = updatePolicy.forceUpdate === true;
+    const clientVersion = String(req.headers.get('x-tg-app-version') || '').trim().replace(/^v/, '');
+    const compareVersion = (a: string, b: string) => {
+      const partsA = a.split(/[.-]/).map(part => Number(part.replace(/\\D/g, '')) || 0);
+      const partsB = b.split(/[.-]/).map(part => Number(part.replace(/\\D/g, '')) || 0);
+      for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
+        const diff = (partsA[i] || 0) - (partsB[i] || 0);
+        if (diff !== 0) return diff;
+      }
+      return 0;
+    };
+    if (forceUpdate && (!clientVersion || compareVersion(clientVersion, minimumVersion) < 0)) {
+      return NextResponse.json({
+        error: 'Versi TG Launcher ini sudah tidak didukung. Silakan perbarui aplikasi.',
+        code: 'UPDATE_REQUIRED',
+        minimumSupportedVersion: minimumVersion,
+      }, { status: 426, headers: { 'Cache-Control': 'no-store' } });
+    }
     const existing = await sql`SELECT id FROM profiles WHERE id=${identity.localId} OR lower(email)=${identity.email} ORDER BY CASE WHEN id=${identity.localId} THEN 0 ELSE 1 END LIMIT 1`;
     if (existing.length) {
       await sql`UPDATE profiles SET id=${identity.localId},email=${identity.email},display_name=CASE WHEN display_name='' THEN ${identity.displayName || identity.email.split('@')[0]} ELSE display_name END,updated_at=now() WHERE id=${existing[0].id}`;
