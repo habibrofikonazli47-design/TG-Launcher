@@ -113,3 +113,12 @@ input:focus,select:focus,textarea:focus{border-color:#35d9ae;box-shadow:0 0 0 3p
  .nav-icon{width:22px;height:22px;flex-basis:22px}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+
+/* Installable TG Admin PWA */
+.pwa-install{position:fixed;z-index:80;right:18px;top:16px;border:1px solid #278d70;background:linear-gradient(120deg,#123b34,#10232c);color:#8ff4d0;font-size:12px;font-weight:850;letter-spacing:.3px;padding:10px 15px;border-radius:999px;box-shadow:0 8px 28px #0006,0 0 22px #1ddba51a}
+.pwa-installed{position:fixed;z-index:80;right:18px;top:16px;padding:9px 13px;border:1px solid #245b4d;border-radius:999px;background:#10271f;color:#83e8c4;font-size:11px;font-weight:800}
+.pwa-help-backdrop{position:fixed;z-index:100;inset:0;background:#02060bd9;display:grid;place-items:center;padding:20px}
+.pwa-help{position:relative;width:min(440px,100%);padding:28px;border:1px solid #2c6656;border-radius:18px;background:linear-gradient(145deg,#172231,#0d131d);box-shadow:0 24px 90px #000a;color:#eef2f7}
+.pwa-help h2{margin:0 32px 14px 0}.pwa-help p{color:#aab6c5;line-height:1.7;font-size:14px}.pwa-help .primary{margin-top:10px}.pwa-help-close{position:absolute;right:14px;top:14px;font-size:22px;padding:3px 10px}
+@media(max-width:600px){.pwa-install,.pwa-installed{top:auto;right:12px;bottom:calc(16px + env(safe-area-inset-bottom));}.pwa-install{padding:12px 16px;box-shadow:0 10px 32px #000b,0 0 20px #1ddba526}}
