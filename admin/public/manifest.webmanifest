@@ -1,0 +1,25 @@
+{
+  "id": "/",
+  "name": "TG Launcher Admin Panel",
+  "short_name": "TG Admin",
+  "description": "Panel kontrol resmi TG Launcher",
+  "lang": "id",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#090b12",
+  "theme_color": "#0b121b",
+  "categories": [
+    "business",
+    "utilities"
+  ],
+  "icons": [
+    {
+      "src": "/icons/tg-admin.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
