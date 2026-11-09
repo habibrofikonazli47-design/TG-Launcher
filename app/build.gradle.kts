@@ -18,6 +18,8 @@ val rawServerApiKey: String = localProperties.getProperty("tg.server.api.key") ?
 val rawAiApiKey: String = localProperties.getProperty("tg.ai.api.key") ?: ""
 val rawAiApiKey2: String = localProperties.getProperty("tg.ai.api.key2") ?: ""
 val rawAiApiKey3: String = localProperties.getProperty("tg.ai.api.key3") ?: ""
+val tgVersionCode: Int = System.getenv("TG_VERSION_CODE")?.toIntOrNull() ?: 18
+val tgVersionName: String = System.getenv("TG_VERSION_NAME") ?: "1.1.6-tg1"
 
 android {
     namespace = "com.israadev.nuxlauncher"
@@ -27,8 +29,8 @@ android {
         applicationId = "com.tg.launcher"
         minSdk = 26
         targetSdk = 35
-        versionCode = 18
-        versionName = "1.1.6-tg1"
+        versionCode = tgVersionCode
+        versionName = tgVersionName
 
         buildConfigField("String", "SERVER_BASE_URL", "\"$rawServerUrl\"")
         buildConfigField("String", "SERVER_API_KEY", "\"$rawServerApiKey\"")
