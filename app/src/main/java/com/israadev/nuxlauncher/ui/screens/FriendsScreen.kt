@@ -78,9 +78,6 @@ fun FriendsScreen(
         if (friendsEnabled) NuxSocialManager.startSync()
         onDispose {}
     }
-    LaunchedEffect(voiceEnabled, selectedTab) {
-        if (!voiceEnabled && selectedTab == "rooms") selectedTab = "friends"
-    }
 
     val friends by NuxSocialManager.friends.collectAsState()
     val activeFriend by NuxSocialManager.activeChatFriend.collectAsState()
@@ -97,6 +94,10 @@ fun FriendsScreen(
 
     var selectedTab by remember { mutableStateOf("friends") } // "room_chat", "friends", "rooms", "requests"
     var searchQuery by remember { mutableStateOf("") }
+
+    LaunchedEffect(voiceEnabled, selectedTab) {
+        if (!voiceEnabled && selectedTab == "rooms") selectedTab = "friends"
+    }
 
     LaunchedEffect(activeVoiceRoom?.id) {
         if (activeVoiceRoom != null) {
