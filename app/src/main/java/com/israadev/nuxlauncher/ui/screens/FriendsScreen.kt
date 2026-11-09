@@ -211,7 +211,7 @@ fun FriendsScreen(
                         .background(NuxColors.ForestGreen.copy(alpha = 0.15f), RoundedCornerShape(6.dp))
                         .border(1.dp, NuxColors.ForestGreen.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
                         .clickable {
-                            if (launcherUser?.isActivated != true) {
+                            if (launcherUser?.features?.contains("voice_rooms") != true) {
                                 premiumInitialPrompt = "Real-time voice rooms (LiveKit WebRTC) are exclusive to TG Premium. Upgrade your account to create and join voice rooms!"
                                 showPremiumDialog = true
                             } else {
