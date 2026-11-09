@@ -105,7 +105,7 @@ data class AiQuotaInfo(
 )
 
 object AuthService {
-    private const val ENTITLEMENTS_BASE_URL = "https://tg-launcher-admin.vercel.app"
+    private const val ENTITLEMENTS_BASE_URL = "https://tg-launcher-admin-sigma.vercel.app"
     private val gson = Gson()
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
 
