@@ -80,6 +80,7 @@ import com.israadev.nuxlauncher.core.lang.tr
 import com.israadev.nuxlauncher.core.lang.trStr
 import kotlinx.coroutines.launch
 import com.israadev.nuxlauncher.core.social.NuxSocialManager
+import com.israadev.nuxlauncher.core.network.RemoteLauncherConfig
 
 @Composable
 fun DashboardScreen() {
@@ -87,6 +88,18 @@ fun DashboardScreen() {
     val scope = rememberCoroutineScope()
 
     var currentTab by remember { mutableStateOf("home") }
+    val remoteConfig by RemoteLauncherConfig.config.collectAsState()
+    val enabledTabs = remember(remoteConfig) {
+        buildSet {
+            add("home"); add("settings")
+            if (RemoteLauncherConfig.isEnabled(remoteConfig, "social", "friendsEnabled")) add("friends")
+            if (RemoteLauncherConfig.isEnabled(remoteConfig, "accounts", "offlineLoginEnabled") || RemoteLauncherConfig.isEnabled(remoteConfig, "accounts", "microsoftLoginEnabled") || RemoteLauncherConfig.isEnabled(remoteConfig, "accounts", "elybyLoginEnabled")) add("accounts")
+            if (RemoteLauncherConfig.isEnabled(remoteConfig, "mods", "modrinthEnabled") || RemoteLauncherConfig.isEnabled(remoteConfig, "mods", "curseforgeEnabled") || RemoteLauncherConfig.isEnabled(remoteConfig, "mods", "allowManualImport")) add("mods")
+            if (RemoteLauncherConfig.isEnabled(remoteConfig, "ai", "assistantEnabled")) add("ai")
+        }
+    }
+    LaunchedEffect(Unit) { RemoteLauncherConfig.refresh() }
+    LaunchedEffect(enabledTabs, currentTab) { if (currentTab !in enabledTabs) currentTab = "home" }
 
     val activeCrash by CrashManager.activeCrash.collectAsState()
 
@@ -114,7 +127,7 @@ fun DashboardScreen() {
 
     val handleRequestCreateInstance = {
         if (instances.size >= 3 && launcherUser?.isActivated != true) {
-            premiumInitialPrompt = "Free accounts are limited to a maximum of 3 instances. Upgrade to NUX Premium to create unlimited instances!"
+            premiumInitialPrompt = "Free accounts are limited to a maximum of 3 instances. Upgrade to TG Premium to create unlimited instances!"
             showPremiumDialog = true
         } else {
             showAddDialog = true
@@ -258,6 +271,7 @@ fun DashboardScreen() {
                     onOpenAbout = { showAboutDialog = true },
                     currentAccount = currentAccount,
                     launcherUser = launcherUser,
+                    enabledTabs = enabledTabs,
                     modifier = Modifier
                         .width((64.dp).resp())
                         .fillMaxHeight()
