@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 
 /**
- * Manajer Sosial Lintas Platform NUX Launcher (Android & Windows)
+ * Manajer sosial lintas platform TG Launcher (Android & Windows)
  * Sinkronisasi data real-time via Firebase Realtime Database (RTDB)
  * Node shared_social: public_profiles, friends, chats, chat_meta, typing, voice_rooms
  */
