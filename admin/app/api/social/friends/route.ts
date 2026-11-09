@@ -22,12 +22,21 @@ export async function POST(req: NextRequest) {
   const body=await req.json(); const action=String(body.action||'request');
   await ensureSocialSchema(); const sql=socialDatabase();
   if(action==='request') {
-   const target=String(body.username||'').trim().toLowerCase();
-   if(!target || target.length>32) return NextResponse.json({error:'Username tujuan tidak valid'},{status:400});
-   const found=await sql`SELECT user_id FROM social_profiles WHERE username_lower=${target} LIMIT 1`;
-   if(!found.length) return NextResponse.json({error:'Pengguna TG tidak ditemukan'},{status:404});
+   const targetUid=String(body.targetUserId||'').trim();
+   const targetName=String(body.username||'').trim().toLowerCase();
+   if(!targetUid && (!targetName || targetName.length>32)) return NextResponse.json({error:'Pengguna tujuan tidak valid'},{status:400});
+   const found=targetUid
+    ? await sql`SELECT user_id FROM social_profiles WHERE user_id=${targetUid} LIMIT 1`
+    : await sql`SELECT user_id FROM social_profiles WHERE username_lower=${targetName} LIMIT 1`;
+   if(!found.length) return NextResponse.json({error:'Pengguna TG tidak ditemukan atau belum memiliki profil sosial'},{status:404});
    if(found[0].user_id===user.uid) return NextResponse.json({error:'Tidak dapat menambahkan akun sendiri'},{status:400});
-   const result=await sql`INSERT INTO social_friendships(requester_id,addressee_id,status) VALUES(${user.uid},${found[0].user_id},'pending') ON CONFLICT(requester_id,addressee_id) DO UPDATE SET status=CASE WHEN social_friendships.status='blocked' THEN 'blocked' ELSE 'pending' END,updated_at=now() RETURNING id,status`;
+   const target=String(found[0].user_id);
+   const reverse=await sql`SELECT id,status FROM social_friendships WHERE requester_id=${target} AND addressee_id=${user.uid} LIMIT 1`;
+   if(reverse.length && reverse[0].status==='pending') {
+    const accepted=await sql`UPDATE social_friendships SET status='accepted',updated_at=now() WHERE id=${reverse[0].id} RETURNING id,status`;
+    return NextResponse.json({success:true,friendship:accepted[0],autoAccepted:true});
+   }
+   const result=await sql`INSERT INTO social_friendships(requester_id,addressee_id,status) VALUES(${user.uid},${target},'pending') ON CONFLICT(requester_id,addressee_id) DO UPDATE SET status=CASE WHEN social_friendships.status='blocked' THEN 'blocked' ELSE 'pending' END,updated_at=now() RETURNING id,status`;
    return NextResponse.json({success:true,friendship:result[0]});
   }
   const id=Number(body.id);
