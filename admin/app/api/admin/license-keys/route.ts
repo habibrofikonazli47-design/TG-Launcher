@@ -3,7 +3,7 @@ import { randomBytes } from 'crypto';
 import { database,ensureSchema } from '@/lib/db';
 import { getCookieName,verifySession } from '@/lib/server';
 export const runtime='nodejs';
-function makeKey(){const raw=randomBytes(8).toString('hex').toUpperCase();return raw.match(/.{1,5}/g)!.join('-');}
+function makeKey(){const raw=randomBytes(8).toString('hex').toUpperCase();return raw.match(/.{4}/g)!.join('-');}
 export async function GET(req:NextRequest){
  if(!verifySession(req.cookies.get(getCookieName())?.value))return NextResponse.json({error:'Unauthorized'},{status:401});
  try{await ensureSchema();return NextResponse.json(await database()`SELECT id,license_key,plan,status,max_uses,used_count,expires_at,duration_days,max_devices,user_id,activated_at,created_at,(SELECT count(*)::int FROM license_devices d WHERE d.license_id=license_keys.id) AS device_count,(SELECT COALESCE(json_agg(json_build_object('device_id',d.device_id,'device_name',d.device_name,'last_seen_at',d.last_seen_at) ORDER BY d.last_seen_at DESC),'[]'::json) FROM license_devices d WHERE d.license_id=license_keys.id) AS devices FROM license_keys ORDER BY created_at DESC LIMIT 300`);}
