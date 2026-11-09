@@ -1,5 +1,7 @@
 name: Build TG Launcher
 
+# Release builds use the persistent TG Launcher signing key from repository secrets.
+
 on:
   push:
     branches: [main]
