@@ -24,7 +24,8 @@ data class AndroidUpdateInfo(
     val fileName: String,
     val fileSize: Long,
     val changelog: String,
-    val isUpdateAvailable: Boolean
+    val isUpdateAvailable: Boolean,
+    val isMandatory: Boolean
 )
 
 object UpdateManager {
@@ -140,7 +141,8 @@ object UpdateManager {
                     fileName = fileName,
                     fileSize = fileSize,
                     changelog = changelogText,
-                    isUpdateAvailable = isAvailable
+                    isUpdateAvailable = isAvailable,
+                    isMandatory = forceUpdate && isAvailable
                 )
 
                 Result.success(updateInfo)
