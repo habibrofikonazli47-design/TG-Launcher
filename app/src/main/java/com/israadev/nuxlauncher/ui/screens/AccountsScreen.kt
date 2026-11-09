@@ -167,8 +167,9 @@ fun AccountsScreen(
                     .background(NuxColors.ForestGreen.copy(alpha = 0.12f), RoundedCornerShape(6.dp))
                     .border(1.dp, NuxColors.ForestGreen.copy(alpha = 0.35f), RoundedCornerShape(6.dp))
                     .clickable {
-                        if (accounts.size >= 2 && launcherUser?.isActivated != true) {
-                            premiumInitialPrompt = "Free users are limited to 2 saved accounts. Upgrade to NUX Premium to save and switch unlimited accounts!"
+                        val maxSavedAccounts = launcherUser?.limits?.get("accounts") ?: if (launcherUser?.isActivated == true) -1 else 2
+                        if (maxSavedAccounts >= 0 && accounts.size >= maxSavedAccounts) {
+                            premiumInitialPrompt = "Paket Free dibatasi maksimal $maxSavedAccounts akun tersimpan. Upgrade ke Premium untuk tanpa batas."
                             showPremiumDialog = true
                         } else {
                             showAddAccountDialog = true
