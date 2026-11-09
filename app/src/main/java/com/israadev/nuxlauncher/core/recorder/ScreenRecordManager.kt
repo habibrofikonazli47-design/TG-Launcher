@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import com.israadev.nuxlauncher.core.account.AccountManager
+import com.israadev.nuxlauncher.core.network.RemoteLauncherConfig
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -39,6 +40,15 @@ object ScreenRecordManager {
         resultData: Intent,
         config: ScreenRecordConfig = ScreenRecordConfig()
     ) {
+        val remoteConfig = RemoteLauncherConfig.config.value
+        if (!RemoteLauncherConfig.isEnabled(remoteConfig, "recorder", "screenRecordingEnabled", true)) {
+            Toast.makeText(context, "Screen Recorder dinonaktifkan oleh administrator TG Launcher.", Toast.LENGTH_LONG).show()
+            return
+        }
+        if (!isUserPremium()) {
+            Toast.makeText(context, "Screen Recorder hanya tersedia untuk akun Premium aktif.", Toast.LENGTH_LONG).show()
+            return
+        }
 
         val intent = Intent(context, ScreenRecordService::class.java).apply {
             action = ScreenRecordService.ACTION_START
