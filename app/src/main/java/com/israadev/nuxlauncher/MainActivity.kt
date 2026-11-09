@@ -12,6 +12,8 @@ import android.view.View
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -157,6 +159,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        lifecycleScope.launch { RemoteLauncherConfig.refresh() }
         hideSystemBars()
         // Re-init instances in case storage permission was just granted
         InstanceManager.init(this)
