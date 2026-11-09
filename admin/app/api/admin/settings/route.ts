@@ -9,6 +9,7 @@ const defaults:Record<string,any>={
   runtimes:{java8Enabled:true,java17Enabled:true,java21Enabled:true,java25Enabled:true,autoSelectJava:true,preferredRuntime:'auto',runtimeMirror:'official'},
   mods:{modrinthEnabled:true,curseforgeEnabled:true,fabricEnabled:true,forgeEnabled:true,quiltEnabled:true,neoForgeEnabled:true,allowManualImport:true},
   renderer:{virglEnabled:true,gl4esEnabled:true,mesaEnabled:true,zinkEnabled:true,defaultRenderer:'auto',experimentalRenderers:false},
+  recorder:{screenRecordingEnabled:true},
   ai:{assistantEnabled:true,crashAnalyzerEnabled:true,freeDailyQuota:5,premiumDailyQuota:-1,model:'default',maxTokens:2048,customApiKeyAllowed:true},
   accounts:{offlineLoginEnabled:true,microsoftLoginEnabled:true,elybyLoginEnabled:true,registrationEnabled:true,otpEnabled:true,otpCooldownSeconds:60},
   social:{friendsEnabled:true,voiceEnabled:true,livekitEnabled:false,uploadsEnabled:true,maximumUploadMb:20,livekitServerUrl:'',livekitApiKey:'',livekitApiKeyConfigured:false,livekitApiSecret:'',livekitApiSecretConfigured:false},
