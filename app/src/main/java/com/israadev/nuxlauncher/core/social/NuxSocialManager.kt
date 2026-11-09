@@ -12,6 +12,7 @@ import com.israadev.nuxlauncher.core.account.AccountManager
 import com.israadev.nuxlauncher.core.auth.AuthService
 import com.israadev.nuxlauncher.core.auth.AuthUser
 import com.israadev.nuxlauncher.core.network.NuxConfig
+import com.israadev.nuxlauncher.core.network.RemoteLauncherConfig
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -1153,6 +1154,17 @@ object NuxSocialManager {
 
     private suspend fun uploadChatImage(bytes: ByteArray): Result<String> = withContext(Dispatchers.IO) {
         try {
+            val remoteConfig = RemoteLauncherConfig.config.value
+            if (!RemoteLauncherConfig.isEnabled(remoteConfig, "social", "uploadsEnabled")) {
+                return@withContext Result.failure(Exception("Upload lampiran dinonaktifkan oleh administrator TG Launcher."))
+            }
+            val maxUploadMb = remoteConfig
+                ?.optJSONObject("social")?.optInt("maximumUploadMb", 20)?.coerceIn(1, 100) ?: 20
+            val maxUploadBytes = maxUploadMb.toLong() * 1024L * 1024L
+            if (bytes.size.toLong() > maxUploadBytes) {
+                return@withContext Result.failure(Exception("Ukuran lampiran melebihi batas admin (${maxUploadMb} MB)."))
+            }
+
             val requestBody = bytes.toRequestBody("image/jpeg".toMediaType())
             val multipart = MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
