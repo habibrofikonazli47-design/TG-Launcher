@@ -1,0 +1,74 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { database, ensureSchema } from '@/lib/db';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+const FIREBASE_WEB_API_KEY = 'AIzaSyDIqvaTHjuwNboBXcVDoY1JYJntS0ECsJ0';
+
+type FirebaseUser = { localId: string; email?: string; displayName?: string };
+
+async function verifyFirebaseIdToken(idToken: string): Promise<FirebaseUser | null> {
+  const response = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${FIREBASE_WEB_API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken }),
+      cache: 'no-store',
+    },
+  );
+  if (!response.ok) return null;
+  const payload = await response.json();
+  const user = payload?.users?.[0];
+  if (!user?.localId) return null;
+  return { localId: String(user.localId), email: user.email ? String(user.email).toLowerCase() : undefined, displayName: user.displayName ? String(user.displayName) : undefined };
+}
+
+export async function GET(req: NextRequest) {
+  const authorization = req.headers.get('authorization') || '';
+  const token = authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : '';
+  if (!token) return NextResponse.json({ error: 'Bearer token diperlukan' }, { status: 401 });
+
+  try {
+    const identity = await verifyFirebaseIdToken(token);
+    if (!identity) return NextResponse.json({ error: 'Token akun tidak valid atau sudah kedaluwarsa' }, { status: 401 });
+    if (!identity.email) return NextResponse.json({ error: 'Akun tidak memiliki alamat email' }, { status: 400 });
+
+    await ensureSchema();
+    const sql = database();
+    const existing = await sql`SELECT id FROM profiles WHERE id=${identity.localId} OR lower(email)=${identity.email} ORDER BY CASE WHEN id=${identity.localId} THEN 0 ELSE 1 END LIMIT 1`;
+    if (existing.length) {
+      await sql`UPDATE profiles SET id=${identity.localId},email=${identity.email},display_name=CASE WHEN display_name='' THEN ${identity.displayName || identity.email.split('@')[0]} ELSE display_name END,updated_at=now() WHERE id=${existing[0].id}`;
+    } else {
+      await sql`INSERT INTO profiles(id,email,display_name,plan,status) VALUES(${identity.localId},${identity.email},${identity.displayName || identity.email.split('@')[0]},'free','active') ON CONFLICT (id) DO NOTHING`;
+    }
+
+    const rows = await sql`SELECT id,email,plan,status,expires_at FROM profiles WHERE id=${identity.localId} LIMIT 1`;
+    if (!rows.length) return NextResponse.json({ error: 'Profil akun tidak ditemukan' }, { status: 404 });
+    const profile = rows[0];
+    const expiry = profile.expires_at ? new Date(profile.expires_at) : null;
+    const isExpired = !!expiry && expiry.getTime() <= Date.now();
+    const isPremium = profile.plan === 'premium' && profile.status === 'active' && !isExpired;
+    const planCode = isPremium ? 'premium' : 'free';
+    const plans = await sql`SELECT code,name,features,limits FROM plans WHERE code=${planCode} LIMIT 1`;
+    const plan = plans[0] || { code: planCode, name: isPremium ? 'Premium' : 'Free', features: ['base_launcher'], limits: { instances: 3, accounts: 2, ai_daily: 5 } };
+
+    return NextResponse.json({
+      success: true,
+      uid: identity.localId,
+      email: identity.email,
+      plan: plan.code,
+      planName: plan.name,
+      isActivated: isPremium,
+      status: profile.status,
+      expiresAt: profile.expires_at ? new Date(profile.expires_at).toISOString() : null,
+      features: plan.features,
+      limits: plan.limits,
+      serverTime: new Date().toISOString(),
+    }, { headers: { 'Cache-Control': 'no-store, private' } });
+  } catch (error) {
+    console.error('[app/entitlements]', error);
+    return NextResponse.json({ error: 'Gagal memuat hak akses akun' }, { status: 503 });
+  }
+}
