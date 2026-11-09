@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ensureSocialSchema, socialDatabase } from '@/lib/social-db';
+import { ensureSocialSchema, socialDatabase, isSocialFeatureEnabled } from '@/lib/social-db';
 import { verifySocialIdentity } from '@/lib/social-auth';
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
 export async function GET(req: NextRequest) {
+ if (!(await isSocialFeatureEnabled('friendsEnabled'))) return NextResponse.json({ error: 'Fitur pertemanan dinonaktifkan oleh admin TG.' }, { status: 403 });
  const user=await verifySocialIdentity(req);
  if(!user) return NextResponse.json({error:'Token TG tidak valid'},{status:401});
  try {
@@ -16,6 +17,7 @@ export async function GET(req: NextRequest) {
  } catch(error) { console.error('[social/friends]',error); return NextResponse.json({error:'Gagal memuat daftar teman'},{status:503}); }
 }
 export async function POST(req: NextRequest) {
+ if (!(await isSocialFeatureEnabled('friendsEnabled'))) return NextResponse.json({ error: 'Fitur pertemanan dinonaktifkan oleh admin TG.' }, { status: 403 });
  const user=await verifySocialIdentity(req);
  if(!user) return NextResponse.json({error:'Token TG tidak valid'},{status:401});
  try {
