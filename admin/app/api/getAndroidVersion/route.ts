@@ -58,7 +58,7 @@ export async function GET() {
     const release = Array.isArray(releasePayload)
       ? releasePayload
           .filter((item: any) => item.prerelease === true ? betaChannel : stableChannel)
-          .filter((item: any) => (item.assets || []).some((asset: any) => /^TG-Launcher-.*\\.apk$/i.test(asset.name)))
+          .filter((item: any) => (item.assets || []).some((asset: any) => /^TG-Launcher-.*\.apk$/i.test(asset.name)))
           .sort((a: any, b: any) =>
             Date.parse(b.published_at || b.created_at || '1970-01-01') -
             Date.parse(a.published_at || a.created_at || '1970-01-01')
