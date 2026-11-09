@@ -126,8 +126,9 @@ fun DashboardScreen() {
     val pendingImport by NuxAddonImportManager.pendingImport.collectAsState()
 
     val handleRequestCreateInstance = {
-        if (instances.size >= 3 && launcherUser?.isActivated != true) {
-            premiumInitialPrompt = "Free accounts are limited to a maximum of 3 instances. Upgrade to TG Premium to create unlimited instances!"
+        val maxInstances = launcherUser?.limits?.get("instances") ?: if (launcherUser?.isActivated == true) -1 else 3
+        if (maxInstances >= 0 && instances.size >= maxInstances) {
+            premiumInitialPrompt = "Paket akun ini dibatasi maksimal $maxInstances instance. Ubah batas paket di Admin Panel TG Launcher untuk menyesuaikannya."
             showPremiumDialog = true
         } else {
             showAddDialog = true
@@ -139,7 +140,9 @@ fun DashboardScreen() {
         // 0. Sinkronisasi status social & friends di background
         launch {
             try {
-                NuxSocialManager.startSync()
+                if (RemoteLauncherConfig.isEnabled(remoteConfig, "social", "friendsEnabled")) {
+                    NuxSocialManager.startSync()
+                }
             } catch (_: Exception) {}
         }
 
