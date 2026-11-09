@@ -25,7 +25,7 @@ data class LanguageInfo(
 )
 
 /**
- * Universal JSON-based i18n Language Engine for NUX Launcher.
+ * Universal JSON-based i18n language engine for TG Launcher.
  * Automatically discovers all language json files in assets lang folder.
  */
 object NuxLanguageManager {
