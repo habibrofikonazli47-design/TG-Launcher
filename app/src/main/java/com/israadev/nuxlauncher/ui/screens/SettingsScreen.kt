@@ -195,13 +195,6 @@ fun SettingsScreen(
     var selectedConfigRenderer by remember { mutableStateOf<NuxRendererInfo?>(null) }
     var showAdrenoWarningDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(remoteConfig, selectedRenderer) {
-        if (!isRendererAllowed(selectedRenderer)) {
-            selectedRenderer = "auto"
-            commitSettings()
-        }
-    }
-
     val totalRamMb = remember { SettingsManager.getTotalDeviceMemoryMb(context) }
     val maxAllocatableRam = remember(totalRamMb) { (totalRamMb * 0.85f).toInt().coerceAtLeast(1024) }
     val cpuCores = remember { SettingsManager.getCpuCoreCount() }
@@ -244,6 +237,13 @@ fun SettingsScreen(
             aiModel = aiModel
         )
         SettingsManager.updateSettings(context, updated)
+    }
+
+    LaunchedEffect(remoteConfig, selectedRenderer) {
+        if (!isRendererAllowed(selectedRenderer)) {
+            selectedRenderer = "auto"
+            commitSettings()
+        }
     }
 
     Column(
