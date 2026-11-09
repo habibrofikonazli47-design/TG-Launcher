@@ -35,6 +35,7 @@ import com.israadev.nuxlauncher.core.lang.tr
 import com.israadev.nuxlauncher.core.lang.NuxLanguageManager
 import com.israadev.nuxlauncher.core.fabric.FabricService
 import com.israadev.nuxlauncher.core.manifest.MojangManifestService
+import com.israadev.nuxlauncher.core.network.RemoteLauncherConfig
 import com.israadev.nuxlauncher.core.models.Instance
 import com.israadev.nuxlauncher.core.models.VersionItem
 import com.israadev.nuxlauncher.ui.components.*
@@ -79,6 +80,7 @@ fun NuxAddInstanceDialog(
     var premiumInitialPrompt by remember { mutableStateOf<String?>(null) }
 
     val launcherUser by com.israadev.nuxlauncher.core.account.AccountManager.launcherUser.collectAsState()
+    val remoteConfig by RemoteLauncherConfig.config.collectAsState()
     val langVersion by NuxLanguageManager.languageVersion.collectAsState()
 
     LaunchedEffect(Unit) {
@@ -111,8 +113,16 @@ fun NuxAddInstanceDialog(
         }
     }
 
-    val filteredVersions = remember(versionsList, searchQuery, selectedCategory) {
+    val filteredVersions = remember(versionsList, searchQuery, selectedCategory, remoteConfig, launcherUser) {
         versionsList.filter { item ->
+            val adminAllowsType = when (item.type) {
+                "release" -> RemoteLauncherConfig.isEnabled(remoteConfig, "game", "minecraftReleaseEnabled")
+                "snapshot", "pending", "unobfuscated" -> RemoteLauncherConfig.isEnabled(remoteConfig, "game", "minecraftSnapshotEnabled")
+                "old_beta", "old_alpha" -> RemoteLauncherConfig.isEnabled(remoteConfig, "game", "showOldVersions")
+                else -> true
+            }
+            val hasExperimentalAccess = if (launcherUser?.features?.isNotEmpty() == true) "snapshot_beta_versions" in launcherUser.features else launcherUser?.isActivated == true
+            val planAllowsType = item.type == "release" || hasExperimentalAccess
             val matchesCategory = when (selectedCategory) {
                 VersionCategory.ALL -> true
                 VersionCategory.RELEASE -> item.type == "release"
@@ -121,7 +131,7 @@ fun NuxAddInstanceDialog(
                 VersionCategory.OLD_ALPHA -> item.type == "old_alpha" || item.id.startsWith("a1.") || item.id.startsWith("a")
             }
             val matchesQuery = if (searchQuery.isBlank()) true else item.id.contains(searchQuery.trim(), ignoreCase = true)
-            matchesCategory && matchesQuery
+            adminAllowsType && planAllowsType && matchesCategory && matchesQuery
         }
     }
 
@@ -293,7 +303,7 @@ fun NuxAddInstanceDialog(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
-                                        listOf("vanilla" to "Vanilla", "fabric" to "Fabric").forEach { (type, label) ->
+                                        listOf("vanilla" to "Vanilla", "fabric" to "Fabric").filter { (type, _) -> type == "vanilla" || RemoteLauncherConfig.isEnabled(remoteConfig, "mods", "fabricEnabled") }.forEach { (type, label) ->
                                             val isSelected = selectedLoader == type
                                             val btnBg by animateColorAsState(
                                                 targetValue = if (isSelected) Color(0xFF10B981).copy(alpha = 0.16f) else Color(0xFF0D0F15),
@@ -602,8 +612,18 @@ fun NuxAddInstanceDialog(
                                             .background(pillBg)
                                             .border(1.dp, pillBorder, RoundedCornerShape(6.dp))
                                             .clickable {
-                                                if (category != VersionCategory.RELEASE && launcherUser?.isActivated != true) {
-                                                    premiumInitialPrompt = "Access to Snapshot and Experimental builds (Beta & Alpha) is exclusively available for NUX Premium members. Free users can play all stable Release versions."
+                                                val adminAllowsCategory = when (category) {
+                                                    VersionCategory.RELEASE -> RemoteLauncherConfig.isEnabled(remoteConfig, "game", "minecraftReleaseEnabled")
+                                                    VersionCategory.SNAPSHOT -> RemoteLauncherConfig.isEnabled(remoteConfig, "game", "minecraftSnapshotEnabled")
+                                                    VersionCategory.OLD_BETA, VersionCategory.OLD_ALPHA -> RemoteLauncherConfig.isEnabled(remoteConfig, "game", "showOldVersions")
+                                                    VersionCategory.ALL -> true
+                                                }
+                                                val hasExperimentalAccess = if (launcherUser?.features?.isNotEmpty() == true) "snapshot_beta_versions" in launcherUser.features else launcherUser?.isActivated == true
+                                                if (!adminAllowsCategory) {
+                                                    premiumInitialPrompt = "Kategori versi ini dinonaktifkan oleh administrator TG Launcher."
+                                                    showPremiumDialog = true
+                                                } else if (category != VersionCategory.RELEASE && category != VersionCategory.ALL && !hasExperimentalAccess) {
+                                                    premiumInitialPrompt = "Akses Snapshot, Beta, dan Alpha tidak termasuk dalam paket akun ini."
                                                     showPremiumDialog = true
                                                 } else {
                                                     selectedCategory = category
