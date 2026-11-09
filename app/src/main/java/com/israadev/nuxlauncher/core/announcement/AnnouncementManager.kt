@@ -24,9 +24,8 @@ data class NuxAnnouncement(
 
 object AnnouncementManager {
     private const val TAG = "AnnouncementManager"
-    private const val PREFS_NAME = "nux_announcement_prefs"
+    private const val PREFS_NAME = "tg_announcement_prefs"
     private const val KEY_LAST_DISMISSED_ID = "last_dismissed_announcement_id"
-    private const val RTDB_BASE = "https://nux-production-default-rtdb.asia-southeast1.firebasedatabase.app"
 
     private val httpClient = OkHttpClient.Builder()
         .connectTimeout(6, TimeUnit.SECONDS)
@@ -49,58 +48,33 @@ object AnnouncementManager {
         getPrefs(context).edit().putString(KEY_LAST_DISMISSED_ID, id).apply()
     }
 
-    /**
-     * Mengambil pengumuman aktif dari Firebase Realtime DB atau API Backend.
-     * Mengembalikan null jika dinonaktifkan, tidak ditargetkan untuk Android, atau error.
-     */
+    /** Mengambil pengumuman dari pengaturan appearance yang dikelola admin TG Launcher. */
     suspend fun fetchAnnouncement(): NuxAnnouncement? = withContext(Dispatchers.IO) {
-        // 1. Coba ambil dari Firebase RTDB
+        if (!NuxConfig.isConfigured) return@withContext null
         try {
-            val rtdbUrls = listOf(
-                "$RTDB_BASE/global/announcements.json",
-                "$RTDB_BASE/settings/announcement.json"
-            )
-            for (url in rtdbUrls) {
-                val req = Request.Builder().url(url).get().build()
-                httpClient.newCall(req).execute().use { resp ->
-                    if (resp.isSuccessful) {
-                        val body = resp.body.string()
-                        val ann = parseAnnouncementJson(body)
-                        if (ann != null && isValidForAndroid(ann)) {
-                            Log.d(TAG, "Successfully fetched announcement from Firebase: ${ann.title}")
-                            return@withContext ann
-                        }
-                    }
+            val request = Request.Builder().url("${NuxConfig.SERVER_BASE_URL}/api/app/config").get().build()
+            httpClient.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) return@withContext null
+                val root = JsonParser.parseString(response.body.string()).asJsonObject
+                val appearance = root.getAsJsonObject("appearance") ?: return@withContext null
+                val title = appearance.get("announcementTitle")?.takeUnless { it.isJsonNull }?.asString.orEmpty()
+                val content = appearance.get("announcementContent")?.takeUnless { it.isJsonNull }?.asString.orEmpty()
+                val item = JsonObject().apply {
+                    addProperty("id", (title + "|" + content).hashCode().toString())
+                    addProperty("title", title)
+                    addProperty("content", content)
+                    addProperty("imageUrl", appearance.get("announcementImageUrl")?.takeUnless { it.isJsonNull }?.asString.orEmpty())
+                    addProperty("linkUrl", appearance.get("announcementLinkUrl")?.takeUnless { it.isJsonNull }?.asString.orEmpty())
+                    addProperty("enabled", appearance.get("announcementEnabled")?.takeUnless { it.isJsonNull }?.asBoolean ?: false)
+                    addProperty("targetPlatform", appearance.get("announcementTarget")?.takeUnless { it.isJsonNull }?.asString ?: "all")
                 }
+                parseAnnouncementJson(item.toString())?.takeIf { isValidForAndroid(it) }
             }
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed to fetch announcement from Firebase: ${e.message}")
+        } catch (error: Exception) {
+            Log.w(TAG, "Failed to fetch TG Launcher announcement: ${error.message}")
+            null
         }
-
-        // 2. Fallback ke REST API Backend Keystore
-        if (NuxConfig.isConfigured) {
-            try {
-                val apiUrl = "${NuxConfig.SERVER_BASE_URL}/api/announcement"
-                val reqBuilder = Request.Builder().url(apiUrl).get()
-                NuxConfig.applyAuthHeaders(reqBuilder)
-                httpClient.newCall(reqBuilder.build()).execute().use { resp ->
-                    if (resp.isSuccessful) {
-                        val body = resp.body.string()
-                        val ann = parseAnnouncementJson(body)
-                        if (ann != null && isValidForAndroid(ann)) {
-                            Log.d(TAG, "Successfully fetched announcement from API: ${ann.title}")
-                            return@withContext ann
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                Log.w(TAG, "Failed to fetch announcement from API: ${e.message}")
-            }
-        }
-
-        null
     }
-
     private fun isValidForAndroid(ann: NuxAnnouncement): Boolean {
         if (!ann.enabled) return false
         val platform = ann.targetPlatform.trim().lowercase()
