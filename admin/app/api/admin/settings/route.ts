@@ -18,7 +18,7 @@ const defaults:Record<string,any>={
 };
 export async function GET(req:NextRequest){
  if(!verifySession(req.cookies.get(getCookieName())?.value)) return NextResponse.json({error:'Unauthorized'},{status:401});
- try{await ensureSchema();const sql=database();const rows=await sql`SELECT key,value,updated_at FROM app_settings ORDER BY key`;const settings={...defaults};for(const row of rows)settings[row.key]=row.value;const social=settings.social||{};const encrypted=typeof social.livekitApiSecretEncrypted==='string'?social.livekitApiSecretEncrypted:'';settings.social={...social,livekitApiSecret:'',livekitApiSecretConfigured:Boolean(encrypted)};delete settings.social.livekitApiSecretEncrypted;return NextResponse.json({settings,defaults});}
+ try{await ensureSchema();const sql=database();const rows=await sql`SELECT key,value,updated_at FROM app_settings ORDER BY key`;const settings={...defaults};for(const row of rows){const base=defaults[row.key];settings[row.key]=base&&row.value&&typeof base==='object'&&typeof row.value==='object'?{...base,...row.value}:row.value;}const social=settings.social||{};const encrypted=typeof social.livekitApiSecretEncrypted==='string'?social.livekitApiSecretEncrypted:'';settings.social={...social,livekitApiSecret:'',livekitApiSecretConfigured:Boolean(encrypted)};delete settings.social.livekitApiSecretEncrypted;return NextResponse.json({settings,defaults});}
  catch(e:any){return NextResponse.json({error:e.message},{status:503});}
 }
 export async function PUT(req:NextRequest){
