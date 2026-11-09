@@ -19,8 +19,18 @@ export async function GET() {
     try {
       await ensureSchema();
       const sql = database();
-      const rows = await sql`SELECT value FROM app_settings WHERE key='updates' LIMIT 1`;
-      if (rows.length && rows[0].value) updatePolicy = { ...updatePolicy, ...rows[0].value };
+      const rows = await sql`SELECT key,value FROM app_settings WHERE key IN ('updates','general')`;
+      const settings = Object.fromEntries(rows.map((row: any) => [row.key, row.value || {}]));
+      const updates = settings.updates || {};
+      const general = settings.general || {};
+      updatePolicy = {
+        forceUpdate: updates.forceUpdate === true || general.forceUpdate === true,
+        minimumSupportedVersion: updates.forceUpdate === true
+          ? updates.minimumSupportedVersion || '1.0.0'
+          : general.forceUpdate === true
+            ? general.minimumAppVersion || updates.minimumSupportedVersion || '1.0.0'
+            : updates.minimumSupportedVersion || general.minimumAppVersion || '1.0.0',
+      };
     } catch (policyError) {
       console.error('[getAndroidVersion] update policy unavailable', policyError);
     }
