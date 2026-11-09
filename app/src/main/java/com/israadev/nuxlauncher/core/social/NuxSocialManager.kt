@@ -658,34 +658,25 @@ object NuxSocialManager {
     }
 
     suspend fun blockUser(targetUid: String): Result<Unit> = withContext(Dispatchers.IO) {
-        val myUid = getCurrentUser()?.uid ?: return@withContext Result.failure(Exception("Belum login"))
-        val token = getAuthToken()
-
+        val user = getCurrentUser() ?: return@withContext Result.failure(Exception("Belum login"))
+        val token = getAuthToken() ?: return@withContext Result.failure(Exception("Sesi login kedaluwarsa"))
         try {
-            // Catat status "blocked" di daftar teman pengguna sendiri
-            val myReq = Request.Builder()
-                .url(buildUrl("shared_social/friends/$myUid/$targetUid", token))
-                .put("\"blocked\"".toRequestBody(JSON_MEDIA))
-                .build()
-            client.newCall(myReq).execute().close()
-
-            // Hapus relasi di pihak target
-            val targetReq = Request.Builder()
-                .url(buildUrl("shared_social/friends/$targetUid/$myUid", token))
-                .delete()
-                .build()
-            client.newCall(targetReq).execute().close()
-
-            // Tutup chat jika sedang aktif
-            if (_activeChatFriend.value?.uid == targetUid) {
-                closeChat()
+            val response = AuthService.getApi("/api/social/friends", bearerToken = token).getOrElse { throw it }
+            val items = JSONObject(response).optJSONArray("items") ?: org.json.JSONArray()
+            var friendshipId = 0
+            for (i in 0 until items.length()) {
+                val item = items.optJSONObject(i) ?: continue
+                val matches = (item.optString("requester_id") == user.uid && item.optString("addressee_id") == targetUid) ||
+                    (item.optString("requester_id") == targetUid && item.optString("addressee_id") == user.uid)
+                if (matches) { friendshipId = item.optInt("id"); break }
             }
-
-            fetchFriends()
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+            if (friendshipId <= 0) return@withContext Result.failure(Exception("Relasi pengguna tidak ditemukan"))
+            val payload = JSONObject().put("action", "block").put("id", friendshipId).toString()
+            val result = AuthService.postApi("/api/social/friends", payload, bearerToken = token).map { Unit }
+            if (result.isSuccess && _activeChatFriend.value?.uid == targetUid) closeChat()
+            if (result.isSuccess) fetchFriends()
+            result
+        } catch (e: Exception) { Result.failure(e) }
     }
 
     suspend fun unblockUser(targetUid: String): Result<Unit> = withContext(Dispatchers.IO) {
