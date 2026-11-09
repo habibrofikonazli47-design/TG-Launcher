@@ -13,7 +13,7 @@ if (localPropertiesFile.exists()) {
         localProperties.load(stream)
     }
 }
-val rawServerUrl: String = localProperties.getProperty("tg.server.url") ?: "https://tg-launcher-admin-habibrofikonazli.vercel.app"
+val rawServerUrl: String = localProperties.getProperty("tg.server.url") ?: "https://tg-launcher-admin.vercel.app"
 val rawServerApiKey: String = localProperties.getProperty("tg.server.api.key") ?: ""
 val rawAiApiKey: String = localProperties.getProperty("tg.ai.api.key") ?: ""
 val rawAiApiKey2: String = localProperties.getProperty("tg.ai.api.key2") ?: ""
