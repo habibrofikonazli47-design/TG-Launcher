@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.viewinterop.AndroidView
 import java.io.File
+import com.israadev.nuxlauncher.core.account.AccountManager
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
@@ -30,6 +31,7 @@ fun HeroBannerVideoPlayer(
     rotationDegrees: Int = 0,
     modifier: Modifier = Modifier
 ) {
+    if (AccountManager.getActiveUser()?.features?.contains("custom_video_hero") != true) return
     if (videoPath.isBlank() || !File(videoPath).exists()) {
         return
     }
