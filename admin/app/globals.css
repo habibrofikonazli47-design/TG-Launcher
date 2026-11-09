@@ -122,3 +122,43 @@ input:focus,select:focus,textarea:focus{border-color:#35d9ae;box-shadow:0 0 0 3p
 .pwa-help{position:relative;width:min(440px,100%);padding:28px;border:1px solid #2c6656;border-radius:18px;background:linear-gradient(145deg,#172231,#0d131d);box-shadow:0 24px 90px #000a;color:#eef2f7}
 .pwa-help h2{margin:0 32px 14px 0}.pwa-help p{color:#aab6c5;line-height:1.7;font-size:14px}.pwa-help .primary{margin-top:10px}.pwa-help-close{position:absolute;right:14px;top:14px;font-size:22px;padding:3px 10px}
 @media(max-width:600px){.pwa-install,.pwa-installed{top:auto;right:12px;bottom:calc(16px + env(safe-area-inset-bottom));}.pwa-install{padding:12px 16px;box-shadow:0 10px 32px #000b,0 0 20px #1ddba526}}
+
+
+/* TG Admin mobile-first refresh — electric blue glass UI */
+:root{--tg-accent:#38bdf8;--tg-blue:#3b82f6;--tg-panel:#101a2a;--tg-line:#263b57}
+html,body{background:#070b14;color:#eaf3ff}
+.shell{background:radial-gradient(ellipse at 65% -10%,#12366a55,transparent 38%),#070b14}
+.shell aside{background:linear-gradient(180deg,#0b1424,#080e19);border-color:#1d3552}
+.brand{color:#55c7ff}.brand span{color:#f1f7ff}
+.shell aside .nav.active{background:linear-gradient(105deg,#12345a,#10253d);border-color:#24568a;color:#8bd8ff;box-shadow:inset 3px 0 #39baff,0 8px 24px #168bff16}
+.nav.active .nav-icon{background:#153e68;color:#8bd8ff}
+.nav-indicator,.status i{background:#42c5ff;box-shadow:0 0 12px #42c5ff}
+.content>header{background:linear-gradient(110deg,#101c2eeb,#0c1524eb);border-color:#203b5c}
+.status{border-color:#24527a;background:#10233a;color:#9bdcff}
+.stat b{background:linear-gradient(100deg,#f2f8ff,#6bcaff);-webkit-background-clip:text;background-clip:text}
+.card{background:linear-gradient(145deg,#121f32,#0c1523);border-color:#263b56;box-shadow:0 18px 48px #0003}
+button:hover{border-color:#45bfff;box-shadow:0 8px 24px #168bff20}
+input:focus,select:focus,textarea:focus{border-color:#45bfff;box-shadow:0 0 0 3px #249dff22;background:#101d30}
+.primary{background:linear-gradient(110deg,#1675d1,#28b9ef);box-shadow:0 7px 20px #168bff2a}
+.primary:hover{background:linear-gradient(110deg,#238eea,#47c9f5);box-shadow:0 10px 26px #168bff40}
+.feature-chips span{background:#102b47;border-color:#24527a;color:#a9ddff}
+.pwa-install{border-color:#286ba3;background:linear-gradient(120deg,#12345a,#10243b);color:#9bdcff}
+.pwa-installed{border-color:#24527a;background:#10233a;color:#9bdcff}
+.db-dashboard{display:grid;gap:16px}
+.db-hero{padding:24px;display:flex;align-items:flex-start;justify-content:space-between;gap:18px;background:radial-gradient(ellipse at 90% 0,#1679cb30,transparent 48%),linear-gradient(120deg,#132640,#0d1727)}
+.db-hero h2{font-size:25px;margin:8px 0}.db-hero p{color:#9aacc2;margin:0;font-size:13px;line-height:1.6}
+.eyebrow{font-size:10px;font-weight:850;letter-spacing:1.8px;color:#54bfff}
+.db-live,.db-offline,.db-tag{display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border-radius:999px;font-size:10px;font-weight:850;letter-spacing:.6px;border:1px solid #245b83;background:#102a43;color:#8dd7ff;white-space:nowrap}
+.db-live i{width:7px;height:7px;border-radius:50%;background:#48e2b0;box-shadow:0 0 10px #48e2b0}
+.db-offline,.muted-tag{border-color:#424b5c;background:#202938;color:#aab6c6}
+.db-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.db-metric{padding:18px;min-width:0}.db-metric span,.db-metric small{display:block;color:#93a7c0;font-size:11px}.db-metric b{display:block;font-size:clamp(21px,3vw,29px);margin:12px 0 5px;overflow-wrap:anywhere;color:#dff4ff}.db-metric small{font-size:10px}
+.db-panel{padding:20px}.db-section-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}.db-section-head h3{font-size:18px;margin:6px 0}.db-section-head p{margin:5px 0}
+.db-resource-row,.db-table-row{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:14px 0;border-top:1px solid #23364f}
+.db-resource-row b,.db-table-row b{display:block;font-size:13px}.db-resource-row small,.db-table-row small{display:block;color:#8fa2bb;font-size:11px;line-height:1.55;margin-top:5px;max-width:650px}
+.db-table-row strong{font-size:12px;color:#9bdcff;white-space:nowrap}.cleanup-summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+.cleanup-summary>div{padding:16px;border-radius:13px;background:#0b192a;border:1px solid #213a56}.cleanup-summary b{display:block;font-size:24px;color:#dff4ff}.cleanup-summary small{display:block;color:#90a5bf;font-size:11px;margin-top:4px}
+.cleanup-card .warning{line-height:1.65}
+@media(max-width:980px){.shell{grid-template-columns:1fr}.shell aside{position:sticky;top:0;z-index:40;display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;overflow-x:auto;overflow-y:hidden;backdrop-filter:blur(18px);padding:10px;gap:8px}.shell aside .brand{font-size:20px;flex:0 0 auto;padding:0 8px}.shell aside .muted,.nav-caption,.nav-group-title{display:none}.shell aside .nav-group{display:contents}.shell aside .nav{flex:0 0 auto;width:auto;min-height:40px;white-space:nowrap}.shell aside .logout{margin:0 0 0 auto;flex:0 0 auto}.content{padding:16px}.db-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.content{padding:12px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}.content>header{padding:14px;border-radius:14px}.content>header h1{font-size:21px}.shell aside{padding:8px;gap:6px}.shell aside .nav{font-size:11px;min-height:38px;padding:7px 9px;border-radius:10px}.nav-icon{width:21px;height:21px;flex-basis:21px}.db-hero{padding:18px;flex-direction:column}.db-hero h2{font-size:22px}.db-metrics{gap:9px}.db-metric{padding:14px;border-radius:14px}.db-metric b{font-size:22px;margin:9px 0 4px}.db-panel{padding:15px;border-radius:15px}.db-section-head{align-items:flex-start}.db-section-head h3{font-size:16px}.db-resource-row{align-items:flex-start;flex-direction:column;gap:8px}.db-table-row{padding:12px 0}.db-table-row b{overflow-wrap:anywhere}.cleanup-summary>div{padding:13px}.cleanup-summary b{font-size:21px}.db-panel .actions{display:grid;grid-template-columns:1fr}.db-panel .actions button{width:100%}.header-right{gap:6px}.status{font-size:8px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){.db-dashboard *{animation:none!important;transition:none!important}}
