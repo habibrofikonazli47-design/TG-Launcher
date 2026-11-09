@@ -520,88 +520,38 @@ object NuxSocialManager {
     }
 
     suspend fun searchUser(query: String) = withContext(Dispatchers.IO) {
-        val q = query.trim().lowercase()
+        val q = query.trim()
         if (q.isEmpty()) {
             _searchResults.value = emptyList()
             return@withContext
         }
-
-        val myUid = getCurrentUser()?.uid ?: ""
-        var token = getAuthToken()
         _isSearching.value = true
-
-        val results = mutableListOf<NuxUserProfile>()
-        val foundUids = mutableSetOf<String>()
         try {
-            var url = buildUrl("shared_social/public_profiles", token)
-            var resp = client.newCall(Request.Builder().url(url).get().build()).execute()
-            if (resp.code == 401 || resp.code == 403) {
-                resp.close()
-                token = getAuthToken(forceRefresh = true)
-                url = buildUrl("shared_social/public_profiles", token)
-                resp = client.newCall(Request.Builder().url(url).get().build()).execute()
+            val token = getAuthToken() ?: throw Exception("Sesi login kedaluwarsa")
+            val encoded = java.net.URLEncoder.encode(q, "UTF-8")
+            val result = AuthService.getApi("/api/social/search?q=$encoded&limit=30", bearerToken = token)
+            val root = JSONObject(result.getOrElse { throw it })
+            val items = root.optJSONArray("items") ?: org.json.JSONArray()
+            val results = mutableListOf<NuxUserProfile>()
+            for (i in 0 until items.length()) {
+                val item = items.optJSONObject(i) ?: continue
+                val status = item.optString("presence", "offline")
+                val lastSeen = try { java.time.Instant.parse(item.optString("last_seen_at")).toEpochMilli() } catch (_: Exception) { null }
+                results.add(NuxUserProfile(
+                    uid = item.optString("user_id"),
+                    username = item.optString("username", "TG Player"),
+                    photoURL = item.optString("avatar_url", ""),
+                    status = status,
+                    lastOnline = lastSeen,
+                    platform = item.optString("platform", "android"),
+                    isAndroid = item.optString("platform", "android") == "android"
+                ))
             }
-            val body = resp.body?.string() ?: ""
-            resp.close()
-
-            if (resp.isSuccessful && body.isNotEmpty() && body != "null") {
-                val json = JSONObject(body)
-                for (key in json.keys()) {
-                    if (key == myUid) continue
-                    val uObj = json.optJSONObject(key) ?: continue
-                    val uname = uObj.optString("username", "")
-                    if (uname.lowercase().contains(q)) {
-                        val isVerified = uObj.optBoolean("verified", false) || uObj.optBoolean("isVerified", false)
-                        val isPremium = uObj.optBoolean("isPremium", false)
-                        foundUids.add(key)
-                        results.add(
-                            NuxUserProfile(
-                                uid = key,
-                                username = uname,
-                                photoURL = uObj.optString("photoURL", ""),
-                                status = uObj.optString("status", "offline"),
-                                platform = uObj.optString("platform", "windows"),
-                                isAndroid = uObj.optBoolean("isAndroid", false),
-                                isVerified = isVerified,
-                                isPremium = isPremium
-                            )
-                        )
-                    }
-                }
-            }
-
-            // Fallback: Check global/auth_registry (public read rules) to find users not yet in public_profiles
-            try {
-                val authRegUrl = "$RTDB_BASE/global/auth_registry.json"
-                val regResp = client.newCall(Request.Builder().url(authRegUrl).get().build()).execute()
-                val regBody = regResp.body?.string() ?: ""
-                regResp.close()
-                if (regResp.isSuccessful && regBody.isNotEmpty() && regBody != "null") {
-                    val regJson = JSONObject(regBody)
-                    for (key in regJson.keys()) {
-                        if (key == myUid || foundUids.contains(key)) continue
-                        val uObj = regJson.optJSONObject(key) ?: continue
-                        val uname = uObj.optString("username", "")
-                        if (uname.lowercase().contains(q)) {
-                            results.add(
-                                NuxUserProfile(
-                                    uid = key,
-                                    username = uname,
-                                    photoURL = uObj.optString("photoURL", ""),
-                                    status = "offline",
-                                    platform = uObj.optString("platform", "android"),
-                                    isAndroid = uObj.optString("platform", "") == "android",
-                                    isVerified = uObj.optBoolean("isActivated", false),
-                                    isPremium = false
-                                )
-                            )
-                        }
-                    }
-                }
-            } catch (_: Exception) {}
-
-        } catch (_: Exception) {} finally {
             _searchResults.value = results
+        } catch (e: Exception) {
+            Log.w(TAG, "TG Social user search failed", e)
+            _searchResults.value = emptyList()
+        } finally {
             _isSearching.value = false
         }
     }
