@@ -85,10 +85,10 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            // Wajibkan versi terbaru sebelum launcher dapat digunakan.
+            // Paksa update hanya ketika admin mengaktifkan kebijakan forceUpdate.
             LaunchedEffect(Unit) {
                 UpdateManager.checkForUpdate(this@MainActivity).onSuccess { info ->
-                    if (info.isUpdateAvailable) mandatoryUpdate = info
+                    if (info.isMandatory) mandatoryUpdate = info
                 }
             }
 
