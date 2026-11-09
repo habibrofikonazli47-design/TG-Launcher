@@ -184,6 +184,12 @@ object AccountManager {
 
     fun addAccount(context: Context, account: UserAccount) {
         val list = _accounts.value.toMutableList()
+        val isExisting = list.any { it.id == account.id || (it.username.equals(account.username, ignoreCase = true) && it.safeAccountType == account.safeAccountType) }
+        val maxAccounts = _launcherUser.value?.limits?.get("accounts") ?: 2
+        if (!isExisting && maxAccounts >= 0 && list.size >= maxAccounts) {
+            android.widget.Toast.makeText(context, "Batas akun tersimpan untuk paket ini adalah $maxAccounts. Hubungi admin TG Launcher untuk menambah kuota.", android.widget.Toast.LENGTH_LONG).show()
+            return
+        }
         list.removeAll { it.id == account.id || (it.username.equals(account.username, ignoreCase = true) && it.safeAccountType == account.safeAccountType) }
         list.add(0, account)
         _accounts.value = list
