@@ -46,7 +46,7 @@ export async function GET() {
       return noUpdate('Kanal pembaruan TG Launcher sedang dinonaktifkan.');
     }
 
-    const releasesUrl = betaChannel && !stableChannel
+    const releasesUrl = betaChannel
       ? 'https://api.github.com/repos/habibrofikonazli47-design/TG-Launcher/releases?per_page=20'
       : 'https://api.github.com/repos/habibrofikonazli47-design/TG-Launcher/releases/latest';
     const response = await fetch(releasesUrl, {
@@ -56,7 +56,7 @@ export async function GET() {
     if (!response.ok) throw new Error('GitHub Releases tidak dapat diakses.');
     const releasePayload = await response.json();
     const release = Array.isArray(releasePayload)
-      ? releasePayload.find((item: any) => betaChannel && !stableChannel ? item.prerelease === true : item.prerelease !== true)
+      ? releasePayload.find((item: any) => item.prerelease === true ? betaChannel : stableChannel)
       : releasePayload;
     if (!release) return noUpdate('Belum ada rilis pada kanal pembaruan yang dipilih.');
     const asset = (release.assets || []).find((item: any) => /^TG-Launcher-.*\.apk$/i.test(item.name));
