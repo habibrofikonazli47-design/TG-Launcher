@@ -126,12 +126,16 @@ fun DashboardScreen() {
     val pendingImport by NuxAddonImportManager.pendingImport.collectAsState()
 
     val handleRequestCreateInstance = {
-        val maxInstances = launcherUser?.limits?.get("instances") ?: if (launcherUser?.isActivated == true) -1 else 3
-        if (maxInstances >= 0 && instances.size >= maxInstances) {
-            premiumInitialPrompt = "Paket akun ini dibatasi maksimal $maxInstances instance. Ubah batas paket di Admin Panel TG Launcher untuk menyesuaikannya."
-            showPremiumDialog = true
+        if (!RemoteLauncherConfig.isEnabled(remoteConfig, "game", "allowCustomInstances")) {
+            Toast.makeText(context, "Pembuatan instance dinonaktifkan oleh administrator TG Launcher.", Toast.LENGTH_LONG).show()
         } else {
-            showAddDialog = true
+            val maxInstances = launcherUser?.limits?.get("instances") ?: if (launcherUser?.isActivated == true) -1 else 3
+            if (maxInstances >= 0 && instances.size >= maxInstances) {
+                premiumInitialPrompt = "Paket akun ini dibatasi maksimal $maxInstances instance. Ubah batas paket di Admin Panel TG Launcher untuk menyesuaikannya."
+                showPremiumDialog = true
+            } else {
+                showAddDialog = true
+            }
         }
     }
 
