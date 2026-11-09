@@ -647,7 +647,13 @@ fun DashboardScreen() {
                                                 imgBtnShape
                                             )
                                             .clickable {
-                                                videoPickerLauncher.launch("video/*")
+                                                val hasCustomHero = if (launcherUser?.features?.isNotEmpty() == true) "custom_video_hero" in launcherUser.features else launcherUser?.isActivated == true
+                                                if (hasCustomHero) {
+                                                    videoPickerLauncher.launch("video/*")
+                                                } else {
+                                                    premiumInitialPrompt = "Video hero kustom tidak termasuk dalam paket akun ini."
+                                                    showPremiumDialog = true
+                                                }
                                             },
                                         contentAlignment = Alignment.Center
                                     ) {
