@@ -28,7 +28,7 @@ object NuxConfig {
         get() = if (isConfigured) "$SERVER_BASE_URL/livekit/token" else ""
 
     val UPDATE_ENDPOINT: String
-        get() = if (isConfigured) "$SERVER_BASE_URL/getAndroidVersion" else ""
+        get() = "https://tg-launcher-admin-habibrofikonazlis-projects.vercel.app/api/getAndroidVersion"
 
     val BUY_KEY_URL: String
         get() = if (isConfigured) "$SERVER_BASE_URL/android-key" else ""
