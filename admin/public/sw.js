@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tg-admin-shell-v1';
+const CACHE_NAME = 'tg-admin-shell-v2';
 const SHELL = ['/offline', '/manifest.webmanifest', '/icons/tg-admin.svg'];
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting()));
