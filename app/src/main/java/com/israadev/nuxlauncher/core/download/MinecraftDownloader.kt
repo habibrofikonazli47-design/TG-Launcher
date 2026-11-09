@@ -184,6 +184,9 @@ class MinecraftDownloader(
 
             // 5. Download Fabric Loader & Libraries if instance uses Fabric
             if (instance.loader.equals("fabric", ignoreCase = true)) {
+                if (!RemoteLauncherConfig.isEnabled(RemoteLauncherConfig.config.value, "mods", "fabricEnabled")) {
+                    throw IllegalStateException("Fabric dinonaktifkan oleh administrator TG Launcher.")
+                }
                 onProgress(0.92f, "Setting up Fabric Loader...")
                 var loaderVer = instance.loaderVersion
                 if (loaderVer.isBlank()) {
