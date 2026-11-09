@@ -14,7 +14,7 @@ export async function GET() {
     if (!asset) return Response.json({ error: 'APK release belum tersedia.' }, { status: 404 });
     const tag = String(release.tag_name || '').replace(/^v/, '');
     const codeMatch = tag.match(/(?:tg|build)?(\d+)$/i);
-    const code = codeMatch ? Number(codeMatch[1]) : 18;
+    const code = codeMatch ? 17 + Number(codeMatch[1]) : 18;
     return Response.json({
       code: Number.isFinite(code) ? code : 18,
       version: tag || release.name || '1.1.6-tg1',
