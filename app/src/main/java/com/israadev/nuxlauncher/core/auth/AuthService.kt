@@ -6,6 +6,8 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
@@ -17,6 +19,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.ByteArrayOutputStream
+import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 import com.israadev.nuxlauncher.core.account.AccountManager
 import com.israadev.nuxlauncher.core.network.NuxConfig
@@ -496,12 +499,21 @@ object AuthService {
     suspend fun activateLicense(
         uid: String,
         licenseKey: String,
-        userToken: String? = null
+        userToken: String? = null,
+        context: Context
     ): Result<ActivateResult> = withContext(Dispatchers.IO) {
         val cleanKey = licenseKey.trim().uppercase()
+        val androidId = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID).orEmpty()
+        if (androidId.isBlank()) return@withContext Result.failure(Exception("Identitas perangkat tidak tersedia."))
+        val deviceId = MessageDigest.getInstance("SHA-256")
+            .digest("${BuildConfig.APPLICATION_ID}:$androidId".toByteArray(Charsets.UTF_8))
+            .joinToString("") { "%02x".format(it) }
+        val deviceName = "${Build.MANUFACTURER} ${Build.MODEL}".trim().take(120)
         val payload = JsonObject().apply {
             addProperty("uid", uid.trim())
             addProperty("licenseKey", cleanKey)
+            addProperty("deviceId", deviceId)
+            addProperty("deviceName", deviceName)
         }
 
         // 1. Coba verifikasi & aktivasi via API backend
