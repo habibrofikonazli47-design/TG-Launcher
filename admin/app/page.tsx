@@ -35,7 +35,7 @@ export default function Home(){
  async function logout(){await fetch('/api/admin/session',{method:'DELETE'});setLogged(false);setData(null);}
  function setField(key:string,value:any){setSettings((v:any)=>({...v,[tab]:{...v[tab],[key]:value}}));}
  useEffect(()=>{loadSession()},[]);
- useEffect(()=>{if(logged&&tab==='users')loadUsers();if(logged&&tab==='plans')loadPlans();if(logged&&tab==='licenses')loadLicenseKeys();if(logged&&tab==='database')loadDb();if(logged&&tab==='socialManage')loadSocialAdmin();},[logged,tab]);
+ useEffect(()=>{if(logged&&tab==='users')loadUsers();if(logged&&tab==='plans')loadPlans();if(logged&&tab==='licenses')loadLicenseKeys();if(logged&&(tab==='database'||tab==='overview'))loadDb();if(logged&&tab==='socialManage')loadSocialAdmin();},[logged,tab]);
  if(!ready)return <main className="center">Memuat TG Admin…</main>;
  if(!logged)return <main className="login-wrap"><form className="login card" onSubmit={login}><div className="brand">TG <span>LAUNCHER</span></div><p className="muted">CONTROL CENTER</p><h1>Admin Login</h1><label>Admin ID</label><input value={username} onChange={e=>setUsername(e.target.value)} autoComplete="username"/><label>Password</label><input type="password" value={password} onChange={e=>setPassword(e.target.value)} autoComplete="current-password"/>{error&&<p className="error">{error}</p>}<button className="primary">Masuk ke Panel</button><small>Login admin diverifikasi dari konfigurasi rahasia Vercel.</small></form></main>;
  const section=sections.find(x=>x[0]===tab);
