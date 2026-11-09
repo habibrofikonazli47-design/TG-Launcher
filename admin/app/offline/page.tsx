@@ -4,7 +4,7 @@ export default function OfflinePage() {
       <div style={{fontSize:28,fontWeight:900,letterSpacing:2,color:'#39dfb0'}}>TG ADMIN</div>
       <h1 style={{fontSize:24}}>Koneksi sedang offline</h1>
       <p style={{color:'#aab6c5',lineHeight:1.7}}>Panel admin membutuhkan koneksi internet untuk memuat data akun dan pengaturan. Sambungkan internet lalu coba lagi.</p>
-      <button onClick={() => window.location.reload()} style={{padding:'12px 20px',borderRadius:10,border:0,background:'#16c997',color:'#06130f',fontWeight:800}}>Coba lagi</button>
+      <a href="/" style={{display:'inline-block',padding:'12px 20px',borderRadius:10,background:'#16c997',color:'#06130f',fontWeight:800,textDecoration:'none'}}>Coba lagi</a>
     </section>
   </main>;
 }
