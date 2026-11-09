@@ -41,6 +41,7 @@ import com.israadev.nuxlauncher.core.lang.NuxLanguageManager
 import com.israadev.nuxlauncher.core.instance.InstanceManager
 import com.israadev.nuxlauncher.core.models.*
 import com.israadev.nuxlauncher.core.mods.NuxModManager
+import com.israadev.nuxlauncher.core.network.RemoteLauncherConfig
 import com.israadev.nuxlauncher.core.mods.WorldInfo
 import com.israadev.nuxlauncher.ui.components.*
 import com.israadev.nuxlauncher.ui.theme.NuxColors
@@ -184,6 +185,8 @@ fun ModsScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val remoteConfig by RemoteLauncherConfig.config.collectAsState()
+    val modrinthEnabled = RemoteLauncherConfig.isEnabled(remoteConfig, "mods", "modrinthEnabled")
     val scope = rememberCoroutineScope()
     val langVersion by NuxLanguageManager.languageVersion.collectAsState()
 
@@ -259,6 +262,12 @@ fun ModsScreen(
 
     // Search Modrinth
     fun performSearch(page: Int = 1) {
+        if (!modrinthEnabled) {
+            searchHits = emptyList()
+            totalHits = 0
+            searchErrorMessage = "Penelusuran Modrinth dinonaktifkan oleh administrator TG Launcher."
+            return
+        }
         val inst = selectedInstance ?: return
         isSearching = true
         searchErrorMessage = null
@@ -288,8 +297,10 @@ fun ModsScreen(
         }
     }
 
+    LaunchedEffect(modrinthEnabled) { if (!modrinthEnabled && mainMode == "browse") mainMode = "installed" }
+
     // Trigger reload when tab, type, world or instance changes
-    LaunchedEffect(selectedInstance, activeType, mainMode, selectedWorld, filterByGameVersion) {
+    LaunchedEffect(selectedInstance, activeType, mainMode, selectedWorld, filterByGameVersion, modrinthEnabled) {
         if (selectedInstance != null) {
             reloadWorlds()
             reloadInstalled()
@@ -573,6 +584,7 @@ fun ModsScreen(
                         )
                     }
 
+                    if (modrinthEnabled) {
                     val isBrowse = mainMode == "browse"
                     Box(
                         modifier = Modifier
@@ -594,6 +606,7 @@ fun ModsScreen(
                             fontWeight = if (isBrowse) FontWeight.Black else FontWeight.SemiBold,
                             fontSize = 9.5.sp
                         )
+                    }
                     }
                 }
             }
