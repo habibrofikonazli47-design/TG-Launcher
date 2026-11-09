@@ -661,7 +661,7 @@ fun DashboardScreen() {
                                                 imgBtnShape
                                             )
                                             .clickable {
-                                                val hasCustomHero = if (currentLauncherUser?.features?.isNotEmpty() == true) "custom_video_hero" in currentLauncherUser.features else currentLauncherUser?.isActivated == true
+                                                val hasCustomHero = currentLauncherUser?.features?.contains("custom_video_hero") == true
                                                 if (hasCustomHero) {
                                                     videoPickerLauncher.launch("video/*")
                                                 } else {
