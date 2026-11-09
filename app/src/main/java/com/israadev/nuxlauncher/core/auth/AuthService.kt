@@ -536,13 +536,18 @@ object AuthService {
         if (activeUser != null && activeUser.uid != uid) {
             return@withContext Result.failure(Exception("Akun aktif berubah. Silakan buka ulang sesi akun."))
         }
-        var activeToken = userToken?.takeIf { it.isNotBlank() } ?: activeUser?.idToken
+        val storedToken = activeUser?.idToken?.takeIf { it.isNotBlank() }
+        val suppliedToken = userToken?.takeIf { it.isNotBlank() }
+        var activeToken = storedToken ?: suppliedToken
         val refreshToken = activeUser?.refreshToken.orEmpty()
         if (refreshToken.isNotBlank()) {
             val refreshedToken = refreshIdToken(refreshToken)
             if (!refreshedToken.isNullOrBlank()) {
+                // Always prefer the fresh token. The UI may pass an older captured token.
                 activeToken = refreshedToken
             }
+        } else if (activeToken.isNullOrBlank()) {
+            activeToken = suppliedToken
         }
         if (activeToken.isNullOrBlank()) {
             return@withContext Result.failure(Exception("Sesi akun tidak tersedia. Silakan login ulang."))
