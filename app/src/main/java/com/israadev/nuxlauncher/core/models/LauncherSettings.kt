@@ -17,6 +17,7 @@ data class LauncherSettings(
     val mouseSizeDp: Int = 24, // 16 - 48 dp
     val hideMouseInClickMode: Boolean = true,
     val physicalMouseMode: Boolean = true, // Auto-hide virtual cursor & enable system cursor when physical mouse is used
+    val disableGestures: Boolean = false, // Controls-only mode: disable touchscreen gestures on the game surface
 
     // Graphics & Performance
     val resolutionRatio: Int = 100, // 50% - 125%
