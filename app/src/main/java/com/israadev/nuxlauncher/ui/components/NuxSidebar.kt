@@ -92,7 +92,7 @@ fun NuxSidebar(
             contentAlignment = Alignment.Center
         ) {
             Image(
-                painter = painterResource(id = R.drawable.nux_icon),
+                painter = painterResource(id = R.drawable.tg_launcher_icon),
                 contentDescription = "TG Launcher Logo",
                 modifier = Modifier.size((24.dp).resp())
             )
