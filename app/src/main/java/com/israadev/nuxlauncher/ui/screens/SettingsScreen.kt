@@ -182,6 +182,7 @@ fun SettingsScreen(
     var captureSensitivity by remember(currentSettings.captureSensitivity) { mutableIntStateOf(currentSettings.captureSensitivity) }
     var mouseSizeDp by remember(currentSettings.mouseSizeDp) { mutableIntStateOf(currentSettings.mouseSizeDp) }
     var physicalMouseMode by remember(currentSettings.physicalMouseMode) { mutableStateOf(currentSettings.physicalMouseMode) }
+    var disableGestures by remember(currentSettings.disableGestures) { mutableStateOf(currentSettings.disableGestures) }
 
     var resolutionRatio by remember(currentSettings.resolutionRatio) { mutableIntStateOf(currentSettings.resolutionRatio) }
     var autoOptimizeMC by remember(currentSettings.autoOptimizeMinecraft) { mutableStateOf(currentSettings.autoOptimizeMinecraft) }
@@ -229,6 +230,7 @@ fun SettingsScreen(
             captureSensitivity = captureSensitivity,
             mouseSizeDp = mouseSizeDp,
             physicalMouseMode = physicalMouseMode,
+            disableGestures = disableGestures,
             resolutionRatio = resolutionRatio,
             autoOptimizeMinecraft = autoOptimizeMC,
             sustainedPerformanceMode = sustainedPerf,
@@ -1743,6 +1745,49 @@ fun SettingsScreen(
                             color = NuxColors.GrayNeutral
                         )
 
+                        // Controls-only mode: disable touch gestures while keeping virtual control buttons active
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(NuxColors.SurfaceInput, RoundedCornerShape(6.dp))
+                                .border(1.dp, NuxColors.CardBorder, RoundedCornerShape(6.dp))
+                                .padding(10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Disable Gestures",
+                                    fontSize = 10.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = if (disableGestures)
+                                        "Controls Only: swipe, drag, and touch-camera gestures are disabled. Use the on-screen control buttons."
+                                    else
+                                        "Allow touchscreen gestures for camera movement and mouse navigation.",
+                                    fontSize = 9.sp,
+                                    color = if (disableGestures) NuxColors.MintGreen else NuxColors.GrayNeutral,
+                                    lineHeight = 12.sp
+                                )
+                            }
+                            Switch(
+                                checked = disableGestures,
+                                onCheckedChange = {
+                                    disableGestures = it
+                                    commitSettings()
+                                },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color.White,
+                                    checkedTrackColor = NuxColors.ForestGreen,
+                                    uncheckedThumbColor = NuxColors.GrayNeutral,
+                                    uncheckedTrackColor = NuxColors.CardBorder
+                                )
+                            )
+                        }
+
                         // CUSTOM CONTROLS / GUI EDITOR ACTION CARD
                         Box(
                             modifier = Modifier
@@ -2087,6 +2132,7 @@ fun SettingsScreen(
                                     captureSensitivity = reset.captureSensitivity
                                     mouseSizeDp = reset.mouseSizeDp
                                     physicalMouseMode = reset.physicalMouseMode
+                                    disableGestures = reset.disableGestures
                                     resolutionRatio = reset.resolutionRatio
                                     autoOptimizeMC = reset.autoOptimizeMinecraft
                                     sustainedPerf = reset.sustainedPerformanceMode
