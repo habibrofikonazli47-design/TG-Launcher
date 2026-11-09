@@ -95,7 +95,7 @@ fun DashboardScreen() {
             add("home"); add("settings")
             if (RemoteLauncherConfig.isEnabled(remoteConfig, "social", "friendsEnabled")) add("friends")
             if (RemoteLauncherConfig.isEnabled(remoteConfig, "accounts", "offlineLoginEnabled") || RemoteLauncherConfig.isEnabled(remoteConfig, "accounts", "microsoftLoginEnabled") || RemoteLauncherConfig.isEnabled(remoteConfig, "accounts", "elybyLoginEnabled")) add("accounts")
-            if (RemoteLauncherConfig.isEnabled(remoteConfig, "mods", "modrinthEnabled") || RemoteLauncherConfig.isEnabled(remoteConfig, "mods", "curseforgeEnabled") || RemoteLauncherConfig.isEnabled(remoteConfig, "mods", "allowManualImport")) add("mods")
+            if (RemoteLauncherConfig.isEnabled(remoteConfig, "mods", "modrinthEnabled") || RemoteLauncherConfig.isEnabled(remoteConfig, "mods", "allowManualImport")) add("mods")
             if (RemoteLauncherConfig.isEnabled(remoteConfig, "ai", "assistantEnabled")) add("ai")
         }
     }
