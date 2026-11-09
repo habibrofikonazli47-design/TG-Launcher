@@ -94,6 +94,12 @@ export async function POST(req: NextRequest, context: { params: Promise<{ path: 
     }
 
     if (path === 'android/register') {
+      await ensureSchema();
+      const policyRows = await database()`SELECT key,value FROM app_settings WHERE key IN ('general','accounts')`;
+      const policies = Object.fromEntries(policyRows.map((row:any) => [row.key, row.value || {}]));
+      if (policies.general?.allowRegistration === false || policies.accounts?.registrationEnabled === false) {
+        return NextResponse.json({ error: 'Pendaftaran akun sedang dinonaktifkan oleh administrator.' }, { status: 403 });
+      }
       const auth = await firebasePost('accounts:signUp', {
         email: String(body.email || '').trim().toLowerCase(), password: String(body.password || ''), returnSecureToken: true,
       });
