@@ -1473,6 +1473,7 @@ fun GameScreen(
             screenHeight = screenHeight,
             cursorMode = gameCursorMode,
             controlMode = mouseControlMode,
+            disableGestures = launcherSettings.disableGestures,
             cursorPosition = Offset(cursorX, cursorY),
             cursorSensitivity = launcherSettings.cursorSensitivity / 100f,
             requestPointerCapture = !launcherSettings.physicalMouseMode,
