@@ -187,6 +187,7 @@ fun ModsScreen(
     val context = LocalContext.current
     val remoteConfig by RemoteLauncherConfig.config.collectAsState()
     val modrinthEnabled = RemoteLauncherConfig.isEnabled(remoteConfig, "mods", "modrinthEnabled")
+    val manualImportEnabled = RemoteLauncherConfig.isEnabled(remoteConfig, "mods", "allowManualImport")
     val scope = rememberCoroutineScope()
     val langVersion by NuxLanguageManager.languageVersion.collectAsState()
 
@@ -916,6 +917,7 @@ fun ModsScreen(
                         }
                     }
 
+                    if (manualImportEnabled) {
                     // Import Button
                     Box(
                         modifier = Modifier
@@ -949,6 +951,7 @@ fun ModsScreen(
                                 fontSize = 9.sp
                             )
                         }
+                    }
                     }
                 }
             }
