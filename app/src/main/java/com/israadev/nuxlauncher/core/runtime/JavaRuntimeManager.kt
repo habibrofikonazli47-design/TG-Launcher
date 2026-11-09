@@ -3,6 +3,7 @@ package com.israadev.nuxlauncher.core.runtime
 import android.content.Context
 import android.os.Build
 import android.system.Os
+import com.israadev.nuxlauncher.core.network.RemoteLauncherConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
@@ -125,6 +126,17 @@ object JavaRuntimeManager {
         }
     }
 
+    fun isRuntimeEnabled(runtimeName: String): Boolean {
+        val key = when (runtimeName.lowercase()) {
+            "jre-8" -> "java8Enabled"
+            "jre-17" -> "java17Enabled"
+            "jre-21" -> "java21Enabled"
+            "jre-25" -> "java25Enabled"
+            else -> return true
+        }
+        return RemoteLauncherConfig.isEnabled(RemoteLauncherConfig.config.value, "runtimes", key)
+    }
+
     fun getRuntimeDisplayName(runtimeName: String): String {
         return when (runtimeName) {
             "jre-8" -> "Java 8 (Auto)"
@@ -151,6 +163,9 @@ object JavaRuntimeManager {
         onProgress: (Float, String) -> Unit = { _, _ -> }
     ): Result<File> = withContext(Dispatchers.IO) {
         try {
+            if (!isRuntimeEnabled(runtimeName)) {
+                return@withContext Result.failure(Exception("Java runtime $runtimeName dinonaktifkan oleh administrator TG Launcher."))
+            }
             val destDir = getRuntimeHome(context, runtimeName)
             if (isRuntimeInstalled(context, runtimeName)) {
                 ensureExecutablePermissions(destDir)
