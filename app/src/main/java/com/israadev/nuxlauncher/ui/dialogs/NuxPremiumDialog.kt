@@ -330,51 +330,353 @@ fun NuxPremiumDialog(
                             letterSpacing = 0.5.sp
                         )
                         if (isUserPremium) {
-                        Text(
-                            text = "PREMIUM ACCESS MANAGED BY TG ADMIN",
-                            color = themeAccentColor,
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Black
-                        )
-                        Text(
-                            text = "Paket, masa aktif, dan delapan fitur Premium akun ini diatur langsung dari Admin Panel. Hak akses akan diperbarui otomatis saat akun menyinkronkan data.",
-                            color = NuxColors.GrayNeutral,
-                            fontSize = 8.sp,
-                            lineHeight = 12.sp
-                        )
-                        val assignedFeatures = launcherUser?.features.orEmpty()
-                        val premiumFeatureLabels = listOf(
-                            "screen_recorder" to "Built-in Screen Recorder",
-                            "voice_rooms" to "Voice Rooms Real-Time",
-                            "unlimited_instances" to "Unlimited Game Instances",
-                            "custom_video_hero" to "Custom Video Hero Banner",
-                            "premium_badge" to "Exclusive Premium Profile Badge",
-                            "snapshot_beta_versions" to "Snapshot & Beta Versions Access",
-                            "unlimited_accounts" to "Multi-Account Switcher",
-                            "turbo_downloader" to "Turbo Multi-Thread Downloader"
-                        )
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            premiumFeatureLabels.forEach { (key, label) ->
-                                Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "ALL ACTIVE ✓",
+                                color = NuxColors.MintGreen,
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = 0.5.sp
+                            )
+                        }
+                    }
+
+                    PREMIUM_FEATURES.forEach { item ->
+                        // Double-bezel Outer Shell
+                        val outerBorderColor = if (isUserPremium)
+                            themeAccentColor.copy(alpha = 0.35f)
+                        else
+                            NuxColors.CardBorder
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFF0F1219), RoundedCornerShape(9.dp))
+                                .border(1.dp, outerBorderColor, RoundedCornerShape(9.dp))
+                                .padding(1.5.dp)
+                        ) {
+                            // Inner Core
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(Color(0xFF141822), RoundedCornerShape(7.5.dp))
+                                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(28.dp)
+                                        .background(Color(0xFF1A202C), RoundedCornerShape(6.dp))
+                                        .border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(6.dp)),
+                                    contentAlignment = Alignment.Center
+                                ) {
                                     Icon(
-                                        imageVector = if (assignedFeatures.contains(key)) Icons.Outlined.CheckCircle else Icons.Outlined.Lock,
+                                        imageVector = item.icon,
                                         contentDescription = null,
-                                        tint = if (assignedFeatures.contains(key)) NuxColors.MintGreen else NuxColors.GrayNeutral,
-                                        modifier = Modifier.size(11.dp)
+                                        tint = if (isUserPremium) themeAccentColor else NuxColors.MintGreen,
+                                        modifier = Modifier.size(15.dp)
                                     )
-                                    Spacer(modifier = Modifier.width(5.dp))
+                                }
+
+                                Spacer(modifier = Modifier.width(8.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text(
+                                            text = item.title,
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 9.sp
+                                        )
+                                        if (isUserPremium) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .background(NuxColors.ForestGreen.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
+                                                    .border(0.5.dp, NuxColors.ForestGreen.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
+                                                    .padding(horizontal = 4.dp, vertical = 1.dp)
+                                            ) {
+                                                Text(
+                                                    text = "ACTIVE",
+                                                    color = NuxColors.MintGreen,
+                                                    fontSize = 6.5.sp,
+                                                    fontWeight = FontWeight.Black
+                                                )
+                                            }
+                                        }
+                                    }
                                     Text(
-                                        text = label,
-                                        color = if (assignedFeatures.contains(key)) Color.White else NuxColors.GrayNeutral,
-                                        fontSize = 7.5.sp
+                                        text = item.desc,
+                                        color = NuxColors.GrayNeutral,
+                                        fontSize = 7.5.sp,
+                                        lineHeight = 10.5.sp
                                     )
                                 }
                             }
                         }
-                        Text(
-                            text = "Masa aktif: ${launcherUser?.expiresAt ?: "Tidak dibatasi"}",
+                    }
+                }
+
+                // ------------------------------------------
+                // RIGHT COLUMN:
+                // If Premium -> VIP Detail Passport Card
+                // If Free -> Upgrade Plans & Key Redemption
+                // ------------------------------------------
+                Column(
+                    modifier = Modifier
+                        .weight(1.12f)
+                        .fillMaxHeight()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (isUserPremium) {
+                        // ==========================================
+                        // STATE A: DETAIL PREMIUM AKTIF (VIP PASSPORT)
+                        // ==========================================
+                        val effectiveExpiresAt = subscriptionInfo?.expiresAt ?: launcherUser?.expiresAt
+                        val effectiveActivatedAt = subscriptionInfo?.activatedAt ?: launcherUser?.activatedAt
+                        val effectiveKey = subscriptionInfo?.redeemedKey ?: launcherUser?.redeemedKey
+                        val (expiryDateStr, expiryRemainingStr) = formatExpiry(effectiveExpiresAt)
+                        val activatedDateStr = formatTimestamp(effectiveActivatedAt)
+
+                        val tierDisplayName = when (activeTier) {
+                            "monthly" -> "MONTHLY PREMIUM (1 MONTH)"
+                            "yearly" -> "YEARLY PREMIUM (1 YEAR)"
+                            else -> "LIFETIME PREMIUM (PERMANENT)"
+                        }
+
+                        // Outer Double-Bezel Frame
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(themeAccentColor.copy(alpha = 0.15f), Color(0xFF0B0E14))
+                                    ),
+                                    RoundedCornerShape(12.dp)
+                                )
+                                .border(
+                                    1.5.dp,
+                                    Brush.linearGradient(themeGradient),
+                                    RoundedCornerShape(12.dp)
+                                )
+                                .padding(3.dp)
+                        ) {
+                            // Inner Core Card
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(Color(0xFF0F131C), RoundedCornerShape(9.dp))
+                                    .padding(10.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                // Passport Badge Header
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(24.dp)
+                                                .background(themeAccentColor.copy(alpha = 0.2f), CircleShape)
+                                                .border(1.dp, themeAccentColor, CircleShape),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = if (isLifetime) Icons.Outlined.WorkspacePremium else if (isYearly) Icons.Outlined.Diamond else Icons.Outlined.Bolt,
+                                                contentDescription = null,
+                                                tint = themeAccentColor,
+                                                modifier = Modifier.size(13.dp)
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Column {
+                                            Text(
+                                                text = tierDisplayName,
+                                                color = Color.White,
+                                                fontWeight = FontWeight.Black,
+                                                fontSize = 10.sp,
+                                                letterSpacing = 0.5.sp
+                                            )
+                                            Text(
+                                                text = "Status: Verified on TG Server",
+                                                color = NuxColors.GrayNeutral,
+                                                fontSize = 7.sp
+                                            )
+                                        }
+                                    }
+
+                                    // Live Pulsing Dot Badge
+                                    Box(
+                                        modifier = Modifier
+                                            .background(NuxColors.ForestGreen.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
+                                            .border(1.dp, NuxColors.ForestGreen.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(5.dp)
+                                                    .background(NuxColors.MintGreen, CircleShape)
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text(
+                                                text = "ACTIVE",
+                                                color = NuxColors.MintGreen,
+                                                fontSize = 7.5.sp,
+                                                fontWeight = FontWeight.Black
+                                            )
+                                        }
+                                    }
+                                }
+
+                                // Bento Matrix Grid (2x2)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    // Bento 1: Masa Berlaku / Expire
+                                    BentoDetailItem(
+                                        icon = Icons.Outlined.Schedule,
+                                        label = "VALIDITY",
+                                        primaryValue = expiryDateStr,
+                                        secondaryValue = expiryRemainingStr,
+                                        accentColor = themeAccentColor,
+                                        modifier = Modifier.weight(1f)
+                                    )
+
+                                    // Bento 2: Tanggal Aktivasi
+                                    BentoDetailItem(
+                                        icon = Icons.Outlined.Verified,
+                                        label = "ACTIVATED ON",
+                                        primaryValue = activatedDateStr,
+                                        secondaryValue = "Server Verified",
+                                        accentColor = NuxColors.MintGreen,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    // Bento 3: Akun Pemilik
+                                    BentoDetailItem(
+                                        icon = Icons.Outlined.AccountCircle,
+                                        label = "LINKED ACCOUNT",
+                                        primaryValue = "@${launcherUser?.username ?: "User"}",
+                                        secondaryValue = "UID: ${launcherUser?.uid?.take(10) ?: "-"}...",
+                                        accentColor = Color(0xFF38BDF8),
+                                        modifier = Modifier.weight(1f)
+                                    )
+
+                                    // Bento 4: License Key Tertaut
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .background(Color(0xFF141822), RoundedCornerShape(7.dp))
+                                            .border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(7.dp))
+                                            .padding(6.dp)
+                                    ) {
+                                        Column {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Icon(
+                                                        imageVector = Icons.Outlined.Key,
+                                                        contentDescription = null,
+                                                        tint = themeAccentColor,
+                                                        modifier = Modifier.size(10.dp)
+                                                    )
+                                                    Spacer(modifier = Modifier.width(3.dp))
+                                                    Text(
+                                                        text = "LICENSE KEY",
+                                                        color = NuxColors.GrayNeutral,
+                                                        fontSize = 6.5.sp,
+                                                        fontWeight = FontWeight.Bold
+                                                    )
+                                                }
+
+                                                if (!effectiveKey.isNullOrBlank()) {
+                                                    Icon(
+                                                        imageVector = Icons.Outlined.ContentCopy,
+                                                        contentDescription = "Copy",
+                                                        tint = NuxColors.GrayNeutral,
+                                                        modifier = Modifier
+                                                            .size(10.dp)
+                                                            .clickable {
+                                                                val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                                                cm.setPrimaryClip(ClipData.newPlainText("License Key", effectiveKey))
+                                                                Toast.makeText(context, "Key copied to clipboard", Toast.LENGTH_SHORT).show()
+                                                            }
+                                                    )
+                                                }
+                                            }
+                                            Spacer(modifier = Modifier.height(2.dp))
+                                            Text(
+                                                text = maskKey(effectiveKey),
+                                                color = Color.White,
+                                                fontWeight = FontWeight.Black,
+                                                fontSize = 8.sp
+                                            )
+                                            Text(
+                                                text = "Platform: Android Client",
+                                                color = NuxColors.GrayNeutral,
+                                                fontSize = 6.5.sp
+                                            )
+                                        }
+                                    }
+                                }
+
+                                // Fasilitas Aktif Bar
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(Color(0xFF161C28), RoundedCornerShape(6.dp))
+                                        .border(0.5.dp, Color(0x33FFFFFF), RoundedCornerShape(6.dp))
+                                        .padding(horizontal = 8.dp, vertical = 5.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                imageVector = Icons.Outlined.Check,
+                                                contentDescription = null,
+                                                tint = NuxColors.MintGreen,
+                                                modifier = Modifier.size(11.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(5.dp))
+                                            Text(
+                                                text = "All 7 Premium Exclusive Features Active",
+                                                color = Color.White,
+                                                fontSize = 7.5.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                        Text(
+                                            text = "100% UNLOCKED",
+                                            color = themeAccentColor,
+                                            fontSize = 7.sp,
+                                            fontWeight = FontWeight.Black
+                                        )
+                                    }
+                                }
+
+                                Text(
+                            text = "Paket, masa aktif, dan fitur Premium dikelola langsung oleh Admin Panel TG Launcher.",
                             color = NuxColors.GrayNeutral,
-                            fontSize = 7.sp
+                            fontSize = 8.sp,
+                            lineHeight = 11.sp
                         )
                     } else {
                         // ==========================================
@@ -427,9 +729,8 @@ fun NuxPremiumDialog(
                             )
                         }
 
-                        // Premium access is assigned by administrators; no in-app key redemption.
                         Text(
-                            text = "Premium diaktifkan langsung oleh Admin TG Launcher setelah akun kamu disetujui. Login dengan akun ini setelah admin memberikan akses.",
+                            text = "Pembelian dan pemberian akses Premium diproses oleh Admin TG Launcher. Setelah disetujui, login kembali untuk menerima hak akses akun.",
                             color = NuxColors.GrayNeutral,
                             fontSize = 8.sp,
                             lineHeight = 11.sp
