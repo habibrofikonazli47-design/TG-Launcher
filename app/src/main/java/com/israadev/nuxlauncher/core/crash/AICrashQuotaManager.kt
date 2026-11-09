@@ -221,7 +221,7 @@ object AICrashQuotaManager {
                     .putInt(KEY_REMAINING_QUOTA, info.remainingQuota)
                     .putInt(KEY_DAILY_LIMIT, info.dailyLimit)
                     .apply()
-                return@withContext true
+                return@withContext info.allowed
             } else {
                 val err = result.exceptionOrNull()?.message ?: ""
                 if (err.contains("Batas", ignoreCase = true) || err.contains("429")) {
