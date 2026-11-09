@@ -43,8 +43,8 @@ export async function GET(req: NextRequest) {
     const forceUpdate = updatePolicy.forceUpdate === true;
     const clientVersion = String(req.headers.get('x-tg-app-version') || '').trim().replace(/^v/, '');
     const compareVersion = (a: string, b: string) => {
-      const partsA = a.split(/[.-]/).map(part => Number(part.replace(/\\D/g, '')) || 0);
-      const partsB = b.split(/[.-]/).map(part => Number(part.replace(/\\D/g, '')) || 0);
+      const partsA = a.split(/[.-]/).map(part => Number(part.replace(/\D/g, '')) || 0);
+      const partsB = b.split(/[.-]/).map(part => Number(part.replace(/\D/g, '')) || 0);
       for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
         const diff = (partsA[i] || 0) - (partsB[i] || 0);
         if (diff !== 0) return diff;
