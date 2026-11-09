@@ -39,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.israadev.nuxlauncher.core.account.AccountManager
+import com.israadev.nuxlauncher.core.network.RemoteLauncherConfig
 import com.israadev.nuxlauncher.core.account.elyby.ElyByAuthService
 import com.israadev.nuxlauncher.core.account.elyby.ElyByDeviceCode
 import com.israadev.nuxlauncher.core.account.elyby.ElyByLoginState
@@ -72,6 +73,10 @@ fun AccountsScreen(
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
     val coroutineScope = rememberCoroutineScope()
+    val remoteConfig by RemoteLauncherConfig.config.collectAsState()
+    val offlineLoginEnabled = RemoteLauncherConfig.isEnabled(remoteConfig, "accounts", "offlineLoginEnabled")
+    val microsoftLoginEnabled = RemoteLauncherConfig.isEnabled(remoteConfig, "accounts", "microsoftLoginEnabled")
+    val elybyLoginEnabled = RemoteLauncherConfig.isEnabled(remoteConfig, "accounts", "elybyLoginEnabled")
 
     val accounts by AccountManager.accounts.collectAsState()
     val currentAccount by AccountManager.currentAccount.collectAsState()
@@ -622,6 +627,9 @@ fun AccountsScreen(
     // =============================================================
     if (showAddAccountDialog) {
         AddAccountModal(
+            offlineEnabled = offlineLoginEnabled,
+            microsoftEnabled = microsoftLoginEnabled,
+            elybyEnabled = elybyLoginEnabled,
             onDismiss = { showAddAccountDialog = false },
             onAccountAdded = { newAcc ->
                 AccountManager.addAccount(context, newAcc)
@@ -722,6 +730,9 @@ fun AccountsScreen(
  */
 @Composable
 private fun AddAccountModal(
+    offlineEnabled: Boolean,
+    microsoftEnabled: Boolean,
+    elybyEnabled: Boolean,
     onDismiss: () -> Unit,
     onAccountAdded: (UserAccount) -> Unit
 ) {
@@ -729,7 +740,14 @@ private fun AddAccountModal(
     val clipboardManager = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
 
-    var selectedTab by remember { mutableStateOf("offline") } // "offline", "microsoft", "elyby"
+    var selectedTab by remember(offlineEnabled, microsoftEnabled, elybyEnabled) {
+        mutableStateOf(when {
+            offlineEnabled -> "offline"
+            microsoftEnabled -> "microsoft"
+            elybyEnabled -> "elyby"
+            else -> "offline"
+        })
+    } // Provider availability follows admin policy.
 
     // Offline State
     var offlineName by remember { mutableStateOf("") }
@@ -815,6 +833,7 @@ private fun AddAccountModal(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // Card 1: Offline
+                if (offlineEnabled) {
                 ProviderCard(
                     title = tr("accounts.tab_offline"),
                     badge = "Free",
@@ -825,8 +844,10 @@ private fun AddAccountModal(
                     modifier = Modifier.weight(1f),
                     onClick = { selectedTab = "offline" }
                 )
+                }
 
                 // Card 2: Microsoft
+                if (microsoftEnabled) {
                 ProviderCard(
                     title = tr("accounts.tab_microsoft"),
                     badge = "Official",
@@ -837,8 +858,10 @@ private fun AddAccountModal(
                     modifier = Modifier.weight(1f),
                     onClick = { selectedTab = "microsoft" }
                 )
+                }
 
                 // Card 3: Ely.by
+                if (elybyEnabled) {
                 ProviderCard(
                     title = tr("accounts.tab_elyby"),
                     badge = "Browser",
@@ -849,6 +872,7 @@ private fun AddAccountModal(
                     modifier = Modifier.weight(1f),
                     onClick = { selectedTab = "elyby" }
                 )
+                }
             }
 
             Spacer(modifier = Modifier.height(14.dp))
