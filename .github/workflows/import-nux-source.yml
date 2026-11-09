@@ -53,8 +53,10 @@ jobs:
           # Keep the Kotlin namespace intact while giving TG Launcher a distinct install identity.
           sed -i 's/applicationId = "com.israadev.nuxlauncher"/applicationId = "com.tg.launcher"/' app/build.gradle.kts
           # Build against the stable Android 15 SDK, not the Android 17 preview platform.
-          sed -i 's/compileSdk = 37/compileSdk = 35/' app/build.gradle.kts
-          grep -q 'compileSdk = 35' app/build.gradle.kts
+          sed -i 's/compileSdk = 35/compileSdk = 37/' app/build.gradle.kts
+          sed -i 's/targetSdk = 34/targetSdk = 35/' app/build.gradle.kts
+          grep -q 'compileSdk = 37' app/build.gradle.kts
+          grep -q 'targetSdk = 35' app/build.gradle.kts
           # Apply TG launcher icon to the app and all file-import shortcuts.
           sed -i 's#@mipmap/ic_launcher_round#@drawable/tg_launcher_icon#g; s#@mipmap/ic_launcher#@drawable/tg_launcher_icon#g; s/NUX Launcher — /TG Launcher — /g' app/src/main/AndroidManifest.xml
           TG_VERSION_CODE=$((17 + GITHUB_RUN_NUMBER))
@@ -80,7 +82,7 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
-          packages: platform-tools platforms;android-35 build-tools;35.0.0
+          packages: platform-tools
 
       - name: Build release APK
         run: |
@@ -102,7 +104,8 @@ jobs:
           grep -q "package: name='com.tg.launcher'" /tmp/tg-badging.txt
           grep -q "application-label:'TG Launcher'" /tmp/tg-badging.txt
           grep -q "native-code: 'arm64-v8a'" /tmp/tg-badging.txt
-          grep -q "platformBuildVersionCode='35'" /tmp/tg-badging.txt
+          grep -q "platformBuildVersionCode='37'" /tmp/tg-badging.txt
+          grep -q "targetSdkVersion:'35'" /tmp/tg-badging.txt
           unzip -tq "$APK"
           sha256sum "$APK"
           echo "APK validation passed."
