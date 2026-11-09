@@ -127,7 +127,7 @@ object UpdateManager {
                 val isNewerCode = remoteCode > localCode
                 val isNewerVer = compareVersions(remoteVersion, localVersionName) > 0
                 val belowMinimum = forceUpdate && compareVersions(localVersionName, minimumSupportedVersion) < 0
-                val isAvailable = forceUpdate && (isNewerCode || isNewerVer || belowMinimum)
+                val releaseEnabled = !rootObj.has("update_available") || rootObj.get("update_available").asBoolean\n                val isAvailable = releaseEnabled && (isNewerCode || isNewerVer || belowMinimum)
 
                 val updateInfo = AndroidUpdateInfo(
                     code = remoteCode,
