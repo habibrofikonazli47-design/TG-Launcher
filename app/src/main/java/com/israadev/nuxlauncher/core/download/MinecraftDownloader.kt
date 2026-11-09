@@ -93,8 +93,11 @@ class MinecraftDownloader(
             val libDir = InstanceManager.getLibrariesDir(context)
             if (!libDir.exists()) libDir.mkdirs()
 
-            val isPremium = com.israadev.nuxlauncher.core.account.AccountManager.launcherUser.value?.isActivated == true
-            val libThreads = if (isPremium) 48 else 20
+            val currentLauncherUser = com.israadev.nuxlauncher.core.account.AccountManager.launcherUser.value
+            val hasTurboDownloader = currentLauncherUser?.features?.contains("turbo_downloader")
+                ?: (currentLauncherUser?.isActivated == true)
+            val configuredWorkers = currentLauncherUser?.limits?.get("download_workers") ?: if (hasTurboDownloader) 48 else 20
+            val libThreads = if (hasTurboDownloader) (configuredWorkers.takeIf { it > 0 } ?: 48).coerceIn(1, 64) else 20
 
             val totalLibs = allowedLibs.size
             if (totalLibs > 0) {
@@ -148,7 +151,7 @@ class MinecraftDownloader(
                         val objectsDir = File(assetsDir, "objects")
 
                         val downloadedAssets = AtomicInteger(0)
-                        val assetThreads = if (isPremium) 48 else 24
+                        val assetThreads = if (hasTurboDownloader) libThreads else 24
                         val semaphore = Semaphore(assetThreads)
 
                         val assetJobs = objects.map { entry ->
@@ -313,7 +316,7 @@ class MinecraftDownloader(
                 try {
                     val request = Request.Builder()
                         .url(candidateUrl)
-                        .header("User-Agent", "NuxLauncher/1.0 (Android)")
+                        .header("User-Agent", "TGLauncher/1.0 (Android)")
                         .build()
                     val response = client.newCall(request).execute()
                     if (!response.isSuccessful) {
