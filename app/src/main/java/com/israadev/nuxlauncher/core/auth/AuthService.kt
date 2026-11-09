@@ -100,7 +100,8 @@ data class AiQuotaInfo(
     val usedCount: Int = 0,
     val remainingQuota: Int = 5,
     val dailyLimit: Int = 5,
-    val isUnlimited: Boolean = false
+    val isUnlimited: Boolean = false,
+    val allowed: Boolean = true
 )
 
 object AuthService {
@@ -321,7 +322,8 @@ object AuthService {
                 usedCount = obj.get("usedCount").asIntOrDefault(0),
                 remainingQuota = obj.get("remainingQuota").asIntOrDefault(5),
                 dailyLimit = obj.get("dailyLimit").asIntOrDefault(5),
-                isUnlimited = obj.get("isUnlimited").asBooleanOrDefault(false)
+                isUnlimited = obj.get("isUnlimited").asBooleanOrDefault(false),
+                allowed = obj.get("allowed").asBooleanOrDefault(true)
             )
         }
     }
@@ -340,7 +342,8 @@ object AuthService {
                 usedCount = obj.get("usedCount").asIntOrDefault(0),
                 remainingQuota = obj.get("remainingQuota").asIntOrDefault(4),
                 dailyLimit = obj.get("dailyLimit").asIntOrDefault(5),
-                isUnlimited = obj.get("isUnlimited").asBooleanOrDefault(false)
+                isUnlimited = obj.get("isUnlimited").asBooleanOrDefault(false),
+                allowed = obj.get("allowed").asBooleanOrDefault(true)
             )
         }
     }
