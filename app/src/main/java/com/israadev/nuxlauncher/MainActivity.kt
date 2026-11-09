@@ -77,7 +77,13 @@ class MainActivity : ComponentActivity() {
             var mandatoryUpdate by remember { mutableStateOf<AndroidUpdateInfo?>(null) }
 
             // Ambil konfigurasi fitur dan kebijakan TG Launcher dari admin panel.
-            LaunchedEffect(Unit) { RemoteLauncherConfig.refresh() }
+            LaunchedEffect(Unit) {
+                if (RemoteLauncherConfig.refresh()) {
+                    val adminDefaultRam = RemoteLauncherConfig.config.value
+                        ?.optJSONObject("game")?.optInt("defaultMemoryMb", 2048) ?: 2048
+                    SettingsManager.applyAdminDefaultRam(this@MainActivity, adminDefaultRam)
+                }
+            }
 
             // Wajibkan versi terbaru sebelum launcher dapat digunakan.
             LaunchedEffect(Unit) {
