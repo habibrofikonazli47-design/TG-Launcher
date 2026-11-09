@@ -123,7 +123,7 @@ fun SwitchableMouseLayout(
             .fillMaxSize()
             // 1. Touchscreen input processing
             .pointerInput(cursorMode, controlMode, disableGestures) {
-                if (!disableGestures) coroutineScope {
+                coroutineScope {
                     var activePointerId: PointerId? = null
                     var startPosition = Offset.Zero
                     var isDragging = false
@@ -157,7 +157,7 @@ fun SwitchableMouseLayout(
                                     }
 
                                     longPressJob?.cancel()
-                                    longPressJob = launch {
+                                    if (!disableGestures) longPressJob = launch {
                                         delay(viewConfiguration.longPressTimeoutMillis)
                                         if (!isDragging && activePointerId == downEvent.id) {
                                             longPressTriggered = true
@@ -213,7 +213,7 @@ fun SwitchableMouseLayout(
                                     longPressJob?.cancel()
                                     if (longPressTriggered) {
                                         currentOnLongPressEnd()
-                                    } else if (!isDragging) {
+                                    } else if (!isDragging && !disableGestures) {
                                         if (currentCursorMode == CURSOR_DISABLED) {
                                             CallbackBridge.putMouseEvent(LwjglGlfwKeycode.GLFW_MOUSE_BUTTON_LEFT)
                                         } else {
