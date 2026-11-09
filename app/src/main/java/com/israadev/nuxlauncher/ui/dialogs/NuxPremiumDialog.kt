@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.sp
 import com.israadev.nuxlauncher.core.account.AccountManager
 import com.israadev.nuxlauncher.core.auth.AuthService
 import com.israadev.nuxlauncher.core.auth.SubscriptionInfo
+import com.israadev.nuxlauncher.core.network.RemoteLauncherConfig
 import com.israadev.nuxlauncher.ui.components.NuxBadge
 import com.israadev.nuxlauncher.ui.components.NuxButton
 import com.israadev.nuxlauncher.ui.components.NuxCard
@@ -222,7 +223,7 @@ fun NuxPremiumDialog(
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "NUX LAUNCHER PREMIUM",
+                                text = "TG LAUNCHER PREMIUM",
                                 color = Color.White,
                                 fontWeight = FontWeight.Black,
                                 fontSize = 13.5.sp,
@@ -308,7 +309,7 @@ fun NuxPremiumDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "7 EXCLUSIVE NUX PREMIUM FEATURES:",
+                            text = "7 EXCLUSIVE TG PREMIUM FEATURES:",
                             color = NuxColors.GrayNeutral,
                             fontSize = 8.5.sp,
                             fontWeight = FontWeight.Black,
@@ -488,7 +489,7 @@ fun NuxPremiumDialog(
                                                 letterSpacing = 0.5.sp
                                             )
                                             Text(
-                                                text = "Status: Verified on NUX Server",
+                                                text = "Status: Verified on TG Server",
                                                 color = NuxColors.GrayNeutral,
                                                 fontSize = 7.sp
                                             )
@@ -701,7 +702,7 @@ fun NuxPremiumDialog(
                                 onActivateClick = {
                                     val user = launcherUser
                                     if (user == null) {
-                                        activationError = "Please log in to your NUX account first."
+                                        activationError = "Please log in to your TG Launcher account first."
                                         return@RedeemKeyCard
                                     }
                                     val rawKey = licenseKeyInput.trim().uppercase()
@@ -775,9 +776,7 @@ fun NuxPremiumDialog(
                                 subtext = "Try features",
                                 modifier = Modifier.weight(1f),
                                 onSelect = {
-                                    try {
-                                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.nuxlauncher.site/upgrade")))
-                                    } catch (_: Exception) {}
+                                    if (premiumPurchaseUrl.isBlank()) { Toast.makeText(context, "Link pembelian Premium belum diatur oleh admin TG Launcher.", Toast.LENGTH_LONG).show() } else { try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(premiumPurchaseUrl))) } catch (_: Exception) { Toast.makeText(context, "Tidak dapat membuka link pembelian.", Toast.LENGTH_SHORT).show() } }
                                 }
                             )
 
@@ -789,9 +788,7 @@ fun NuxPremiumDialog(
                                 isBestValue = true,
                                 modifier = Modifier.weight(1.15f),
                                 onSelect = {
-                                    try {
-                                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.nuxlauncher.site/upgrade")))
-                                    } catch (_: Exception) {}
+                                    if (premiumPurchaseUrl.isBlank()) { Toast.makeText(context, "Link pembelian Premium belum diatur oleh admin TG Launcher.", Toast.LENGTH_LONG).show() } else { try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(premiumPurchaseUrl))) } catch (_: Exception) { Toast.makeText(context, "Tidak dapat membuka link pembelian.", Toast.LENGTH_SHORT).show() } }
                                 }
                             )
 
@@ -802,9 +799,7 @@ fun NuxPremiumDialog(
                                 subtext = "One-time purchase",
                                 modifier = Modifier.weight(1f),
                                 onSelect = {
-                                    try {
-                                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.nuxlauncher.site/upgrade")))
-                                    } catch (_: Exception) {}
+                                    if (premiumPurchaseUrl.isBlank()) { Toast.makeText(context, "Link pembelian Premium belum diatur oleh admin TG Launcher.", Toast.LENGTH_LONG).show() } else { try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(premiumPurchaseUrl))) } catch (_: Exception) { Toast.makeText(context, "Tidak dapat membuka link pembelian.", Toast.LENGTH_SHORT).show() } }
                                 }
                             )
                         }
@@ -819,7 +814,7 @@ fun NuxPremiumDialog(
                             onActivateClick = {
                                 val user = launcherUser
                                 if (user == null) {
-                                    activationError = "Please log in to your NUX account first."
+                                    activationError = "Please log in to your TG Launcher account first."
                                     return@RedeemKeyCard
                                 }
                                 val rawKey = licenseKeyInput.trim().uppercase()
