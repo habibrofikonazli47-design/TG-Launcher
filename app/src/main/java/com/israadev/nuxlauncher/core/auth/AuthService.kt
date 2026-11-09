@@ -541,10 +541,20 @@ object AuthService {
         var activeToken = storedToken ?: suppliedToken
         val refreshToken = activeUser?.refreshToken.orEmpty()
         if (refreshToken.isNotBlank()) {
+            // Prefer refreshing directly from Firebase. If the device cannot reach
+            // Secure Token reliably, retry through our backend session-token endpoint.
             val refreshedToken = refreshIdToken(refreshToken)
             if (!refreshedToken.isNullOrBlank()) {
-                // Always prefer the fresh token. The UI may pass an older captured token.
                 activeToken = refreshedToken
+            } else {
+                val serverSession = requestSessionToken(uid)
+                if (serverSession != null && serverSession.first.isNotBlank()) {
+                    activeToken = serverSession.first
+                    AccountManager.updateTokens(
+                        serverSession.first,
+                        serverSession.second.ifBlank { refreshToken }
+                    )
+                }
             }
         } else if (activeToken.isNullOrBlank()) {
             activeToken = suppliedToken
