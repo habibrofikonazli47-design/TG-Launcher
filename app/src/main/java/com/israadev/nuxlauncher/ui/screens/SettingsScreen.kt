@@ -1765,9 +1765,9 @@ fun SettingsScreen(
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = if (disableGestures)
-                                        "Controls Only: swipe, drag, and touch-camera gestures are disabled. Use the on-screen control buttons."
+                                        "Disable touch actions for breaking/mining and placing/using items. Camera and cursor movement stay enabled."
                                     else
-                                        "Allow touchscreen gestures for camera movement and mouse navigation.",
+                                        "Touch actions for breaking/mining and placing/using items are enabled.",
                                     fontSize = 9.sp,
                                     color = if (disableGestures) NuxColors.MintGreen else NuxColors.GrayNeutral,
                                     lineHeight = 12.sp
