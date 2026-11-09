@@ -38,12 +38,13 @@ async function getQuota(uid: string, consume: boolean) {
   const usage = await sql`SELECT COALESCE(SUM(request_count),0)::int AS used_count FROM launcher_ai_usage WHERE user_id=${uid} AND created_at >= date_trunc('day', now() AT TIME ZONE 'Asia/Jakarta') AT TIME ZONE 'Asia/Jakarta'`;
   let usedCount = Number(usage[0]?.used_count || 0);
   const isUnlimited = dailyLimit < 0;
-  if (consume && (isUnlimited || usedCount < dailyLimit)) {
+  const allowed = isUnlimited || usedCount < dailyLimit;
+  if (consume && allowed) {
     await sql`INSERT INTO launcher_ai_usage(user_id,request_count) VALUES(${uid},1)`;
     usedCount += 1;
   }
   const remainingQuota = isUnlimited ? -1 : Math.max(0, dailyLimit - usedCount);
-  return { success: true, date: new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10), usedCount, remainingQuota, dailyLimit, isUnlimited, allowed: isUnlimited || usedCount <= dailyLimit };
+  return { success: true, date: new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10), usedCount, remainingQuota, dailyLimit, isUnlimited, allowed };
 }
 
 async function authorized(req: NextRequest) {
