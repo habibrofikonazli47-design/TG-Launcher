@@ -41,7 +41,8 @@ jobs:
             --exclude='app/src/main/java/com/israadev/nuxlauncher/core/download/MinecraftDownloader.kt' \
             --exclude='app/src/main/java/com/israadev/nuxlauncher/core/social/NuxVoiceManager.kt' \
             --exclude='app/src/main/java/com/israadev/nuxlauncher/core/runtime/JavaRuntimeManager.kt' \
-            --exclude='app/src/main/java/com/israadev/nuxlauncher/ui/screens/ModsScreen.kt' nux-source/ ./
+            --exclude='app/src/main/java/com/israadev/nuxlauncher/ui/screens/ModsScreen.kt' \
+            --exclude='app/src/main/java/com/israadev/nuxlauncher/ui/dialogs/NuxAddInstanceDialog.kt' nux-source/ ./
           rm -rf nux-source
           sed -i 's#<string name="app_name">NUX Launcher</string>#<string name="app_name">TG Launcher</string>#' app/src/main/res/values/strings.xml
           if ! grep -q '<string name="app_name">TG Launcher</string>' app/src/main/res/values/strings.xml; then
