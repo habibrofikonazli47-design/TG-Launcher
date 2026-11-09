@@ -300,7 +300,7 @@ object AuthService {
     suspend fun fetchAiQuota(uid: String): Result<AiQuotaInfo> {
         val encodedUid = try { java.net.URLEncoder.encode(uid.trim(), "UTF-8") } catch (_: Exception) { uid.trim() }
         val endpoint = "/api/auth/android/ai-quota?uid=$encodedUid"
-        return getApi(endpoint).mapCatching { jsonStr ->
+        return getApi(endpoint, bearerToken = AccountManager.getActiveUser()?.idToken).mapCatching { jsonStr ->
             val obj = gson.fromJson(jsonStr, JsonObject::class.java)
             AiQuotaInfo(
                 date = obj.get("date").asStringOrNull() ?: "",
@@ -319,7 +319,7 @@ object AuthService {
         val payload = JsonObject().apply {
             addProperty("uid", uid.trim())
         }
-        return postApi("/api/auth/android/ai-quota", payload.toString()).mapCatching { jsonStr ->
+        return postApi("/api/auth/android/ai-quota", payload.toString(), bearerToken = AccountManager.getActiveUser()?.idToken).mapCatching { jsonStr ->
             val obj = gson.fromJson(jsonStr, JsonObject::class.java)
             AiQuotaInfo(
                 date = obj.get("date").asStringOrNull() ?: "",
