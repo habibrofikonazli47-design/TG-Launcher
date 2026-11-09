@@ -62,6 +62,7 @@ export async function GET() {
     const asset = (release.assets || []).find((item: any) => /^TG-Launcher-.*\.apk$/i.test(item.name));
     if (!asset) return Response.json({ error: 'APK release belum tersedia.' }, { status: 404 });
     const tag = String(release.tag_name || '').replace(/^v/, '');
+    const versionTag = tag.replace(/^tg-launcher-/i, '');
     let metadata: any = null;
     const metadataAsset = (release.assets || []).find((item: any) => item.name === 'output-metadata.json');
     if (metadataAsset?.browser_download_url) {
@@ -69,10 +70,10 @@ export async function GET() {
       if (metadataResponse.ok) metadata = await metadataResponse.json();
     }
     const element = metadata?.elements?.[0] || {};
-    const tagMatch = tag.match(/(?:tg|build)?(\d+)$/i);
+    const tagMatch = versionTag.match(/(?:tg|build)?(\d+)$/i);
     const fallbackCode = tagMatch ? 17 + Number(tagMatch[1]) : 18;
     const code = Number(element.versionCode) || fallbackCode;
-    const version = String(element.versionName || tag || release.name || '1.1.6');
+    const version = String(element.versionName || versionTag || String(release.name || '').replace(/^TG Launcher\s*/i, '') || '1.1.6');
     return Response.json({
       code: Number.isFinite(code) ? code : 18,
       version,
