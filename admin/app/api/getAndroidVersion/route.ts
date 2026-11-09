@@ -22,24 +22,43 @@ export async function GET() {
     };
 
     // Do not distribute an older APK while a stable signing key/release is not approved.
+    const autoUpdateCheck = updates.autoUpdateCheck !== false;
+    const stableChannel = updates.stableChannel !== false;
+    const betaChannel = updates.betaChannel === true;
+    const noUpdate = (message: string) => Response.json({
+      code: 0,
+      version: '0.0.0',
+      force_update: false,
+      minimum_supported_version: String(updatePolicy.minimumSupportedVersion || '1.0.0'),
+      update_available: false,
+      created_at: '',
+      files: [],
+      default_body: { markdown: message },
+    }, { headers: { 'Cache-Control': 'no-store, max-age=0' } });
+
     if (!releaseEnabled) {
-      return Response.json({
-        code: 0,
-        version: '0.0.0',
-        force_update: false,
-        minimum_supported_version: String(updatePolicy.minimumSupportedVersion || '1.0.0'),
-        update_available: false,
-        created_at: '',
-        files: [],
-        default_body: { markdown: 'Distribusi pembaruan TG Launcher belum diaktifkan oleh administrator.' },
-      }, { headers: { 'Cache-Control': 'no-store, max-age=0' } });
+      return noUpdate('Distribusi pembaruan TG Launcher belum diaktifkan oleh administrator.');
     }
-    const response = await fetch('https://api.github.com/repos/habibrofikonazli47-design/TG-Launcher/releases/latest', {
+    if (!autoUpdateCheck && !updatePolicy.forceUpdate) {
+      return noUpdate('Pemeriksaan pembaruan otomatis dinonaktifkan oleh administrator.');
+    }
+    if (!stableChannel && !betaChannel) {
+      return noUpdate('Kanal pembaruan TG Launcher sedang dinonaktifkan.');
+    }
+
+    const releasesUrl = betaChannel && !stableChannel
+      ? 'https://api.github.com/repos/habibrofikonazli47-design/TG-Launcher/releases?per_page=20'
+      : 'https://api.github.com/repos/habibrofikonazli47-design/TG-Launcher/releases/latest';
+    const response = await fetch(releasesUrl, {
       headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'TG-Launcher-Updater' },
       cache: 'no-store',
     });
     if (!response.ok) throw new Error('GitHub Releases tidak dapat diakses.');
-    const release = await response.json();
+    const releasePayload = await response.json();
+    const release = Array.isArray(releasePayload)
+      ? releasePayload.find((item: any) => betaChannel && !stableChannel ? item.prerelease === true : item.prerelease !== true)
+      : releasePayload;
+    if (!release) return noUpdate('Belum ada rilis pada kanal pembaruan yang dipilih.');
     const asset = (release.assets || []).find((item: any) => /^TG-Launcher-.*\.apk$/i.test(item.name));
     if (!asset) return Response.json({ error: 'APK release belum tersedia.' }, { status: 404 });
     const tag = String(release.tag_name || '').replace(/^v/, '');
