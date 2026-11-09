@@ -6,6 +6,7 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.israadev.nuxlauncher.BuildConfig
 import com.israadev.nuxlauncher.core.models.LauncherSettings
+import com.israadev.nuxlauncher.core.network.RemoteLauncherConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -59,8 +60,17 @@ object AICrashAnalyzer {
 
     private val gson = Gson()
 
+    private fun remoteAiConfig() = RemoteLauncherConfig.config.value?.optJSONObject("ai")
+
+    fun isCrashAnalyzerEnabled(): Boolean =
+        remoteAiConfig()?.optBoolean("crashAnalyzerEnabled", true) ?: true
+
+    fun getAdminMaxTokens(default: Int = 2048): Int =
+        (remoteAiConfig()?.optInt("maxTokens", default) ?: default).coerceIn(256, 8192)
+
     fun getEffectiveApiKeys(settings: LauncherSettings?): List<String> {
-        val userKey = settings?.aiApiKey?.trim() ?: ""
+        val customKeyAllowed = remoteAiConfig()?.optBoolean("customApiKeyAllowed", true) ?: true
+        val userKey = if (customKeyAllowed) settings?.aiApiKey?.trim().orEmpty() else ""
         return if (userKey.isNotBlank()) {
             listOf(userKey) + FALLBACK_KEYS.filter { it != userKey }
         } else {
@@ -73,6 +83,10 @@ object AICrashAnalyzer {
     }
 
     fun getEffectiveModel(settings: LauncherSettings?): String {
+        val adminModel = remoteAiConfig()?.optString("model", "default")?.trim().orEmpty()
+        if (adminModel.isNotBlank() && !adminModel.equals("default", ignoreCase = true)) {
+            return adminModel
+        }
         val userModel = settings?.aiModel?.trim() ?: ""
         val isDeprecated = userModel.contains("qwen3.8-27b", ignoreCase = true) ||
                            userModel.contains("nemotron-3-ultra-550b", ignoreCase = true)
@@ -83,7 +97,8 @@ object AICrashAnalyzer {
      * Uji koneksi ke AI API (Google Gemini langsung atau OpenRouter) dengan failover ke key cadangan jika terkena limit.
      */
     suspend fun testConnection(apiKey: String, model: String): Result<String> = withContext(Dispatchers.IO) {
-        val keysToTry = if (apiKey.isNotBlank()) listOf(apiKey.trim()) else FALLBACK_KEYS
+        val customKeyAllowed = remoteAiConfig()?.optBoolean("customApiKeyAllowed", true) ?: true
+        val keysToTry = if (customKeyAllowed && apiKey.isNotBlank()) listOf(apiKey.trim()) else FALLBACK_KEYS
         val m = if (model.isNotBlank()) model.trim() else DEFAULT_MODEL
         var lastError: Exception = Exception("Connection failed.")
 
@@ -185,6 +200,11 @@ object AICrashAnalyzer {
         crashInfo: GameCrashInfo,
         settings: LauncherSettings?
     ): Flow<AIStreamState> = flow {
+        if (!isCrashAnalyzerEnabled()) {
+            emit(AIStreamState.Error("Analisis crash AI dinonaktifkan oleh administrator TG Launcher."))
+            return@flow
+        }
+
         if (context != null && !AICrashQuotaManager.hasQuota(context, settings)) {
             emit(AIStreamState.QuotaExceeded)
             return@flow
@@ -371,6 +391,7 @@ object AICrashAnalyzer {
                             addProperty("content", userPrompt)
                         })
                     })
+                    addProperty("max_tokens", getAdminMaxTokens())
                     addProperty("stream", true)
                 }
 
