@@ -10,6 +10,10 @@ on:
       - "gradle/**"
   workflow_dispatch:
 
+concurrency:
+  group: tg-launcher-android-release
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
