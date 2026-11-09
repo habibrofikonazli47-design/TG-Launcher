@@ -15,6 +15,12 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -30,6 +36,8 @@ import com.israadev.nuxlauncher.core.instance.InstanceManager
 import com.israadev.nuxlauncher.core.mods.NuxAddonImportManager
 import com.israadev.nuxlauncher.core.mods.PendingAddonImport
 import com.israadev.nuxlauncher.core.settings.SettingsManager
+import com.israadev.nuxlauncher.core.update.UpdateManager
+import com.israadev.nuxlauncher.core.update.AndroidUpdateInfo
 import com.israadev.nuxlauncher.ui.screens.AuthScreen
 import com.israadev.nuxlauncher.ui.screens.DashboardScreen
 import com.israadev.nuxlauncher.ui.theme.NuxColors
@@ -62,6 +70,14 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val launcherUser by AccountManager.launcherUser.collectAsState()
+            var mandatoryUpdate by remember { mutableStateOf<AndroidUpdateInfo?>(null) }
+
+            // Wajibkan versi terbaru sebelum launcher dapat digunakan.
+            LaunchedEffect(Unit) {
+                UpdateManager.checkForUpdate(this@MainActivity).onSuccess { info ->
+                    if (info.isUpdateAvailable) mandatoryUpdate = info
+                }
+            }
 
             // Refresh token dan paket server saat aplikasi dibuka agar perubahan admin berlaku
             // tanpa pengguna harus logout/login ulang.
@@ -88,14 +104,36 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.fillMaxSize(),
                         color = NuxColors.Background
                     ) {
-                        if (isLoggedIn) {
-                            DashboardScreen()
-                        } else {
-                            AuthScreen(
-                                onAuthSuccess = {
-                                    // Sesi telah tersimpan di AccountManager, state compose otomatis ter-update
-                                }
-                            )
+                        androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize()) {
+                            if (isLoggedIn) {
+                                DashboardScreen()
+                            } else {
+                                AuthScreen(
+                                    onAuthSuccess = {
+                                        // Sesi telah tersimpan di AccountManager, state compose otomatis ter-update
+                                    }
+                                )
+                            }
+
+                            mandatoryUpdate?.let { update ->
+                                AlertDialog(
+                                    onDismissRequest = { /* pembaruan wajib: dialog tidak dapat ditutup */ },
+                                    title = { Text("Pembaruan TG Launcher wajib") },
+                                    text = {
+                                        Text(
+                                            "Versi terbaru tersedia: ${update.version}\n" +
+                                            "Versi terpasang: ${update.localVersion}\n" +
+                                            (if (update.fileSize > 0) "Ukuran APK: ${android.text.format.Formatter.formatShortFileSize(this@MainActivity, update.fileSize)}\n" else "") +
+                                            "\n${update.changelog}\n\nSilakan unduh dan pasang versi terbaru untuk melanjutkan."
+                                        )
+                                    },
+                                    confirmButton = {
+                                        Button(onClick = { UpdateManager.openDownloadUrl(this@MainActivity, update.downloadUrl) }) {
+                                            Text("Unduh & Pasang")
+                                        }
+                                    }
+                                )
+                            }
                         }
                     }
                 }
