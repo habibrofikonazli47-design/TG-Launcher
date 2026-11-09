@@ -46,9 +46,9 @@ export async function GET() {
       return noUpdate('Kanal pembaruan TG Launcher sedang dinonaktifkan.');
     }
 
-    const releasesUrl = betaChannel
-      ? 'https://api.github.com/repos/habibrofikonazli47-design/TG-Launcher/releases?per_page=20'
-      : 'https://api.github.com/repos/habibrofikonazli47-design/TG-Launcher/releases/latest';
+    // Fetch the full release page: GitHub's release ordering is not guaranteed
+    // to put the newest beta inside the first 20 entries.
+    const releasesUrl = 'https://api.github.com/repos/habibrofikonazli47-design/TG-Launcher/releases?per_page=100';
     const response = await fetch(releasesUrl, {
       headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'TG-Launcher-Updater' },
       cache: 'no-store',
@@ -56,7 +56,13 @@ export async function GET() {
     if (!response.ok) throw new Error('GitHub Releases tidak dapat diakses.');
     const releasePayload = await response.json();
     const release = Array.isArray(releasePayload)
-      ? releasePayload.find((item: any) => item.prerelease === true ? betaChannel : stableChannel)
+      ? releasePayload
+          .filter((item: any) => item.prerelease === true ? betaChannel : stableChannel)
+          .filter((item: any) => (item.assets || []).some((asset: any) => /^TG-Launcher-.*\\.apk$/i.test(asset.name)))
+          .sort((a: any, b: any) =>
+            Date.parse(b.published_at || b.created_at || '1970-01-01') -
+            Date.parse(a.published_at || a.created_at || '1970-01-01')
+          )[0]
       : releasePayload;
     if (!release) return noUpdate('Belum ada rilis pada kanal pembaruan yang dipilih.');
     const asset = (release.assets || []).find((item: any) => /^TG-Launcher-.*\.apk$/i.test(item.name));
