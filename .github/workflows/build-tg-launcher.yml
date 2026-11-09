@@ -82,20 +82,4 @@ jobs:
           name: TG-Launcher-release-verified
           path: app/build/outputs/apk/release/TG-Launcher-v1.1.6-tg${{ env.TG_BUILD_NUMBER }}.apk
           if-no-files-found: error
-          retention-days: 14
-
-      - name: Publish direct APK download on GitHub Releases
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v1.1.6-tg${{ env.TG_BUILD_NUMBER }}
-          name: TG Launcher v1.1.6-tg${{ env.TG_BUILD_NUMBER }}
-          body: |
-            TG Launcher release build.
-            Download the APK asset below; no ZIP extraction is required.
-          files: |
-            app/build/outputs/apk/release/TG-Launcher-v1.1.6-tg${{ env.TG_BUILD_NUMBER }}.apk
-            app/build/outputs/apk/release/output-metadata.json
-          fail_on_unmatched_files: true
-          make_latest: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          retention-days: 30
