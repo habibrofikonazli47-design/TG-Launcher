@@ -13,11 +13,20 @@ export async function GET() {
       || (release.assets || []).find((item: any) => item.name.toLowerCase().endsWith('.apk'));
     if (!asset) return Response.json({ error: 'APK release belum tersedia.' }, { status: 404 });
     const tag = String(release.tag_name || '').replace(/^v/, '');
-    const codeMatch = tag.match(/(?:tg|build)?(\d+)$/i);
-    const code = codeMatch ? 17 + Number(codeMatch[1]) : 18;
+    let metadata: any = null;
+    const metadataAsset = (release.assets || []).find((item: any) => item.name === 'output-metadata.json');
+    if (metadataAsset?.browser_download_url) {
+      const metadataResponse = await fetch(metadataAsset.browser_download_url, { cache: 'no-store' });
+      if (metadataResponse.ok) metadata = await metadataResponse.json();
+    }
+    const element = metadata?.elements?.[0] || {};
+    const tagMatch = tag.match(/(?:tg|build)?(\\d+)$/i);
+    const fallbackCode = tagMatch ? 17 + Number(tagMatch[1]) : 18;
+    const code = Number(element.versionCode) || fallbackCode;
+    const version = String(element.versionName || tag || release.name || '1.1.6');
     return Response.json({
       code: Number.isFinite(code) ? code : 18,
-      version: tag || release.name || '1.1.6-tg1',
+      version,
       created_at: release.published_at || release.created_at || '',
       files: [{ uri: asset.browser_download_url, file_name: asset.name, size: asset.size }],
       default_body: { markdown: release.body || 'Pembaruan TG Launcher tersedia.' },
