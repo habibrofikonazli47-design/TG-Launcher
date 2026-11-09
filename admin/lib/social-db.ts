@@ -4,8 +4,10 @@ import { database, ensureSchema } from '@/lib/db';
 let schemaReady: Promise<void> | null = null;
 
 export function socialDatabase() {
-  const url = process.env.TG_SOCIAL_DATABASE_URL;
-  if (!url) throw new Error('TG_SOCIAL_DATABASE_URL belum dikonfigurasi.');
+  // Use the dedicated Social database when configured; otherwise share the
+  // primary Neon database so Social does not fail on an empty optional variable.
+  const url = process.env.TG_SOCIAL_DATABASE_URL?.trim() || process.env.DATABASE_URL?.trim();
+  if (!url) throw new Error('Database TG Social belum dikonfigurasi: TG_SOCIAL_DATABASE_URL atau DATABASE_URL wajib tersedia.');
   return neon(url);
 }
 
