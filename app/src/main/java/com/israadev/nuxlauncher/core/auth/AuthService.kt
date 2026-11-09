@@ -54,6 +54,8 @@ data class AuthUser(
     val activatedAt: Long? = null,
     val expiresAt: String? = null,
     val redeemedKey: String? = null,
+    val features: List<String> = emptyList(),
+    val limits: Map<String, Int> = emptyMap(),
     val idToken: String = "",
     val refreshToken: String = ""
 )
@@ -97,6 +99,7 @@ data class AiQuotaInfo(
 )
 
 object AuthService {
+    private const val ENTITLEMENTS_BASE_URL = "https://tg-launcher-admin-habibrofikonazlis-projects.vercel.app"
     private val gson = Gson()
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
 
@@ -250,6 +253,45 @@ object AuthService {
         }
 
         Result.failure(lastError ?: Exception("Failed to reach authentication server"))
+    }
+
+    /**
+     * Sinkronkan paket Free/Premium dari database TG Launcher Admin.
+     * Token Firebase diverifikasi ulang oleh server; jika layanan entitlement gagal,
+     * sesi login lama tetap dipertahankan dan error tidak memblokir launcher.
+     */
+    suspend fun syncEntitlements(user: AuthUser): AuthUser = withContext(Dispatchers.IO) {
+        if (user.idToken.isBlank()) return@withContext user
+        try {
+            val request = Request.Builder()
+                .url("$ENTITLEMENTS_BASE_URL/api/app/entitlements")
+                .header("Authorization", "Bearer ${user.idToken}")
+                .get()
+                .build()
+            client.newCall(request).execute().use { response ->
+                val body = response.body?.string().orEmpty()
+                if (!response.isSuccessful) return@withContext user
+                val obj = gson.fromJson(body, JsonObject::class.java) ?: return@withContext user
+                if (!obj.get("success").asBooleanOrDefault(false)) return@withContext user
+                val features = try {
+                    obj.getAsJsonArray("features")?.mapNotNull { if (it.isJsonPrimitive) it.asString else null } ?: user.features
+                } catch (_: Exception) { user.features }
+                val limits = try {
+                    obj.getAsJsonObject("limits")?.entrySet()?.associate { entry ->
+                        entry.key to try { entry.value.asInt } catch (_: Exception) { -1 }
+                    } ?: user.limits
+                } catch (_: Exception) { user.limits }
+                user.copy(
+                    isActivated = obj.get("isActivated").asBooleanOrDefault(user.isActivated),
+                    tier = obj.get("plan").asStringOrNull() ?: user.tier,
+                    expiresAt = obj.get("expiresAt").asStringOrNull(),
+                    features = features,
+                    limits = limits
+                )
+            }
+        } catch (_: Exception) {
+            user
+        }
     }
 
     /**
