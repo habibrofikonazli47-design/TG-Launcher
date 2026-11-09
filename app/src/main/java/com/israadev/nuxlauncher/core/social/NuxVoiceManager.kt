@@ -254,32 +254,6 @@ object NuxVoiceManager {
                         }
                     }
                 }
-                val tokenJson = JSONObject(body)
-                val token = tokenJson.optString("token", "")
-                if (token.isEmpty()) {
-                    Log.e(TAG, "LiveKit token is empty in response: $body")
-                    withContext(Dispatchers.Main) {
-                        _isConnecting.value = false
-                    }
-                    return@launch
-                }
-
-                Log.i(TAG, "LiveKit token received. Calling connectVoice in WebView...")
-                withContext(Dispatchers.Main) {
-                    val connectAction: () -> Unit = {
-                        Log.i(TAG, "Invoking connectVoice in WebView...")
-                        webView?.evaluateJavascript("connectVoice('$LIVEKIT_SERVER_URL', '$token');") { result ->
-                            Log.i(TAG, "evaluateJavascript connectVoice evaluated: $result")
-                        }
-                    }
-
-                    if (isBridgeReady && webView != null) {
-                        connectAction()
-                    } else {
-                        Log.i(TAG, "Bridge not yet ready, saving pendingConnectAction")
-                        pendingConnectAction = connectAction
-                    }
-                }
             } catch (e: Exception) {
                 Log.e(TAG, "joinVoiceRoom error", e)
                 withContext(Dispatchers.Main) {
