@@ -41,6 +41,7 @@ fun SwitchableMouseLayout(
     screenHeight: Float,
     cursorMode: Int,
     controlMode: MouseControlMode,
+    disableGestures: Boolean = false,
     cursorPosition: Offset,
     cursorSensitivity: Float = 1.0f,
     requestPointerCapture: Boolean = false,
@@ -121,8 +122,8 @@ fun SwitchableMouseLayout(
         modifier = modifier
             .fillMaxSize()
             // 1. Touchscreen input processing
-            .pointerInput(cursorMode, controlMode) {
-                coroutineScope {
+            .pointerInput(cursorMode, controlMode, disableGestures) {
+                if (!disableGestures) coroutineScope {
                     var activePointerId: PointerId? = null
                     var startPosition = Offset.Zero
                     var isDragging = false
