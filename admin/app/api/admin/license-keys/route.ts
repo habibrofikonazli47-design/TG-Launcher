@@ -24,8 +24,18 @@ export async function POST(req:NextRequest){
 export async function PATCH(req:NextRequest){
  if(!verifySession(req.cookies.get(getCookieName())?.value))return NextResponse.json({error:'Unauthorized'},{status:401});
  try{await ensureSchema();const b=await req.json();if(!b.id||!['active','revoked'].includes(b.status))return NextResponse.json({error:'Status lisensi tidak valid.'},{status:400});
- const rows=await database()`UPDATE license_keys SET status=${b.status} WHERE id=${String(b.id)} RETURNING id,license_key,status`;
+ const rows=await database()`UPDATE license_keys SET status=${b.status} WHERE id=${String(b.id)} RETURNING id,license_key,status,user_id`;
  if(!rows.length)return NextResponse.json({error:'Kode tidak ditemukan.'},{status:404});
+ const license=rows[0];
+ if(license.user_id){
+  if(b.status==='revoked'){
+   await database()`UPDATE profiles SET plan='free',updated_at=now() WHERE license_id=${license.id}`;
+   await database()`UPDATE licenses SET status='revoked' WHERE id=${license.id}`;
+  }else{
+   await database()`UPDATE profiles SET plan='premium',updated_at=now() WHERE license_id=${license.id} AND status='active' AND (expires_at IS NULL OR expires_at>now())`;
+   await database()`UPDATE licenses SET status='active' WHERE id=${license.id}`;
+  }
+ }
  await database()`INSERT INTO admin_audit_logs(actor,action,detail) VALUES('admin','license.status',${JSON.stringify({id:b.id,status:b.status})}::jsonb)`;
- return NextResponse.json(rows[0]);}catch(e:any){return NextResponse.json({error:e.message},{status:400});}
+ return NextResponse.json({id:license.id,license_key:license.license_key,status:license.status});}catch(e:any){return NextResponse.json({error:e.message},{status:400});}
 }
