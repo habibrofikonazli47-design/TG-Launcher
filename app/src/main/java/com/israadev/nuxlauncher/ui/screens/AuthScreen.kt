@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import com.israadev.nuxlauncher.R
 import com.israadev.nuxlauncher.core.account.AccountManager
 import com.israadev.nuxlauncher.core.auth.AuthService
+import com.israadev.nuxlauncher.core.network.RemoteLauncherConfig
 import com.israadev.nuxlauncher.core.auth.AuthUser
 import com.israadev.nuxlauncher.core.auth.OtpCooldownManager
 import com.israadev.nuxlauncher.ui.components.NuxButton
@@ -69,7 +70,11 @@ fun AuthScreen(
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val remoteConfig by RemoteLauncherConfig.config.collectAsState()
+    val registrationEnabled = RemoteLauncherConfig.isEnabled(remoteConfig, "general", "allowRegistration") &&
+        RemoteLauncherConfig.isEnabled(remoteConfig, "accounts", "registrationEnabled")
 
+    LaunchedEffect(Unit) { RemoteLauncherConfig.refresh() }
     var mode by remember { mutableStateOf(AuthMode.LOGIN) }
 
     // Form states
@@ -88,6 +93,13 @@ fun AuthScreen(
     var errorMessage by remember { mutableStateOf("") }
     var successMessage by remember { mutableStateOf("") }
     var isPasswordVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(registrationEnabled) {
+        if (!registrationEnabled && mode == AuthMode.REGISTER) {
+            mode = AuthMode.LOGIN
+            errorMessage = "Pendaftaran akun sedang dinonaktifkan oleh administrator TG Launcher."
+        }
+    }
 
     // Monotonic Anti-Bypass Countdown timer for OTP
     var countdown by remember { mutableIntStateOf(OtpCooldownManager.getRemainingSeconds()) }
@@ -291,7 +303,7 @@ fun AuthScreen(
                             val isLogin = mode == AuthMode.LOGIN
                             Box(
                                 modifier = Modifier
-                                    .weight(1f)
+                                    .weight(if (registrationEnabled) 1f else 2f)
                                     .fillMaxHeight()
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(if (isLogin) Color(0xFF181C26) else Color.Transparent)
@@ -315,6 +327,7 @@ fun AuthScreen(
                                 )
                             }
 
+                            if (registrationEnabled) {
                             val isRegister = mode == AuthMode.REGISTER
                             Box(
                                 modifier = Modifier
@@ -340,6 +353,7 @@ fun AuthScreen(
                                     fontWeight = if (isRegister) FontWeight.Black else FontWeight.SemiBold,
                                     color = if (isRegister) Color.White else Color(0xFF71717A)
                                 )
+                            }
                             }
                         }
                     }
@@ -549,6 +563,10 @@ fun AuthScreen(
 
                         NuxButton(
                             onClick = {
+                                if (!registrationEnabled) {
+                                    errorMessage = "Pendaftaran akun sedang dinonaktifkan oleh administrator TG Launcher."
+                                    return@NuxButton
+                                }
                                 val cleanUser = username.trim()
                                 val cleanEmail = email.trim()
                                 if (cleanUser.isEmpty()) {
