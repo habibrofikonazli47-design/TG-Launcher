@@ -117,8 +117,10 @@ object AuthService {
         .build()
 
     // Endpoint backend TG Launcher (diinjeksi dari local.properties via NuxConfig)
+    // Authentication and Premium activation must always reach the canonical Admin API first.
+    // SERVER_BASE_URL may be unset in older/local builds, so it cannot be the only auth host.
     private val CANDIDATE_BASES: List<String>
-        get() = NuxConfig.CANDIDATE_BASES
+        get() = (listOf(ENTITLEMENTS_BASE_URL) + NuxConfig.CANDIDATE_BASES).distinct()
 
     suspend fun postApi(endpoint: String, jsonBody: String, bearerToken: String? = null): Result<String> = withContext(Dispatchers.IO) {
         if (CANDIDATE_BASES.isEmpty()) {
