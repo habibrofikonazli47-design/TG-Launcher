@@ -672,57 +672,12 @@ fun NuxPremiumDialog(
                                     }
                                 }
 
-                                // Tombol Toggle Perbarui / Ganti Key
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(26.dp)
-                                        .background(Color(0xFF1F2432), RoundedCornerShape(6.dp))
-                                        .border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(6.dp))
-                                        .clickable { showRedeemBoxForPremium = !showRedeemBoxForPremium },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.Key,
-                                            contentDescription = null,
-                                            tint = themeAccentColor,
-                                            modifier = Modifier.size(11.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text(
-                                            text = if (showRedeemBoxForPremium) "HIDE KEY REDEEM FORM" else "REDEEM / EXTEND LICENSE KEY",
-                                            color = Color.White,
-                                            fontSize = 8.sp,
-                                            fontWeight = FontWeight.Black
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        // Form input redeem opsional untuk VIP yang ingin upgrade ke Lifetime atau tukar key
-                        AnimatedVisibility(
-                            visible = showRedeemBoxForPremium,
-                            enter = fadeIn() + expandVertically(),
-                            exit = fadeOut() + shrinkVertically()
-                        ) {
-                            RedeemKeyCard(
-                                licenseKeyInput = licenseKeyInput,
-                                onKeyChange = { licenseKeyInput = it },
-                                isActivating = isActivating,
-                                activationError = activationError,
-                                activationSuccess = activationSuccess,
-                                onActivateClick = {
-                                    val user = launcherUser
-                                    if (user == null) {
-                                        activationError = "Please log in to your TG Launcher account first."
-                                        return@RedeemKeyCard
-                                    }
-                                    val rawKey = licenseKeyInput.trim().uppercase()
-                                    val cleanKey = if (!rawKey.contains("-") && rawKey.length == 16) {
-                                        "${rawKey.substring(0, 4)}-${rawKey.substring(4, 8)}-${rawKey.substring(8, 12)}-${rawKey.substring(12, 16)}"
-                                    } else {
+                                Text(
+                                    text = "Pengaturan paket dan perpanjangan Premium dikelola oleh Admin TG Launcher.",
+                                    color = NuxColors.GrayNeutral,
+                                    fontSize = 8.sp
+                                )
+                    } else {
                                         rawKey
                                     }
                                     if (cleanKey.length < 8) {
@@ -818,65 +773,12 @@ fun NuxPremiumDialog(
                             )
                         }
 
-                        // Key Redemption Box
-                        RedeemKeyCard(
-                            licenseKeyInput = licenseKeyInput,
-                            onKeyChange = { licenseKeyInput = it },
-                            isActivating = isActivating,
-                            activationError = activationError,
-                            activationSuccess = activationSuccess,
-                            onActivateClick = {
-                                val user = launcherUser
-                                if (user == null) {
-                                    activationError = "Please log in to your TG Launcher account first."
-                                    return@RedeemKeyCard
-                                }
-                                val rawKey = licenseKeyInput.trim().uppercase()
-                                val cleanKey = if (!rawKey.contains("-") && rawKey.length == 16) {
-                                    "${rawKey.substring(0, 4)}-${rawKey.substring(4, 8)}-${rawKey.substring(8, 12)}-${rawKey.substring(12, 16)}"
-                                } else {
-                                    rawKey
-                                }
-                                if (cleanKey.length < 8) {
-                                    activationError = "Invalid key format."
-                                    return@RedeemKeyCard
-                                }
-
-                                isActivating = true
-                                activationError = null
-                                coroutineScope.launch {
-                                    val res = AuthService.activateLicense(user.uid, cleanKey, user.idToken, context)
-                                    isActivating = false
-                                    res.fold(
-                                        onSuccess = { actResult ->
-                                            if (!actResult.success || !actResult.isActivated) {
-                                                activationError = actResult.message.takeIf { it.isNotBlank() } ?: "Invalid or already used license key."
-                                            } else {
-                                                val updatedUser = user.copy(
-                                                    isActivated = true,
-                                                    tier = actResult.tier,
-                                                    activatedAt = System.currentTimeMillis(),
-                                                    expiresAt = actResult.expiresAt,
-                                                    redeemedKey = cleanKey
-                                                )
-                                                AccountManager.saveAuthUser(context, updatedUser)
-                                                subscriptionInfo = SubscriptionInfo(
-                                                    isActivated = true,
-                                                    tier = actResult.tier,
-                                                    activatedAt = System.currentTimeMillis(),
-                                                    expiresAt = actResult.expiresAt,
-                                                    redeemedKey = cleanKey
-                                                )
-                                                activationSuccess = "Congratulations! Your account is now active as a ${actResult.tier.uppercase()} Member!"
-                                                Toast.makeText(context, "Activation Successful! Premium Features Unlocked!", Toast.LENGTH_LONG).show()
-                                            }
-                                        },
-                                        onFailure = { err ->
-                                            activationError = err.message ?: "Activation failed. Check your internet connection."
-                                        }
-                                    )
-                                }
-                            }
+                        // Premium access is assigned by administrators; no in-app key redemption.
+                        Text(
+                            text = "Premium diaktifkan langsung oleh Admin TG Launcher setelah akun kamu disetujui. Login dengan akun ini setelah admin memberikan akses.",
+                            color = NuxColors.GrayNeutral,
+                            fontSize = 8.sp,
+                            lineHeight = 11.sp
                         )
                     }
                 }
