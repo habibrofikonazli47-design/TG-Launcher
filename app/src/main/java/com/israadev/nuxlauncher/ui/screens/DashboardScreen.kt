@@ -107,6 +107,7 @@ fun DashboardScreen() {
     val selectedInstance by InstanceManager.selectedInstance.collectAsState()
     val currentAccount by AccountManager.currentAccount.collectAsState()
     val launcherUser by AccountManager.launcherUser.collectAsState()
+    val currentLauncherUser = launcherUser
     val launcherSettings by SettingsManager.settings.collectAsState()
 
     var showAddDialog by remember { mutableStateOf(false) }
@@ -647,7 +648,7 @@ fun DashboardScreen() {
                                                 imgBtnShape
                                             )
                                             .clickable {
-                                                val hasCustomHero = if (launcherUser?.features?.isNotEmpty() == true) "custom_video_hero" in launcherUser.features else launcherUser?.isActivated == true
+                                                val hasCustomHero = if (currentLauncherUser?.features?.isNotEmpty() == true) "custom_video_hero" in currentLauncherUser.features else currentLauncherUser?.isActivated == true
                                                 if (hasCustomHero) {
                                                     videoPickerLauncher.launch("video/*")
                                                 } else {
