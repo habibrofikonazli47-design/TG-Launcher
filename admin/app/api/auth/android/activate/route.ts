@@ -24,6 +24,7 @@ export async function POST(req:NextRequest){
   const license=keys[0];
   if(license.status==='revoked')return NextResponse.json({error:'Kode aktivasi telah dinonaktifkan.'},{status:403});
   const alreadyActivatedByUser=license.status==='active'&&license.user_id===user.id;
+  if(license.status==='unused'&&license.user_id&&license.user_id!==user.id)return NextResponse.json({error:'Kode ini pernah terikat ke akun lain dan tidak dapat dipindahkan.'},{status:409});
   if(license.status!=='unused'&&!alreadyActivatedByUser)return NextResponse.json({error:'Kode sudah digunakan oleh akun lain.'},{status:409});
   if(license.status==='unused'&&Number(license.used_count||0)>=Number(license.max_uses||1))return NextResponse.json({error:'Batas penggunaan kode aktivasi telah tercapai.'},{status:409});
   if(alreadyActivatedByUser&&license.expires_at&&new Date(license.expires_at).getTime()<=Date.now())return NextResponse.json({error:'Masa aktif kode ini sudah berakhir. Hubungi admin untuk perpanjangan.'},{status:403});
