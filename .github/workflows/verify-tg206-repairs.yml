@@ -1,0 +1,111 @@
+name: Verify TG206 feature repairs
+
+on:
+  push:
+    branches: [fix/tg206-feature-integration]
+    paths:
+      - "app/**"
+      - "admin/**"
+      - "*.gradle.kts"
+      - "gradle/**"
+      - ".github/workflows/verify-tg206-repairs.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tg206-feature-repairs
+  cancel-in-progress: true
+
+jobs:
+  android-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+
+      - name: Configure TG Launcher release signing
+        shell: bash
+        env:
+          TG_SIGNING_KEYSTORE_BASE64: ${{ secrets.TG_SIGNING_KEYSTORE_BASE64 }}
+          TG_SIGNING_STORE_PASSWORD: ${{ secrets.TG_SIGNING_STORE_PASSWORD }}
+          TG_SIGNING_KEY_ALIAS: ${{ secrets.TG_SIGNING_KEY_ALIAS }}
+          TG_SIGNING_KEY_PASSWORD: ${{ secrets.TG_SIGNING_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$TG_SIGNING_KEYSTORE_BASE64"
+          test -n "$TG_SIGNING_STORE_PASSWORD"
+          test -n "$TG_SIGNING_KEY_ALIAS"
+          test -n "$TG_SIGNING_KEY_PASSWORD"
+          KEYSTORE_PATH="$RUNNER_TEMP/tg-launcher-release.jks"
+          printf '%s' "$TG_SIGNING_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+          test -s "$KEYSTORE_PATH"
+          echo "TG_SIGNING_STORE_FILE=$KEYSTORE_PATH" >> "$GITHUB_ENV"
+          echo "TG_SIGNING_STORE_PASSWORD=$TG_SIGNING_STORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "TG_SIGNING_KEY_ALIAS=$TG_SIGNING_KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "TG_SIGNING_KEY_PASSWORD=$TG_SIGNING_KEY_PASSWORD" >> "$GITHUB_ENV"
+
+      - name: Build release APK
+        env:
+          TG_VERSION_CODE: "270"
+          TG_VERSION_NAME: "1.1.6-tg207"
+        run: |
+          chmod +x ./gradlew
+          ./gradlew --no-daemon clean testReleaseUnitTest assembleRelease
+
+      - name: Verify package, signing identity, and alignment
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/release/app-release.apk"
+          test -s "$APK"
+          BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          "$BUILD_TOOLS/apksigner" verify --min-sdk-version 18 --verbose --print-certs "$APK" | tee /tmp/tg-signature.txt
+          grep -q "Signer #1 certificate SHA-256 digest: e5aa76841020b79e40e8612021d262f53afdb3d918b3dbc4df97afca1af3b73f" /tmp/tg-signature.txt
+          "$BUILD_TOOLS/zipalign" -c -v 4 "$APK"
+          "$BUILD_TOOLS/aapt" dump badging "$APK" | tee /tmp/tg-badging.txt
+          grep -q "package: name='com.tg.launcher' versionCode='270' versionName='1.1.6-tg207'" /tmp/tg-badging.txt
+          grep -q "application-label:'TG Launcher'" /tmp/tg-badging.txt
+          grep -q "targetSdkVersion:'35'" /tmp/tg-badging.txt
+          grep -q "native-code: 'arm64-v8a'" /tmp/tg-badging.txt
+          unzip -tq "$APK"
+          sha256sum "$APK"
+
+      - name: Upload test APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: TG-Launcher-tg207-feature-validation
+          path: app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 14
+
+  admin-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: admin
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund --no-package-lock
+      - name: Build Admin Panel
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: npm run build
