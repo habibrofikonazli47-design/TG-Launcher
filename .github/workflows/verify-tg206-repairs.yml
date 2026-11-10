@@ -93,6 +93,15 @@ jobs:
           unzip -tq "$APK"
           sha256sum "$APK"
 
+      - name: Prepare direct APK and update metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp app/build/outputs/apk/release/app-release.apk TG-Launcher-v1.1.6-tg208.apk
+          cp app/build/outputs/apk/release/output-metadata.json output-metadata.json
+          test -s TG-Launcher-v1.1.6-tg208.apk
+          test -s output-metadata.json
+
       - name: Publish direct TG208 APK release
         uses: softprops/action-gh-release@v2
         with:
@@ -104,7 +113,9 @@ jobs:
             Version code: 271
             Signing identity verified against TG206.
             Install this APK over TG206; keep the existing app installed.
-          files: app/build/outputs/apk/release/app-release.apk
+          files: |
+            TG-Launcher-v1.1.6-tg208.apk
+            output-metadata.json
           make_latest: true
 
       - name: Upload test APK
