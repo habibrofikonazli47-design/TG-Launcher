@@ -22,6 +22,16 @@ export async function GET(){
   const rows=await sql`SELECT key,value FROM app_settings WHERE key IN ('general','game','runtimes','mods','renderer','recorder','ai','accounts','social','updates','appearance')`;
   const config:any={...defaults};
   for(const row of rows){if(Object.prototype.hasOwnProperty.call(defaults,row.key)&&row.value&&typeof row.value==='object')config[row.key]={...defaults[row.key],...row.value};}
+  // Never expose encrypted LiveKit credentials or other admin-only Social settings
+  // through the public launcher configuration endpoint.
+  const social=config.social||{};
+  config.social={
+   friendsEnabled:social.friendsEnabled!==false,
+   voiceEnabled:social.voiceEnabled!==false,
+   livekitEnabled:social.livekitEnabled===true,
+   uploadsEnabled:social.uploadsEnabled!==false,
+   maximumUploadMb:Number.isFinite(Number(social.maximumUploadMb))?Math.max(1,Math.min(100,Number(social.maximumUploadMb))):20,
+  };
   config.features={game:config.game.minecraftReleaseEnabled||config.game.minecraftSnapshotEnabled,runtimes:config.runtimes.java8Enabled||config.runtimes.java17Enabled||config.runtimes.java21Enabled||config.runtimes.java25Enabled,mods:config.mods.modrinthEnabled||config.mods.curseforgeEnabled||config.mods.allowManualImport,renderer:config.renderer.virglEnabled||config.renderer.gl4esEnabled||config.renderer.mesaEnabled||config.renderer.zinkEnabled,recorder:config.recorder.screenRecordingEnabled,ai:config.ai.assistantEnabled,accounts:config.accounts.offlineLoginEnabled||config.accounts.microsoftLoginEnabled||config.accounts.elybyLoginEnabled,social:config.social.friendsEnabled||config.social.voiceEnabled};
   config.branding={name:'TG Launcher',adminName:'TG Launcher Control Center'};
   return NextResponse.json(config,{headers:{'Cache-Control':'no-store, max-age=0'}});
