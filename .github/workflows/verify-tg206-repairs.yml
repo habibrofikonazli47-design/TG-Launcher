@@ -1,4 +1,4 @@
-name: Verify TG208 feature integration
+name: Verify TG209 install compatibility
 
 on:
   push:
@@ -59,8 +59,8 @@ jobs:
 
       - name: Build release APK
         env:
-          TG_VERSION_CODE: "271"
-          TG_VERSION_NAME: "1.1.6-tg208"
+          TG_VERSION_CODE: "272"
+          TG_VERSION_NAME: "1.1.6-tg209"
         run: |
           chmod +x ./gradlew
           ./gradlew --no-daemon clean assembleRelease
@@ -72,7 +72,22 @@ jobs:
           APK="app/build/outputs/apk/release/app-release.apk"
           test -s "$APK"
           BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          # Re-sign with the SAME permanent TG release key and explicitly enable
+          # all three schemes. AGP previously emitted v2-only APKs despite the
+          # Gradle v1 flag, which can be rejected by some OEM installers.
+          "$BUILD_TOOLS/apksigner" sign \
+            --ks "$TG_SIGNING_STORE_FILE" \
+            --ks-key-alias "$TG_SIGNING_KEY_ALIAS" \
+            --ks-pass "env:TG_SIGNING_STORE_PASSWORD" \
+            --key-pass "env:TG_SIGNING_KEY_PASSWORD" \
+            --v1-signing-enabled true \
+            --v2-signing-enabled true \
+            --v3-signing-enabled true \
+            "$APK"
           "$BUILD_TOOLS/apksigner" verify --min-sdk-version 18 --verbose --print-certs "$APK" | tee /tmp/tg-signature.txt
+          grep -q "Verified using v1 scheme (JAR signing): true" /tmp/tg-signature.txt
+          grep -q "Verified using v2 scheme (APK Signature Scheme v2): true" /tmp/tg-signature.txt
+          grep -q "Verified using v3 scheme (APK Signature Scheme v3): true" /tmp/tg-signature.txt
           grep -q "V3.0 Signer: certificate SHA-256 digest: e5aa76841020b79e40f8612021d262f53afdb3d918b3dbc4df97afca1af3b73f" /tmp/tg-signature.txt
           "$BUILD_TOOLS/zipalign" -c -v 4 "$APK"
           APKANALYZER="$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer"
@@ -85,9 +100,11 @@ jobs:
           echo "APK version code: $("$APKANALYZER" manifest version-code "$APK")"
           echo "APK version name: $("$APKANALYZER" manifest version-name "$APK")"
           echo "APK target SDK: $("$APKANALYZER" manifest target-sdk "$APK")"
+          "$BUILD_TOOLS/aapt" dump badging "$APK" | tee /tmp/tg-badging.txt
+          grep -q "package: name='com.tg.launcher'" /tmp/tg-badging.txt
           test "$("$APKANALYZER" manifest application-id "$APK")" = "com.tg.launcher"
-          test "$("$APKANALYZER" manifest version-code "$APK")" = "271"
-          test "$("$APKANALYZER" manifest version-name "$APK")" = "1.1.6-tg208"
+          test "$("$APKANALYZER" manifest version-code "$APK")" = "272"
+          test "$("$APKANALYZER" manifest version-name "$APK")" = "1.1.6-tg209"
           test "$("$APKANALYZER" manifest target-sdk "$APK")" = "35"
           unzip -Z1 "$APK" | grep -Eq '^lib/arm64-v8a/.*[.]so$'
           unzip -tq "$APK"
@@ -97,31 +114,31 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cp app/build/outputs/apk/release/app-release.apk TG-Launcher-v1.1.6-tg208.apk
+          cp app/build/outputs/apk/release/app-release.apk TG-Launcher-v1.1.6-tg209.apk
           cp app/build/outputs/apk/release/output-metadata.json output-metadata.json
-          test -s TG-Launcher-v1.1.6-tg208.apk
+          test -s TG-Launcher-v1.1.6-tg209.apk
           test -s output-metadata.json
 
-      - name: Publish direct TG208 APK release
+      - name: Publish direct TG209 APK release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: tg-launcher-1.1.6-tg208
-          name: TG Launcher 1.1.6 TG208
+          tag_name: tg-launcher-1.1.6-tg209
+          name: TG Launcher 1.1.6 TG209
           body: |
-            TG208 built from the existing TG206 codebase.
+            TG209 built from the existing TG206 codebase.
             Package: com.tg.launcher
             Version code: 271
             Signing identity verified against TG206.
             Install this APK over TG206; keep the existing app installed.
           files: |
-            TG-Launcher-v1.1.6-tg208.apk
+            TG-Launcher-v1.1.6-tg209.apk
             output-metadata.json
           make_latest: true
 
       - name: Upload test APK
         uses: actions/upload-artifact@v4
         with:
-          name: TG-Launcher-tg208-feature-validation
+          name: TG-Launcher-tg209-feature-validation
           path: app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 14
