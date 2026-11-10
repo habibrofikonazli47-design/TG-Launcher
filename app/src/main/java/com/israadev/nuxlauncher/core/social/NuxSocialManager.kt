@@ -143,7 +143,8 @@ object NuxSocialManager {
             if (!freshIdToken.isNullOrBlank()) {
                 cachedToken = freshIdToken
                 tokenExpiry = now + 50 * 60 * 1000L // 50 menit
-                AccountManager.updateTokens(freshIdToken, refreshToken)
+                // AuthService.refreshIdToken persists both the new ID token and Firebase's
+                // rotated refresh token. Do not overwrite that rotated token with the old one.
                 return freshIdToken
             }
         }
