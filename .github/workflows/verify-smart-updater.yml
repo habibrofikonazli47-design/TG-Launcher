@@ -16,7 +16,7 @@ permissions:
   contents: read
 
 jobs:
-  android-compile:
+  android-release-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,7 +28,30 @@ jobs:
       - uses: android-actions/setup-android@v3
         with:
           packages: platform-tools
-      - name: Compile release Kotlin sources
+      - name: Build release APK
         run: |
           chmod +x ./gradlew
-          ./gradlew --no-daemon :app:compileReleaseKotlin
+          ./gradlew --no-daemon clean assembleRelease
+      - name: Verify APK package, signature, alignment and archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/release/app-release.apk"
+          test -s "$APK"
+          BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          "$BUILD_TOOLS/apksigner" verify --verbose "$APK"
+          "$BUILD_TOOLS/zipalign" -c -v 4 "$APK"
+          "$BUILD_TOOLS/aapt" dump badging "$APK" | tee /tmp/tg-badging.txt
+          grep -q "package: name='com.tg.launcher'" /tmp/tg-badging.txt
+          grep -q "application-label:'TG Launcher'" /tmp/tg-badging.txt
+          grep -q "native-code: 'arm64-v8a'" /tmp/tg-badging.txt
+          unzip -tq "$APK"
+          sha256sum "$APK"
+          echo "Release APK build validation passed."
+      - name: Upload validation APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: TG-Launcher-smart-updater-validation
+          path: app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 7
