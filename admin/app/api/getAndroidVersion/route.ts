@@ -87,7 +87,7 @@ export async function GET() {
       update_available: true,
       minimum_supported_version: String(updatePolicy.minimumSupportedVersion || '1.0.0'),
       created_at: release.published_at || release.created_at || '',
-      files: [{ uri: asset.browser_download_url, file_name: asset.name, size: asset.size }],
+      files: [{ uri: asset.browser_download_url, file_name: asset.name, size: asset.size, sha256: String(asset.digest || '').replace(/^sha256:/i, '').toLowerCase() }],
       default_body: { markdown: release.body || 'Pembaruan TG Launcher tersedia.' },
     }, { headers: { 'Cache-Control': 'no-store, max-age=0' } });
   } catch (error: any) {
