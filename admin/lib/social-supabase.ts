@@ -48,7 +48,7 @@ export async function proxySocialRequest(req: Request, operation: string) {
   }
 }
 
-export async function proxySocialAdminRequest(req: NextRequest) {
+export async function proxySocialAdminRequest(req: Request) {
   const endpoint = process.env.TG_SOCIAL_SUPABASE_FUNCTION_URL?.trim();
   const publishableKey = process.env.TG_SOCIAL_SUPABASE_PUBLISHABLE_KEY?.trim();
   const cookie = req.headers.get('cookie') || '';
