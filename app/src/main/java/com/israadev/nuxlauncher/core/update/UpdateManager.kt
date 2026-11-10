@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import androidx.core.content.FileProvider
 import androidx.core.content.pm.PackageInfoCompat
 import com.google.gson.JsonParser
 import kotlinx.coroutines.Dispatchers
@@ -12,6 +13,9 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import com.israadev.nuxlauncher.core.network.NuxConfig
+import java.io.File
+import java.security.MessageDigest
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 data class AndroidUpdateInfo(
@@ -23,99 +27,49 @@ data class AndroidUpdateInfo(
     val downloadUrl: String,
     val fileName: String,
     val fileSize: Long,
+    val sha256: String,
     val changelog: String,
     val isUpdateAvailable: Boolean,
     val isMandatory: Boolean
 )
 
 object UpdateManager {
-    private val UPDATE_ENDPOINT: String
-        get() = NuxConfig.UPDATE_ENDPOINT
-
+    private val UPDATE_ENDPOINT: String get() = NuxConfig.UPDATE_ENDPOINT
     private val client = OkHttpClient.Builder()
-        .connectTimeout(8, TimeUnit.SECONDS)
-        .readTimeout(10, TimeUnit.SECONDS)
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(90, TimeUnit.SECONDS)
+        .callTimeout(15, TimeUnit.MINUTES)
         .build()
 
     suspend fun checkForUpdate(context: Context): Result<AndroidUpdateInfo> = withContext(Dispatchers.IO) {
-        if (UPDATE_ENDPOINT.isBlank()) {
-            return@withContext Result.failure(Exception("Server pembaruan belum dikonfigurasi di local.properties."))
-        }
+        if (UPDATE_ENDPOINT.isBlank()) return@withContext Result.failure(Exception("Server pembaruan belum dikonfigurasi."))
         try {
-            val reqBuilder = Request.Builder()
-                .url(UPDATE_ENDPOINT)
-                .header("User-Agent", "TG-Launcher-Android")
-                .get()
-            val req = reqBuilder.build()
-
-            client.newCall(req).execute().use { resp ->
-                if (!resp.isSuccessful) {
-                    return@withContext Result.failure(Exception("Server HTTP ${resp.code}"))
+            val request = Request.Builder().url(UPDATE_ENDPOINT)
+                .header("User-Agent", "TG-Launcher-Android").get().build()
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) return@withContext Result.failure(Exception("Server HTTP ${response.code}"))
+                val root = JsonParser.parseString(response.body.string()).asJsonObject
+                val remoteCode = root.get("code")?.takeUnless { it.isJsonNull }?.asInt ?: 1
+                val remoteVersion = root.get("version")?.takeUnless { it.isJsonNull }?.asString?.trim()?.removePrefix("v") ?: "1.0.0"
+                val force = root.get("force_update")?.takeUnless { it.isJsonNull }?.asBoolean ?: false
+                val minimum = root.get("minimum_supported_version")?.takeUnless { it.isJsonNull }?.asString?.trim()?.removePrefix("v") ?: "1.0.0"
+                val createdAt = root.get("created_at")?.takeUnless { it.isJsonNull }?.asString ?: ""
+                var url = ""
+                var name = "TG-Launcher-Android.apk"
+                var size = 0L
+                var hash = ""
+                val files = root.getAsJsonArray("files")
+                if (files != null && files.size() > 0) {
+                    val file = files[0].asJsonObject
+                    url = file.get("uri")?.takeUnless { it.isJsonNull }?.asString?.let(NuxConfig::getDownloadUrl) ?: ""
+                    name = file.get("file_name")?.takeUnless { it.isJsonNull }?.asString ?: name
+                    size = file.get("size")?.takeUnless { it.isJsonNull }?.asLong ?: 0L
+                    hash = file.get("sha256")?.takeUnless { it.isJsonNull }?.asString.orEmpty()
+                    hash = hash.removePrefix("sha256:").lowercase(Locale.ROOT)
                 }
-                val bodyStr = resp.body.string()
-
-                val rootObj = JsonParser.parseString(bodyStr).asJsonObject
-
-                val remoteCode = if (rootObj.has("code") && !rootObj.get("code").isJsonNull) {
-                    rootObj.get("code").asInt
-                } else 1
-
-                val remoteVersion = if (rootObj.has("version") && !rootObj.get("version").isJsonNull) {
-                    rootObj.get("version").asString.trim().removePrefix("v")
-                } else "1.0.0"
-
-                val forceUpdate = rootObj.has("force_update") && !rootObj.get("force_update").isJsonNull && rootObj.get("force_update").asBoolean
-                val minimumSupportedVersion = if (rootObj.has("minimum_supported_version") && !rootObj.get("minimum_supported_version").isJsonNull) rootObj.get("minimum_supported_version").asString.trim().removePrefix("v") else "1.0.0"
-
-                val createdAt = if (rootObj.has("created_at") && !rootObj.get("created_at").isJsonNull) {
-                    rootObj.get("created_at").asString
-                } else ""
-
-                // Extract download files info
-                var downloadUrl = NuxConfig.getDownloadUrl("uploads/installers/TG-Launcher.apk")
-                var fileName = "TG-Launcher-Android.apk"
-                var fileSize = 0L
-
-                if (rootObj.has("files") && rootObj.get("files").isJsonArray) {
-                    val filesArr = rootObj.getAsJsonArray("files")
-                    if (filesArr.size() > 0) {
-                        val firstFile = filesArr.get(0).asJsonObject
-                        if (firstFile.has("uri") && !firstFile.get("uri").isJsonNull) {
-                            downloadUrl = NuxConfig.getDownloadUrl(firstFile.get("uri").asString)
-                        }
-                        if (firstFile.has("file_name") && !firstFile.get("file_name").isJsonNull) {
-                            fileName = firstFile.get("file_name").asString
-                        }
-                        if (firstFile.has("size") && !firstFile.get("size").isJsonNull) {
-                            fileSize = firstFile.get("size").asLong
-                        }
-                    }
-                }
-
-                // Changelog extraction
-                var changelogText = ""
-                if (rootObj.has("default_body") && rootObj.get("default_body").isJsonObject) {
-                    val defBody = rootObj.getAsJsonObject("default_body")
-                    if (defBody.has("markdown") && !defBody.get("markdown").isJsonNull) {
-                        changelogText = defBody.get("markdown").asString
-                    }
-                }
-
-                if (changelogText.isBlank() && rootObj.has("bodies") && rootObj.get("bodies").isJsonArray) {
-                    val bodies = rootObj.getAsJsonArray("bodies")
-                    if (bodies.size() > 0) {
-                        val b0 = bodies.get(0).asJsonObject
-                        if (b0.has("markdown") && !b0.get("markdown").isJsonNull) {
-                            changelogText = b0.get("markdown").asString
-                        }
-                    }
-                }
-
-                if (changelogText.isBlank()) {
-                    changelogText = "• Official TG Launcher Android Release\n• Performance Optimizations & Game Sync Improvements"
-                }
-
-                // Local package info
+                val changelog = root.getAsJsonObject("default_body")?.get("markdown")
+                    ?.takeUnless { it.isJsonNull }?.asString?.takeIf { it.isNotBlank() }
+                    ?: "Pembaruan resmi TG Launcher tersedia."
                 val packageInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     context.packageManager.getPackageInfo(context.packageName, PackageManager.PackageInfoFlags.of(0))
                 } else {
@@ -123,54 +77,76 @@ object UpdateManager {
                     context.packageManager.getPackageInfo(context.packageName, 0)
                 }
                 val localCode = PackageInfoCompat.getLongVersionCode(packageInfo)
-                val localVersionName = (packageInfo.versionName ?: "1.0.4").trim().removePrefix("v")
-
-                val isNewerCode = remoteCode > localCode
-                val isNewerVer = compareVersions(remoteVersion, localVersionName) > 0
-                val belowMinimum = forceUpdate && compareVersions(localVersionName, minimumSupportedVersion) < 0
-                val releaseEnabled = !rootObj.has("update_available") || rootObj.get("update_available").asBoolean
-                val isAvailable = releaseEnabled && (isNewerCode || isNewerVer || belowMinimum)
-
-                val updateInfo = AndroidUpdateInfo(
-                    code = remoteCode,
-                    version = remoteVersion,
-                    localVersion = localVersionName,
-                    localCode = localCode,
-                    createdAt = createdAt,
-                    downloadUrl = downloadUrl,
-                    fileName = fileName,
-                    fileSize = fileSize,
-                    changelog = changelogText,
-                    isUpdateAvailable = isAvailable,
-                    isMandatory = forceUpdate && isAvailable
-                )
-
-                Result.success(updateInfo)
+                val localVersion = (packageInfo.versionName ?: "1.0.0").trim().removePrefix("v")
+                val newer = remoteCode > localCode || compareVersions(remoteVersion, localVersion) > 0
+                val belowMinimum = force && compareVersions(localVersion, minimum) < 0
+                val enabled = root.get("update_available")?.takeUnless { it.isJsonNull }?.asBoolean ?: true
+                val available = enabled && (newer || belowMinimum)
+                Result.success(AndroidUpdateInfo(remoteCode, remoteVersion, localVersion, localCode,
+                    createdAt, url, name, size, hash, changelog, available, force && available))
             }
-        } catch (e: Exception) {
-            Result.failure(e)
+        } catch (error: Exception) {
+            Result.failure(error)
         }
     }
 
-    private fun compareVersions(ver1: String, ver2: String): Int {
-        val parts1 = ver1.split('.').mapNotNull { it.filter { c -> c.isDigit() }.toIntOrNull() }
-        val parts2 = ver2.split('.').mapNotNull { it.filter { c -> c.isDigit() }.toIntOrNull() }
-        val maxLen = maxOf(parts1.size, parts2.size)
-        for (i in 0 until maxLen) {
-            val p1 = parts1.getOrElse(i) { 0 }
-            val p2 = parts2.getOrElse(i) { 0 }
-            if (p1 != p2) return p1.compareTo(p2)
+    /** Download inside TG Launcher, verify SHA-256, then request Android's installer UI. */
+    suspend fun downloadAndInstall(context: Context, update: AndroidUpdateInfo): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            if (Uri.parse(update.downloadUrl).scheme != "https")
+                return@withContext Result.failure(Exception("Tautan update harus menggunakan HTTPS."))
+            if (!update.sha256.matches(Regex("^[a-fA-F0-9]{64}$")))
+                return@withContext Result.failure(Exception("Checksum SHA-256 tidak tersedia. Update dibatalkan demi keamanan."))
+
+            val dir = File(context.cacheDir, "updates").apply { mkdirs() }
+            val safeName = update.fileName.substringAfterLast('/').replace(Regex("[^A-Za-z0-9._-]"), "_")
+            val temp = File(dir, "$safeName.part")
+            val apk = File(dir, safeName)
+            val request = Request.Builder().url(update.downloadUrl)
+                .header("User-Agent", "TG-Launcher-Android").get().build()
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) return@withContext Result.failure(Exception("Unduhan gagal: HTTP ${response.code}"))
+                val body = response.body ?: return@withContext Result.failure(Exception("Server tidak mengirim file APK."))
+                if (update.fileSize > 0 && body.contentLength() > 0 && body.contentLength() != update.fileSize)
+                    return@withContext Result.failure(Exception("Ukuran file update tidak cocok dengan metadata server."))
+                body.byteStream().use { input -> temp.outputStream().buffered().use { output -> input.copyTo(output) } }
+            }
+            val digest = MessageDigest.getInstance("SHA-256")
+            val actualHash = temp.inputStream().buffered().use { input ->
+                val buffer = ByteArray(64 * 1024)
+                while (true) {
+                    val count = input.read(buffer)
+                    if (count < 0) break
+                    digest.update(buffer, 0, count)
+                }
+                digest.digest().joinToString("") { "%02x".format(it) }
+            }
+            if (!actualHash.equals(update.sha256, ignoreCase = true)) {
+                temp.delete()
+                return@withContext Result.failure(Exception("Verifikasi update gagal (SHA-256 tidak cocok)."))
+            }
+            if (apk.exists()) apk.delete()
+            if (!temp.renameTo(apk)) return@withContext Result.failure(Exception("Tidak dapat menyiapkan file instalasi."))
+            val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", apk)
+            val install = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, "application/vnd.android.package-archive")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(install)
+            Result.success(Unit)
+        } catch (error: Exception) {
+            Result.failure(error)
+        }
+    }
+
+    private fun compareVersions(first: String, second: String): Int {
+        val a = first.split('.').mapNotNull { it.filter(Char::isDigit).toIntOrNull() }
+        val b = second.split('.').mapNotNull { it.filter(Char::isDigit).toIntOrNull() }
+        for (i in 0 until maxOf(a.size, b.size)) {
+            val left = a.getOrElse(i) { 0 }
+            val right = b.getOrElse(i) { 0 }
+            if (left != right) return left.compareTo(right)
         }
         return 0
-    }
-
-    fun openDownloadUrl(context: Context, url: String) {
-        try {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            context.startActivity(intent)
-        } catch (_: Exception) {
-        }
     }
 }
