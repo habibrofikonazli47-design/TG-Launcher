@@ -663,7 +663,7 @@ fun FriendsScreen(
         JoinPrivateWorldCodeDialog(
             code = joinWorldCode,
             busy = worldInviteBusy,
-            onCodeChange = { joinWorldCode = it.uppercase().filter { ch -> ch.isLetterOrDigit() }.take(10) },
+            onCodeChange = { joinWorldCode = it.uppercase().filter { ch -> ch in "ABCDEFGHJKLMNPQRSTUVWXYZ23456789" }.take(10) },
             onJoin = {
                 scope.launch {
                     worldInviteBusy = true
