@@ -291,7 +291,7 @@ class MinecraftDownloader(
                     digest.update(buffer, 0, read)
                 }
             }
-            digest.digest().joinToString("") { "%02x".format(it) }.equals(expectedHash, ignoreCase = true)
+            digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) }.equals(expectedHash, ignoreCase = true)
         } catch (_: Exception) {
             false
         }
