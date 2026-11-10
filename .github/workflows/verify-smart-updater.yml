@@ -86,10 +86,7 @@ jobs:
           set -euo pipefail
           APK="app/build/outputs/apk/release/app-release.apk"
           TAG="tg-launcher-$TG_VERSION_NAME"
-          gh release create "$TAG" "$APK" \\
-            --title "TG Launcher $TG_VERSION_NAME" \\
-            --notes "TG Launcher beta APK. Signed with the persistent TG Launcher release certificate matching build 206. Package: com.tg.launcher." \\
-            --prerelease
+          gh release create "$TAG" "$APK" --title "TG Launcher $TG_VERSION_NAME" --notes "TG Launcher beta APK. Signed with the persistent TG Launcher release certificate matching build 206. Package: com.tg.launcher." --prerelease
       - name: Upload validation APK
         uses: actions/upload-artifact@v4
         with:
