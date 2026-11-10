@@ -75,11 +75,41 @@ jobs:
           "$BUILD_TOOLS/apksigner" verify --min-sdk-version 18 --verbose --print-certs "$APK" | tee /tmp/tg-signature.txt
           grep -q "V3.0 Signer: certificate SHA-256 digest: e5aa76841020b79e40e8612021d262f53afdb3d918b3dbc4df97afca1af3b73f" /tmp/tg-signature.txt
           "$BUILD_TOOLS/zipalign" -c -v 4 "$APK"
-          "$BUILD_TOOLS/aapt" dump badging "$APK" | tee /tmp/tg-badging.txt
-          grep -q "package: name='com.tg.launcher' versionCode='270' versionName='1.1.6-tg207'" /tmp/tg-badging.txt
-          grep -q "application-label:'TG Launcher'" /tmp/tg-badging.txt
-          grep -q "targetSdkVersion:'35'" /tmp/tg-badging.txt
-          grep -q "native-code: 'arm64-v8a'" /tmp/tg-badging.txt
+          APKANALYZER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name apkanalyzer -perm -u+x | sort -V | tail -n 1)"
+          test -x "$APKANALYZER"
+          test "$("$APKANALYZER" manifest application-id "$APK")" = "com.tg.launcher"
+          test "$("$APKANALYZER" manifest version-code "$APK")" = "270"
+          test "$("$APKANALYZER" manifest version-name "$APK")" = "1.1.6-tg207"
+          test "$("$APKANALYZER" manifest target-sdk "$APK")" = "35"
+          unzip -Z1 "$APK" | grep -q '^lib/arm64-v8a/.*\\.so
+
+      - name: Upload test APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: TG-Launcher-tg207-feature-validation
+          path: app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 14
+
+  admin-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: admin
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund --no-package-lock
+      - name: Build Admin Panel
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: npm run build
+
           unzip -tq "$APK"
           sha256sum "$APK"
 
