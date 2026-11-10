@@ -238,8 +238,11 @@ object NuxVoiceManager {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                if (user.idToken.isBlank()) {
-                    Log.e(TAG, "Firebase ID token is missing; cannot authenticate TG Social voice request")
+                // Always obtain a fresh Firebase ID token for the LiveKit token endpoint.
+                // The AuthUser passed by the UI may contain an expired token from an older session.
+                val activeToken = NuxSocialManager.getAuthToken(forceRefresh = true)
+                if (activeToken.isNullOrBlank()) {
+                    Log.e(TAG, "Unable to refresh Firebase ID token for TG Social voice request")
                     withContext(Dispatchers.Main) { _isConnecting.value = false; _lastError.value = "Sesi login kedaluwarsa. Silakan login ulang." }
                     return@launch
                 }
@@ -251,7 +254,7 @@ object NuxVoiceManager {
                 val requestBody = payload.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
                 val req = Request.Builder()
                     .url(TOKEN_API_BASE)
-                    .header("Authorization", "Bearer ${user.idToken}")
+                    .header("Authorization", "Bearer $activeToken")
                     .header("Accept", "application/json")
                     .post(requestBody)
                     .build()
