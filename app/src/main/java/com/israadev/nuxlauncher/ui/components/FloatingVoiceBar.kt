@@ -49,7 +49,7 @@ fun FloatingVoiceBar(
     val activeSpeakers by NuxVoiceManager.activeSpeakers.collectAsState()
     val voiceError by NuxVoiceManager.lastError.collectAsState()
 
-    if (!isConnected && !isConnecting && activeRoom == null) return
+    if (!isConnected && !isConnecting && activeRoom == null && voiceError == null) return
 
     var offsetX by remember { mutableFloatStateOf(0f) }
     var offsetY by remember { mutableFloatStateOf(0f) }
