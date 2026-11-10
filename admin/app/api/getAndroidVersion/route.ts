@@ -11,7 +11,7 @@ export async function GET() {
     const settings = Object.fromEntries(rows.map((row: any) => [row.key, row.value || {}]));
     const updates = settings.updates || {};
     const general = settings.general || {};
-    const releaseEnabled = updates.releaseEnabled === true;
+    const releaseEnabled = updates.releaseEnabled !== false;
     const updatePolicy = {
       forceUpdate: updates.forceUpdate === true || general.forceUpdate === true,
       minimumSupportedVersion: updates.forceUpdate === true
