@@ -22,7 +22,7 @@ object InstanceManager {
     val selectedInstance: StateFlow<Instance?> = _selectedInstance.asStateFlow()
 
     fun getNuxDir(context: Context): File {
-        // 1. Primary user-visible storage: /storage/emulated/0/nuxlauncher
+        // 1. Primary user-visible storage: /storage/emulated/0/tglauncher
         try {
             val extStorage = android.os.Environment.getExternalStorageDirectory()
             val tgPublicDir = File(extStorage, "tglauncher")
@@ -34,7 +34,7 @@ object InstanceManager {
             }
         } catch (_: Exception) {}
 
-        // 2. Secondary fallback: /storage/emulated/0/Android/data/com.israadev.nuxlauncher/files/nuxlauncher
+        // 2. Secondary fallback: app-specific TG Launcher storage
         val appExt = context.getExternalFilesDir(null)
         if (appExt != null) {
             val appExtDir = File(appExt, "tglauncher")
@@ -221,9 +221,9 @@ object InstanceManager {
             // Previous possible locations
             val oldLocations = listOf(
                 // Previous public folder used by older NUX-branded builds.
-                File(android.os.Environment.getExternalStorageDirectory(), "tglauncher"),
-                File(context.dataDir ?: context.filesDir, "tglauncher"),
-                File(context.filesDir, "tglauncher"),
+                File(android.os.Environment.getExternalStorageDirectory(), "nuxlauncher"),
+                File(context.dataDir ?: context.filesDir, "nuxlauncher"),
+                File(context.filesDir, "nuxlauncher"),
                 File(context.filesDir, ".minecraft")
             )
 
