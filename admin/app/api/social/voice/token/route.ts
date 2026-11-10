@@ -45,7 +45,7 @@ export async function POST(req:NextRequest){
   if(!payload?.success||!payload?.roomName)return NextResponse.json({error:payload?.error||'Gagal menyiapkan voice room'},{status:result.status||503});
   const roomName=String(payload.roomName);
   const token=signLiveKitToken(apiKey,secret,user.uid,roomName);
-  return NextResponse.json({success:true,serverUrl,roomName,token,expiresIn:3600},{headers:{'Cache-Control':'no-store'}});
+  return NextResponse.json({success:true,serverUrl,roomId:payload.id||null,roomName,token,expiresIn:3600},{headers:{'Cache-Control':'no-store'}});
  }catch(error){console.error('[tg-social-voice-token]',error);return NextResponse.json({error:'Gagal membuat token voice TG'},{status:503});}
 }
 export async function GET(req:NextRequest){
