@@ -280,42 +280,42 @@ object AuthService {
                     .header("Cache-Control", "no-cache")
                     .get()
                     .build()
-                client.newCall(request).execute().use { response ->
-                    val body = response.body?.string().orEmpty()
-                    if (response.code == 401 && attempt == 0) {
-                        // Retry once with a freshly rotated Firebase token instead of downgrading Premium.
-                        val refreshedToken = refreshIdToken(currentUser.refreshToken)
-                        if (!refreshedToken.isNullOrBlank()) {
-                            currentUser = currentUser.copy(idToken = refreshedToken)
-                            continue
-                        }
-                        return@withContext user
-                    }
-                    if (!response.isSuccessful) {
-                        if (response.code == 403) {
-                            return@withContext currentUser.copy(isActivated = false, tier = "blocked", features = emptyList(), limits = emptyMap())
-                        }
-                        // Network/server/auth failures must not silently turn a cached Premium account into Free.
-                        return@withContext currentUser
-                    }
-                    val obj = gson.fromJson(body, JsonObject::class.java) ?: return@withContext currentUser
-                    if (!obj.get("success").asBooleanOrDefault(false)) return@withContext currentUser
-                    val features = try {
-                        obj.getAsJsonArray("features")?.mapNotNull { if (it.isJsonPrimitive) it.asString else null } ?: currentUser.features
-                    } catch (_: Exception) { currentUser.features }
-                    val limits = try {
-                        obj.getAsJsonObject("limits")?.entrySet()?.associate { entry ->
-                            entry.key to try { entry.value.asInt } catch (_: Exception) { -1 }
-                        } ?: currentUser.limits
-                    } catch (_: Exception) { currentUser.limits }
-                    return@withContext currentUser.copy(
-                        isActivated = obj.get("isActivated").asBooleanOrDefault(currentUser.isActivated),
-                        tier = obj.get("plan").asStringOrNull() ?: currentUser.tier,
-                        expiresAt = obj.get("expiresAt").asStringOrNull(),
-                        features = features,
-                        limits = limits
-                    )
+                val (statusCode, body) = client.newCall(request).execute().use { response ->
+                    response.code to response.body?.string().orEmpty()
                 }
+                if (statusCode == 401 && attempt == 0) {
+                    // Retry once with a freshly rotated Firebase token instead of downgrading Premium.
+                    val refreshedToken = refreshIdToken(currentUser.refreshToken)
+                    if (!refreshedToken.isNullOrBlank()) {
+                        currentUser = currentUser.copy(idToken = refreshedToken)
+                        continue
+                    }
+                    return@withContext user
+                }
+                if (statusCode !in 200..299) {
+                    if (statusCode == 403) {
+                        return@withContext currentUser.copy(isActivated = false, tier = "blocked", features = emptyList(), limits = emptyMap())
+                    }
+                    // Network/server/auth failures must not silently turn a cached Premium account into Free.
+                    return@withContext currentUser
+                }
+                val obj = gson.fromJson(body, JsonObject::class.java) ?: return@withContext currentUser
+                if (!obj.get("success").asBooleanOrDefault(false)) return@withContext currentUser
+                val features = try {
+                    obj.getAsJsonArray("features")?.mapNotNull { if (it.isJsonPrimitive) it.asString else null } ?: currentUser.features
+                } catch (_: Exception) { currentUser.features }
+                val limits = try {
+                    obj.getAsJsonObject("limits")?.entrySet()?.associate { entry ->
+                        entry.key to try { entry.value.asInt } catch (_: Exception) { -1 }
+                    } ?: currentUser.limits
+                } catch (_: Exception) { currentUser.limits }
+                return@withContext currentUser.copy(
+                    isActivated = obj.get("isActivated").asBooleanOrDefault(currentUser.isActivated),
+                    tier = obj.get("plan").asStringOrNull() ?: currentUser.tier,
+                    expiresAt = obj.get("expiresAt").asStringOrNull(),
+                    features = features,
+                    limits = limits
+                )
             }
         } catch (_: Exception) {
             return@withContext currentUser
