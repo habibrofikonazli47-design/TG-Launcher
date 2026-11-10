@@ -64,12 +64,24 @@ export async function GET(req: NextRequest) {
         minimumSupportedVersion: minimumVersion,
       }, { status: 426, headers: { 'Cache-Control': 'no-store' } });
     }
-    const existing = await sql`SELECT id FROM profiles WHERE id=${identity.localId} OR lower(email)=${identity.email} ORDER BY CASE WHEN id=${identity.localId} THEN 0 ELSE 1 END LIMIT 1`;
-    if (existing.length) {
-      await sql`UPDATE profiles SET id=${identity.localId},email=${identity.email},display_name=CASE WHEN display_name='' THEN ${identity.displayName || identity.email.split('@')[0]} ELSE display_name END,updated_at=now() WHERE id=${existing[0].id}`;
-    } else {
+    // Reconcile legacy profiles created once by Firebase UID and once by email.
+    // The Firebase-verified email is authoritative for merging a previously assigned Premium plan.
+    const matchingProfiles = await sql`SELECT id,email,display_name,plan,status,expires_at,feature_overrides,limit_overrides FROM profiles WHERE id=${identity.localId} OR lower(email)=${identity.email} ORDER BY CASE WHEN id=${identity.localId} THEN 0 ELSE 1 END`;
+    const uidProfile = matchingProfiles.find((row: any) => row.id === identity.localId);
+    const emailProfile = matchingProfiles.find((row: any) => String(row.email || '').toLowerCase() === identity.email);
+    if (!uidProfile && emailProfile) {
+      await sql`UPDATE profiles SET id=${identity.localId},email=${identity.email},display_name=CASE WHEN display_name='' THEN ${identity.displayName || identity.email.split('@')[0]} ELSE display_name END,updated_at=now() WHERE id=${emailProfile.id}`;
+    } else if (!uidProfile && !emailProfile) {
       await sql`INSERT INTO profiles(id,email,display_name,plan,status) VALUES(${identity.localId},${identity.email},${identity.displayName || identity.email.split('@')[0]},'free','active') ON CONFLICT (id) DO NOTHING`;
+    } else if (uidProfile && emailProfile && uidProfile.id !== emailProfile.id) {
+      const emailExpiry = emailProfile.expires_at ? new Date(emailProfile.expires_at).getTime() : null;
+      const emailPremiumActive = emailProfile.plan === 'premium' && emailProfile.status === 'active' && (emailExpiry === null || emailExpiry > Date.now());
+      const uidIsDefaultFree = uidProfile.plan !== 'premium' && uidProfile.status === 'active';
+      if (emailPremiumActive && uidIsDefaultFree) {
+        await sql`UPDATE profiles SET plan='premium',status='active',expires_at=${emailProfile.expires_at || null},feature_overrides=COALESCE(feature_overrides,${emailProfile.feature_overrides ? JSON.stringify(emailProfile.feature_overrides) : null}::jsonb),limit_overrides=CASE WHEN limit_overrides='{}'::jsonb THEN ${JSON.stringify(emailProfile.limit_overrides || {})}::jsonb ELSE limit_overrides END,updated_at=now() WHERE id=${identity.localId}`;
+      }
     }
+    await sql`UPDATE profiles SET email=${identity.email},display_name=CASE WHEN display_name='' THEN ${identity.displayName || identity.email.split('@')[0]} ELSE display_name END,updated_at=now() WHERE id=${identity.localId}`;
 
     const rows = await sql`SELECT id,email,plan,status,expires_at,feature_overrides,limit_overrides FROM profiles WHERE id=${identity.localId} LIMIT 1`;
     if (!rows.length) return NextResponse.json({ error: 'Profil akun tidak ditemukan' }, { status: 404 });
