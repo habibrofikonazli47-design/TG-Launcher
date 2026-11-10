@@ -258,7 +258,6 @@ class MinecraftDownloader(
                                             throw IOException("Library Fabric tidak lengkap: ${lib.name}")
                                         }
                                     }
-                                    }
                                 }
                                 val count = downloadedFabric.incrementAndGet()
                                 val p = 0.94f + (count.toFloat() / totalFabricLibs) * 0.05f
