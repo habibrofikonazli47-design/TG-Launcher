@@ -16,6 +16,11 @@ import androidx.compose.material.icons.outlined.SystemUpdate
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,6 +33,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.israadev.nuxlauncher.core.update.AndroidUpdateInfo
 import com.israadev.nuxlauncher.core.update.UpdateManager
+import kotlinx.coroutines.launch
 import com.israadev.nuxlauncher.ui.components.NuxButton
 import com.israadev.nuxlauncher.ui.components.NuxCard
 import com.israadev.nuxlauncher.ui.theme.NuxColors
@@ -39,6 +45,9 @@ fun NuxUpdateDialog(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var isDownloading by remember { mutableStateOf(false) }
+    var downloadError by remember { mutableStateOf<String?>(null) }
 
     val formattedSize = if (updateInfo.fileSize > 0) {
         String.format("%.1f MB", updateInfo.fileSize / (1024.0 * 1024.0))
@@ -259,6 +268,11 @@ fun NuxUpdateDialog(
                         )
                     }
 
+                    downloadError?.let { message ->
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(text = message, color = Color(0xFFFF8A80), fontSize = 9.sp)
+                    }
+
                     Spacer(modifier = Modifier.height(10.dp))
 
                     // Buttons
@@ -289,8 +303,16 @@ fun NuxUpdateDialog(
 
                         NuxButton(
                             onClick = {
-                                UpdateManager.openDownloadUrl(context, updateInfo.downloadUrl)
-                                onDismiss()
+                                if (!isDownloading) {
+                                    scope.launch {
+                                        isDownloading = true
+                                        downloadError = null
+                                        val result = UpdateManager.downloadAndInstall(context, updateInfo)
+                                        isDownloading = false
+                                        result.onSuccess { onDismiss() }
+                                            .onFailure { downloadError = it.message ?: "Gagal mengunduh pembaruan." }
+                                    }
+                                }
                             },
                             backgroundColor = NuxColors.ForestGreen,
                             contentColor = Color.White,
@@ -305,7 +327,7 @@ fun NuxUpdateDialog(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = if (updateInfo.isUpdateAvailable) "DOWNLOAD UPDATE" else "RE-DOWNLOAD APK",
+                                text = if (isDownloading) "DOWNLOADING & VERIFYING..." else if (updateInfo.isUpdateAvailable) "DOWNLOAD & INSTALL" else "RE-DOWNLOAD APK",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 10.sp,
                                 color = Color.White
