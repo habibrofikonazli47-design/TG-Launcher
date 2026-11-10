@@ -985,6 +985,9 @@ object NuxSocialManager {
     }
 
     suspend fun createVoiceRoom(name: String, password: String, maxUsers: Int): Result<NuxVoiceRoom> = withContext(Dispatchers.IO) {
+        // Load the latest admin switches before evaluating the create-room gate.
+        // A cold app launch can otherwise see a null config and incorrectly fail closed.
+        RemoteLauncherConfig.refresh()
         if (!isSocialFeatureEnabled("voiceEnabled")) return@withContext Result.failure(Exception("Voice Room dinonaktifkan oleh administrator TG Launcher."))
         val user = getCurrentUser() ?: return@withContext Result.failure(Exception("Belum login"))
         var token = getAuthToken()
