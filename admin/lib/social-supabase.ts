@@ -48,19 +48,22 @@ export async function proxySocialRequest(req: Request, operation: string) {
   }
 }
 
-export async function proxySocialAdminRequest(req: Request) {
+export async function proxySocialAdminRequest(req: Request, adminAssertion: string) {
   const endpoint = process.env.TG_SOCIAL_SUPABASE_FUNCTION_URL?.trim();
   const publishableKey = process.env.TG_SOCIAL_SUPABASE_PUBLISHABLE_KEY?.trim();
-  const cookie = req.headers.get('cookie') || '';
   if (!endpoint || !publishableKey) {
     return NextResponse.json({ error: 'Koneksi database Social TG belum dikonfigurasi.' }, { status: 503 });
   }
-  if (!cookie) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!adminAssertion) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
     const target = new URL(endpoint);
     target.searchParams.set('op', 'admin');
     const method = req.method.toUpperCase();
-    const headers: Record<string, string> = { apikey: publishableKey, cookie, accept: 'application/json' };
+    const headers: Record<string, string> = {
+      apikey: publishableKey,
+      'x-tg-admin-assertion': adminAssertion,
+      accept: 'application/json',
+    };
     let body: string | undefined;
     if (method !== 'GET' && method !== 'HEAD') {
       headers['content-type'] = req.headers.get('content-type') || 'application/json';
