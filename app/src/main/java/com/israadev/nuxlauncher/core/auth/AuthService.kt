@@ -270,45 +270,57 @@ object AuthService {
      */
     suspend fun syncEntitlements(user: AuthUser): AuthUser = withContext(Dispatchers.IO) {
         if (user.idToken.isBlank()) return@withContext user
+        var currentUser = user
         try {
-            val request = Request.Builder()
-                .url("$ENTITLEMENTS_BASE_URL/api/app/entitlements")
-                .header("Authorization", "Bearer ${user.idToken}")
-                .header("X-TG-App-Version", BuildConfig.VERSION_NAME)
-                .get()
-                .build()
-            client.newCall(request).execute().use { response ->
-                val body = response.body?.string().orEmpty()
-                if (!response.isSuccessful) {
-                    if (response.code == 403 || response.code == 426) {
-                        return@withContext user.copy(isActivated = false, tier = "blocked", features = emptyList(), limits = emptyMap())
+            for (attempt in 0..1) {
+                val request = Request.Builder()
+                    .url("$ENTITLEMENTS_BASE_URL/api/app/entitlements")
+                    .header("Authorization", "Bearer ${currentUser.idToken}")
+                    .header("X-TG-App-Version", BuildConfig.VERSION_NAME)
+                    .header("Cache-Control", "no-cache")
+                    .get()
+                    .build()
+                client.newCall(request).execute().use { response ->
+                    val body = response.body?.string().orEmpty()
+                    if (response.code == 401 && attempt == 0) {
+                        // Retry once with a freshly rotated Firebase token instead of downgrading Premium.
+                        val refreshedToken = refreshIdToken(currentUser.refreshToken)
+                        if (!refreshedToken.isNullOrBlank()) {
+                            currentUser = currentUser.copy(idToken = refreshedToken)
+                            continue
+                        }
+                        return@withContext user
                     }
-                    if (response.code == 401) {
-                        return@withContext user.copy(isActivated = false, tier = "free", features = listOf("base_launcher"), limits = mapOf("instances" to 3, "accounts" to 2, "ai_daily" to 5))
+                    if (!response.isSuccessful) {
+                        if (response.code == 403) {
+                            return@withContext currentUser.copy(isActivated = false, tier = "blocked", features = emptyList(), limits = emptyMap())
+                        }
+                        // Network/server/auth failures must not silently turn a cached Premium account into Free.
+                        return@withContext currentUser
                     }
-                    return@withContext user
+                    val obj = gson.fromJson(body, JsonObject::class.java) ?: return@withContext currentUser
+                    if (!obj.get("success").asBooleanOrDefault(false)) return@withContext currentUser
+                    val features = try {
+                        obj.getAsJsonArray("features")?.mapNotNull { if (it.isJsonPrimitive) it.asString else null } ?: currentUser.features
+                    } catch (_: Exception) { currentUser.features }
+                    val limits = try {
+                        obj.getAsJsonObject("limits")?.entrySet()?.associate { entry ->
+                            entry.key to try { entry.value.asInt } catch (_: Exception) { -1 }
+                        } ?: currentUser.limits
+                    } catch (_: Exception) { currentUser.limits }
+                    return@withContext currentUser.copy(
+                        isActivated = obj.get("isActivated").asBooleanOrDefault(currentUser.isActivated),
+                        tier = obj.get("plan").asStringOrNull() ?: currentUser.tier,
+                        expiresAt = obj.get("expiresAt").asStringOrNull(),
+                        features = features,
+                        limits = limits
+                    )
                 }
-                val obj = gson.fromJson(body, JsonObject::class.java) ?: return@withContext user
-                if (!obj.get("success").asBooleanOrDefault(false)) return@withContext user
-                val features = try {
-                    obj.getAsJsonArray("features")?.mapNotNull { if (it.isJsonPrimitive) it.asString else null } ?: user.features
-                } catch (_: Exception) { user.features }
-                val limits = try {
-                    obj.getAsJsonObject("limits")?.entrySet()?.associate { entry ->
-                        entry.key to try { entry.value.asInt } catch (_: Exception) { -1 }
-                    } ?: user.limits
-                } catch (_: Exception) { user.limits }
-                user.copy(
-                    isActivated = obj.get("isActivated").asBooleanOrDefault(user.isActivated),
-                    tier = obj.get("plan").asStringOrNull() ?: user.tier,
-                    expiresAt = obj.get("expiresAt").asStringOrNull(),
-                    features = features,
-                    limits = limits
-                )
             }
         } catch (_: Exception) {
-            user
+            return@withContext currentUser
         }
+        currentUser
     }
 
     /**
