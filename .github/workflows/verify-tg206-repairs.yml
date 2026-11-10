@@ -5,7 +5,6 @@ on:
     branches: [fix/tg206-feature-integration]
     paths:
       - "app/**"
-      - "admin/**"
       - "*.gradle.kts"
       - "gradle/**"
       - ".github/workflows/verify-tg206-repairs.yml"
@@ -127,7 +126,7 @@ jobs:
           body: |
             TG209 built from the existing TG206 codebase.
             Package: com.tg.launcher
-            Version code: 271
+            Version code: 272
             Signing identity verified against TG206.
             Install this APK over TG206; keep the existing app installed.
           files: |
@@ -142,22 +141,3 @@ jobs:
           path: app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 14
-
-  admin-build:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: admin
-    steps:
-      - name: Check out source
-        uses: actions/checkout@v4
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Install dependencies
-        run: npm install --no-audit --no-fund --no-package-lock
-      - name: Build Admin Panel
-        env:
-          NEXT_TELEMETRY_DISABLED: "1"
-        run: npm run build
