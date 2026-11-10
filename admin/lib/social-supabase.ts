@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
-export async function proxySocialRequest(req: NextRequest, operation: string) {
+export async function proxySocialRequest(req: Request, operation: string) {
   const endpoint = process.env.TG_SOCIAL_SUPABASE_FUNCTION_URL?.trim();
   const publishableKey = process.env.TG_SOCIAL_SUPABASE_PUBLISHABLE_KEY?.trim();
   const authorization = req.headers.get('authorization') || '';
@@ -13,7 +13,7 @@ export async function proxySocialRequest(req: NextRequest, operation: string) {
   try {
     const target = new URL(endpoint);
     target.searchParams.set('op', operation);
-    req.nextUrl.searchParams.forEach((value, key) => {
+    new URL(req.url).searchParams.forEach((value, key) => {
       if (key !== 'op') target.searchParams.set(key, value);
     });
     const method = req.method.toUpperCase();
