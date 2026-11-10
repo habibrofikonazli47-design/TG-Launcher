@@ -1003,7 +1003,10 @@ object NuxSocialManager {
             }.toString()
             val createResult = AuthService.postApi("/api/social/voice/token", createPayload, bearerToken = token)
             val createJson = JSONObject(createResult.getOrElse { throw it })
-            val roomId = createJson.optString("roomId", "")
+            val roomId = createJson.optString("roomId", "").ifBlank {
+                val livekitRoomName = createJson.optString("roomName", "")
+                if (livekitRoomName.startsWith("tg-social-")) livekitRoomName.removePrefix("tg-social-") else ""
+            }
             if (roomId.isBlank()) throw Exception("Server tidak mengembalikan ID Voice Room.")
 
             val participant = JSONObject().apply {
