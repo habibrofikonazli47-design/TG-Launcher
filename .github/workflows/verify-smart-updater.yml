@@ -71,12 +71,12 @@ jobs:
           grep -q "Verified using v3 scheme (APK Signature Scheme v3): true" <<< "$SIGNATURE_REPORT"
           grep -Fqi "V3.0 Signer: certificate SHA-256 digest: e5aa76841020b79e40e8612021d262f53afdb3d918b3dbc4df97afca1af3b73f" <<< "$SIGNATURE_REPORT"
           "$BUILD_TOOLS/zipalign" -c -v 4 "$APK"
-          "$BUILD_TOOLS/aapt" dump badging "$APK" | tee /tmp/tg-badging.txt
-          grep -Eq "^package: name='com\\.tg\\.launcher' versionCode='$TG_VERSION_CODE'([[:space:]]|$)" /tmp/tg-badging.txt
-          grep -Eq "^application-label(:|-[^:]+:)'TG Launcher'$" /tmp/tg-badging.txt
-          # ABI filters are enforced by app/build.gradle.kts. Some APKs omit
-          # native-code metadata when native libraries are packaged differently,
-          # so do not reject a valid ARM64-only APK solely on aapt's optional field.
+          APK_ANALYZER="$(find "$ANDROID_HOME" -type f -name apkanalyzer -perm -u+x | head -n 1)"
+          test -n "$APK_ANALYZER"
+          test "$("$APK_ANALYZER" manifest application-id "$APK")" = "com.tg.launcher"
+          test "$("$APK_ANALYZER" manifest version-code "$APK")" = "$TG_VERSION_CODE"
+          grep -Fq 'android:label="@string/app_name"' app/src/main/AndroidManifest.xml
+          grep -Fq '<string name="app_name">TG Launcher</string>' app/src/main/res/values/strings.xml
           grep -Fq 'abiFilters.add("arm64-v8a")' app/build.gradle.kts
           unzip -tq "$APK"
           sha256sum "$APK"
