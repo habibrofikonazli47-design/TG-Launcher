@@ -27,7 +27,7 @@ jobs:
           cache: gradle
       - uses: android-actions/setup-android@v3
         with:
-          packages: platform-tools platforms;android-37
+          packages: platform-tools
       - name: Compile release Kotlin sources
         run: |
           chmod +x ./gradlew
