@@ -6,8 +6,15 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    await ensureSocialSchema();
     const sql = socialDatabase();
+    const diagnostic = await sql`
+      SELECT current_database() AS database_name,
+             current_user AS database_role,
+             has_schema_privilege(current_user, 'public', 'USAGE') AS public_usage,
+             has_schema_privilege(current_user, 'public', 'CREATE') AS public_create
+    `;
+    console.info('[tg-social-db-diagnostic]', diagnostic[0]);
+    await ensureSocialSchema();
     const rows = await sql`
       SELECT
         (SELECT count(*)::int FROM social_profiles) AS profiles,
