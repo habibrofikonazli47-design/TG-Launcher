@@ -473,7 +473,7 @@ async function handle(req: Request) {
 
     if (req.method === "POST" && action === "accept") {
       const code = String(body.inviteCode || "").trim().toUpperCase();
-      if (!/^[A-HJ-NP-Z2-9]{8}$/.test(code)) return fail("Kode undangan tidak valid");
+      if (!/^[A-HJ-NP-Z2-9]{10}$/.test(code)) return fail("Kode undangan tidak valid");
       const { data: session, error: sessionError } = await db.from("social_world_sessions")
         .select("id,host_uid,world_name,minecraft_version,status,max_players,expires_at")
         .eq("invite_code_hash", await hashInviteCode(code)).eq("status", "active").gt("expires_at", nowIso).maybeSingle();
@@ -513,12 +513,14 @@ async function handle(req: Request) {
       const sessionId = String(body.sessionId || "");
       const targetUid = String(body.targetUserId || "");
       if (!/^[0-9a-f-]{36}$/i.test(sessionId) || !targetUid) return fail("Data pencabutan undangan tidak valid");
+      const { data: owner, error: ownerError } = await db.from("social_world_sessions")
+        .select("id").eq("id", sessionId).eq("host_uid", user.uid).maybeSingle();
+      if (ownerError) return fail("Gagal memeriksa kepemilikan sesi", 503);
+      if (!owner) return fail("Sesi tidak ditemukan atau bukan milikmu", 404);
       const { data, error } = await db.from("social_world_members").update({ status: "revoked", updated_at: nowIso })
         .eq("session_id", sessionId).eq("user_id", targetUid).eq("status", "invited")
         .select("session_id,status").maybeSingle();
       if (error) return fail("Gagal mencabut undangan", 503);
-      const { data: owner } = await db.from("social_world_sessions").select("id").eq("id", sessionId).eq("host_uid", user.uid).maybeSingle();
-      if (!owner) return fail("Sesi tidak ditemukan atau bukan milikmu", 404);
       return data ? reply({ success: true }) : fail("Undangan tidak ditemukan", 404);
     }
 
