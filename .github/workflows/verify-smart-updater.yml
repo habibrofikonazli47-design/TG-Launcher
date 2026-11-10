@@ -69,7 +69,7 @@ jobs:
           grep -q "Verified using v1 scheme (JAR signing): true" <<< "$SIGNATURE_REPORT"
           grep -q "Verified using v2 scheme (APK Signature Scheme v2): true" <<< "$SIGNATURE_REPORT"
           grep -q "Verified using v3 scheme (APK Signature Scheme v3): true" <<< "$SIGNATURE_REPORT"
-          grep -Fqi "V3.0 Signer: certificate SHA-256 digest: e5aa76841020b79e40f8612021d262f53afdb3d918b3dbc4df97afca1af3b73f" <<< "$SIGNATURE_REPORT"
+          grep -Fqi "V3.0 Signer: certificate SHA-256 digest: e5aa76841020b79e40e8612021d262f53afdb3d918b3dbc4df97afca1af3b73f" <<< "$SIGNATURE_REPORT"
           "$BUILD_TOOLS/zipalign" -c -v 4 "$APK"
           "$BUILD_TOOLS/aapt" dump badging "$APK" | tee /tmp/tg-badging.txt
           grep -q "package: name='com.tg.launcher' versionCode='$TG_VERSION_CODE'" /tmp/tg-badging.txt
@@ -79,16 +79,16 @@ jobs:
           sha256sum "$APK"
           echo "Release APK signature matches TG Launcher build 206."
       - name: Publish direct APK download as GitHub prerelease
-        if: github.event_name == 'push' && contains(github.event.head_commit.message, 'Publish TG Launcher Smart Updater APK')
+        if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           APK="app/build/outputs/apk/release/app-release.apk"
           TAG="tg-launcher-$TG_VERSION_NAME"
-          gh release create "$TAG" "$APK" \
-            --title "TG Launcher $TG_VERSION_NAME" \
-            --notes "TG Launcher Smart Updater validation build. Signed with the persistent TG Launcher release certificate matching build 206. Package: com.tg.launcher." \
+          gh release create "$TAG" "$APK" \\
+            --title "TG Launcher $TG_VERSION_NAME" \\
+            --notes "TG Launcher beta APK. Signed with the persistent TG Launcher release certificate matching build 206. Package: com.tg.launcher." \\
             --prerelease
       - name: Upload validation APK
         uses: actions/upload-artifact@v4
