@@ -3,6 +3,9 @@ package com.israadev.nuxlauncher.core.social
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 import android.util.Log
 import android.view.ViewGroup
 import android.webkit.*
@@ -42,6 +45,7 @@ object NuxVoiceManager {
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     private var webView: WebView? = null
+    private var appContext: Context? = null
     private var isBridgeReady = false
     private var pendingConnectAction: (() -> Unit)? = null
 
@@ -50,6 +54,9 @@ object NuxVoiceManager {
 
     private val _isConnected = MutableStateFlow(false)
     val isConnected: StateFlow<Boolean> = _isConnected.asStateFlow()
+
+    private val _lastError = MutableStateFlow<String?>(null)
+    val lastError: StateFlow<String?> = _lastError.asStateFlow()
 
     private val _isMuted = MutableStateFlow(false)
     val isMuted: StateFlow<Boolean> = _isMuted.asStateFlow()
@@ -61,6 +68,7 @@ object NuxVoiceManager {
     val currentRoomId: StateFlow<String?> = _currentRoomId.asStateFlow()
 
     fun init(context: Context) {
+        appContext = context.applicationContext
         if (webView != null) {
             attachToActivityIfNeeded(context)
             return
@@ -168,6 +176,11 @@ object NuxVoiceManager {
             ) {
                 super.onReceivedError(view, request, error)
                 Log.e(TAG, "LiveKit bridge onReceivedError: ${error?.description} for ${request?.url}")
+                if (request?.isForMainFrame == true) {
+                    _lastError.value = "Bridge audio gagal dimuat: ${error?.description ?: "kesalahan jaringan"}"
+                    _isConnecting.value = false
+                    _isConnected.value = false
+                }
             }
         }
 
@@ -205,8 +218,19 @@ object NuxVoiceManager {
             return
         }
         Log.i(TAG, "joinVoiceRoom called for roomId: $roomId, user: ${user.username}")
+        _lastError.value = null
+        val context = appContext
+        if (context == null) {
+            _lastError.value = "Audio TG belum siap. Tutup lalu buka kembali aplikasi."
+            return
+        }
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            _lastError.value = "Izin mikrofon belum diberikan. Aktifkan izin Mikrofon untuk TG Launcher di Pengaturan Android."
+            return
+        }
         if (TOKEN_API_BASE.isBlank()) {
             Log.w(TAG, "LiveKit token API is not configured in local.properties")
+            _lastError.value = "Server Voice TG belum dikonfigurasi."
             return
         }
         _isConnecting.value = true
@@ -214,9 +238,12 @@ object NuxVoiceManager {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                if (user.idToken.isBlank()) {
-                    Log.e(TAG, "Firebase ID token is missing; cannot authenticate TG Social voice request")
-                    withContext(Dispatchers.Main) { _isConnecting.value = false }
+                // Always obtain a fresh Firebase ID token for the LiveKit token endpoint.
+                // The AuthUser passed by the UI may contain an expired token from an older session.
+                val activeToken = NuxSocialManager.getAuthToken(forceRefresh = true)
+                if (activeToken.isNullOrBlank()) {
+                    Log.e(TAG, "Unable to refresh Firebase ID token for TG Social voice request")
+                    withContext(Dispatchers.Main) { _isConnecting.value = false; _lastError.value = "Sesi login kedaluwarsa. Silakan login ulang." }
                     return@launch
                 }
 
@@ -227,7 +254,7 @@ object NuxVoiceManager {
                 val requestBody = payload.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
                 val req = Request.Builder()
                     .url(TOKEN_API_BASE)
-                    .header("Authorization", "Bearer ${user.idToken}")
+                    .header("Authorization", "Bearer $activeToken")
                     .header("Accept", "application/json")
                     .post(requestBody)
                     .build()
@@ -236,7 +263,8 @@ object NuxVoiceManager {
                     val responseBody = resp.body?.string().orEmpty()
                     if (!resp.isSuccessful || responseBody.isEmpty()) {
                         Log.e(TAG, "Failed to get TG LiveKit token: HTTP ${resp.code} body: $responseBody")
-                        withContext(Dispatchers.Main) { _isConnecting.value = false }
+                        val serverError = try { JSONObject(responseBody).optString("error").ifBlank { "HTTP ${resp.code}" } } catch (_: Exception) { "HTTP ${resp.code}" }
+                        withContext(Dispatchers.Main) { _isConnecting.value = false; _lastError.value = serverError }
                         return@launch
                     }
                     val tokenJson = JSONObject(responseBody)
@@ -244,7 +272,7 @@ object NuxVoiceManager {
                     val serverUrl = tokenJson.optString("serverUrl", "")
                     if (token.isBlank() || serverUrl.isBlank()) {
                         Log.e(TAG, "TG LiveKit token response is incomplete")
-                        withContext(Dispatchers.Main) { _isConnecting.value = false }
+                        withContext(Dispatchers.Main) { _isConnecting.value = false; _lastError.value = "Respons server Voice TG tidak lengkap." }
                         return@launch
                     }
 
@@ -270,6 +298,8 @@ object NuxVoiceManager {
                 Log.e(TAG, "joinVoiceRoom error", e)
                 withContext(Dispatchers.Main) {
                     _isConnecting.value = false
+                    _isConnected.value = false
+                    _lastError.value = e.message ?: "Gagal terhubung ke Voice Room."
                 }
             }
         }
@@ -287,6 +317,7 @@ object NuxVoiceManager {
             _activeSpeakers.value = emptySet()
             _currentRoomId.value = null
             _isMuted.value = false
+            _lastError.value = null
         }
     }
 
@@ -311,6 +342,7 @@ object NuxVoiceManager {
             scope.launch {
                 _isConnected.value = true
                 _isConnecting.value = false
+                _lastError.value = null
             }
         }
 
@@ -345,6 +377,8 @@ object NuxVoiceManager {
             Log.e(TAG, "VoiceBridgeInterface: onError received: $error")
             scope.launch {
                 _isConnecting.value = false
+                _isConnected.value = false
+                _lastError.value = error
             }
         }
     }
