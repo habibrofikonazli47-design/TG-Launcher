@@ -1,4 +1,4 @@
-name: Verify TG206 feature repairs
+name: Verify TG208 feature integration
 
 on:
   push:
@@ -59,8 +59,8 @@ jobs:
 
       - name: Build release APK
         env:
-          TG_VERSION_CODE: "270"
-          TG_VERSION_NAME: "1.1.6-tg207"
+          TG_VERSION_CODE: "271"
+          TG_VERSION_NAME: "1.1.6-tg208"
         run: |
           chmod +x ./gradlew
           ./gradlew --no-daemon clean assembleRelease
@@ -86,8 +86,8 @@ jobs:
           echo "APK version name: $("$APKANALYZER" manifest version-name "$APK")"
           echo "APK target SDK: $("$APKANALYZER" manifest target-sdk "$APK")"
           test "$("$APKANALYZER" manifest application-id "$APK")" = "com.tg.launcher"
-          test "$("$APKANALYZER" manifest version-code "$APK")" = "270"
-          test "$("$APKANALYZER" manifest version-name "$APK")" = "1.1.6-tg207"
+          test "$("$APKANALYZER" manifest version-code "$APK")" = "271"
+          test "$("$APKANALYZER" manifest version-name "$APK")" = "1.1.6-tg208"
           test "$("$APKANALYZER" manifest target-sdk "$APK")" = "35"
           unzip -Z1 "$APK" | grep -Eq '^lib/arm64-v8a/.*[.]so$'
           unzip -tq "$APK"
@@ -96,7 +96,7 @@ jobs:
       - name: Upload test APK
         uses: actions/upload-artifact@v4
         with:
-          name: TG-Launcher-tg207-feature-validation
+          name: TG-Launcher-tg208-feature-validation
           path: app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 14
