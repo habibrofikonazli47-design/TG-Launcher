@@ -143,7 +143,8 @@ object NuxSocialManager {
             if (!freshIdToken.isNullOrBlank()) {
                 cachedToken = freshIdToken
                 tokenExpiry = now + 50 * 60 * 1000L // 50 menit
-                AccountManager.updateTokens(freshIdToken, refreshToken)
+                // AuthService.refreshIdToken persists both the new ID token and Firebase's
+                // rotated refresh token. Do not overwrite that rotated token with the old one.
                 return freshIdToken
             }
         }
@@ -985,6 +986,9 @@ object NuxSocialManager {
     }
 
     suspend fun createVoiceRoom(name: String, password: String, maxUsers: Int): Result<NuxVoiceRoom> = withContext(Dispatchers.IO) {
+        // Load the latest admin switches before evaluating the create-room gate.
+        // A cold app launch can otherwise see a null config and incorrectly fail closed.
+        RemoteLauncherConfig.refresh()
         if (!isSocialFeatureEnabled("voiceEnabled")) return@withContext Result.failure(Exception("Voice Room dinonaktifkan oleh administrator TG Launcher."))
         val user = getCurrentUser() ?: return@withContext Result.failure(Exception("Belum login"))
         var token = getAuthToken()
