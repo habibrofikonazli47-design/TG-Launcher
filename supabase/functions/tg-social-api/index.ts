@@ -425,7 +425,7 @@ async function handle(req: Request) {
         .order("created_at", { ascending: false }).limit(20);
       const { data: invited, error: inviteError } = await db.from("social_world_members")
         .select("session_id,status,created_at,session:social_world_sessions!inner(id,host_uid,world_name,minecraft_version,status,max_players,expires_at,created_at)")
-        .eq("user_id", user.uid).eq("status", "invited").eq("session.status", "active").gt("session.expires_at", nowIso)
+        .eq("user_id", user.uid).in("status", ["invited", "accepted", "joined"]).eq("session.status", "active").gt("session.expires_at", nowIso)
         .order("created_at", { ascending: false }).limit(20);
       if (hostError || inviteError) return fail("Gagal memuat undangan dunia privat", 503);
       const hostIds = [...new Set((invited || []).map((x: any) => x.session?.host_uid).filter(Boolean))];
@@ -488,7 +488,7 @@ async function handle(req: Request) {
       return reply({ success: true, session: { id: session.id, hostUid: session.host_uid, worldName: session.world_name, minecraftVersion: session.minecraft_version, maxPlayers: session.max_players, expiresAt: session.expires_at } });
     }
 
-    if (req.method === "PATCH" && action === "close") {
+    if (["POST", "PATCH"].includes(req.method) && action === "close") {
       const sessionId = String(body.sessionId || "");
       if (!/^[0-9a-f-]{36}$/i.test(sessionId)) return fail("ID sesi tidak valid");
       const { data, error } = await db.from("social_world_sessions")
@@ -498,7 +498,7 @@ async function handle(req: Request) {
       return data ? reply({ success: true, session: data }) : fail("Sesi tidak ditemukan atau bukan milikmu", 404);
     }
 
-    if (req.method === "PATCH" && action === "heartbeat") {
+    if (["POST", "PATCH"].includes(req.method) && action === "heartbeat") {
       const sessionId = String(body.sessionId || "");
       if (!/^[0-9a-f-]{36}$/i.test(sessionId)) return fail("ID sesi tidak valid");
       const { data, error } = await db.from("social_world_sessions")
@@ -509,7 +509,7 @@ async function handle(req: Request) {
       return data ? reply({ success: true, session: data }) : fail("Sesi sudah berakhir atau bukan milikmu", 404);
     }
 
-    if (req.method === "PATCH" && action === "revoke") {
+    if (["POST", "PATCH"].includes(req.method) && action === "revoke") {
       const sessionId = String(body.sessionId || "");
       const targetUid = String(body.targetUserId || "");
       if (!/^[0-9a-f-]{36}$/i.test(sessionId) || !targetUid) return fail("Data pencabutan undangan tidak valid");
