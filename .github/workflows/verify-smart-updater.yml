@@ -69,7 +69,7 @@ jobs:
           grep -q "Verified using v1 scheme (JAR signing): true" <<< "$SIGNATURE_REPORT"
           grep -q "Verified using v2 scheme (APK Signature Scheme v2): true" <<< "$SIGNATURE_REPORT"
           grep -q "Verified using v3 scheme (APK Signature Scheme v3): true" <<< "$SIGNATURE_REPORT"
-          grep -qi "Signer #1 certificate SHA-256 digest: e5aa76841020b79e40f8612021d262f53afdb3d918b3dbc4df97afca1af3b73f" <<< "$SIGNATURE_REPORT"
+          grep -Fqi "V3.0 Signer: certificate SHA-256 digest: e5aa76841020b79e40f8612021d262f53afdb3d918b3dbc4df97afca1af3b73f" <<< "$SIGNATURE_REPORT"
           "$BUILD_TOOLS/zipalign" -c -v 4 "$APK"
           "$BUILD_TOOLS/aapt" dump badging "$APK" | tee /tmp/tg-badging.txt
           grep -q "package: name='com.tg.launcher' versionCode='$TG_VERSION_CODE'" /tmp/tg-badging.txt
