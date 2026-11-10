@@ -902,62 +902,39 @@ object NuxSocialManager {
             _voiceRooms.value = emptyList()
             return@withContext
         }
-        var token = getAuthToken()
+        val token = getAuthToken() ?: return@withContext
         try {
-            var url = buildUrl("shared_social/voice_rooms", token)
-            var resp = client.newCall(Request.Builder().url(url).get().build()).execute()
-            var body = resp.body?.string() ?: ""
-
-            // Auto retry on 401
-            if (resp.code == 401) {
-                resp.close()
-                token = getAuthToken(forceRefresh = true)
-                url = buildUrl("shared_social/voice_rooms", token)
-                resp = client.newCall(Request.Builder().url(url).get().build()).execute()
-                body = resp.body?.string() ?: ""
-            }
-            resp.close()
-
-            var json: JSONObject? = null
-            if (body.isNotEmpty() && body != "null") {
-                try {
-                    json = JSONObject(body)
-                } catch (_: Exception) {}
-            }
-
-            // Fallback: baca juga dari root voice_rooms jika shared_social kosong
-            if (json == null || json.length() == 0) {
-                try {
-                    val rootUrl = buildUrl("voice_rooms", token)
-                    val rResp = client.newCall(Request.Builder().url(rootUrl).get().build()).execute()
-                    val rBody = rResp.body?.string() ?: ""
-                    rResp.close()
-                    if (rBody.isNotEmpty() && rBody != "null") {
-                        json = JSONObject(rBody)
-                    }
-                } catch (_: Exception) {}
-            }
-
-            if (json == null || json.length() == 0) {
-                _voiceRooms.value = emptyList()
-                return@withContext
-            }
-
+            // Supabase is the source of truth for room metadata. Firebase RTDB
+            // remains only for transient participant presence and room chat.
+            val response = AuthService.getApi("/api/social/voice/token", bearerToken = token)
+            val root = JSONObject(response.getOrElse { throw it })
+            val items = root.optJSONArray("rooms") ?: org.json.JSONArray()
             val rooms = mutableListOf<NuxVoiceRoom>()
             val now = System.currentTimeMillis()
 
-            for (roomId in json.keys()) {
-                val rObj = json.optJSONObject(roomId) ?: continue
-                val participantsJson = rObj.optJSONObject("participants")
-                val participants = mutableMapOf<String, NuxParticipant>()
+            for (i in 0 until items.length()) {
+                val item = items.optJSONObject(i) ?: continue
+                val roomId = item.optString("id", "")
+                if (roomId.isBlank()) continue
 
+                var roomState: JSONObject? = null
+                try {
+                    val roomUrl = buildUrl("shared_social/voice_rooms/$roomId", token)
+                    val roomBody = client.newCall(Request.Builder().url(roomUrl).get().build()).execute().use {
+                        it.body?.string().orEmpty()
+                    }
+                    if (roomBody.isNotBlank() && roomBody != "null") roomState = JSONObject(roomBody)
+                } catch (_: Exception) {}
+
+                val participantsJson = roomState?.optJSONObject("participants")
+                val participants = mutableMapOf<String, NuxParticipant>()
                 if (participantsJson != null) {
                     for (pUid in participantsJson.keys()) {
                         val pObj = participantsJson.optJSONObject(pUid) ?: continue
                         val pLastSeen = pObj.optLong("lastSeen", 0L)
-                        // Bersihkan peserta android yang stale lebih dari 60s
-                        val isStaleAndroid = pObj.optString("platform") == "android" && pLastSeen > 0L && (now - pLastSeen > 60_000L)
-                        if (isStaleAndroid) {
+                        val staleAndroid = pObj.optString("platform") == "android" &&
+                            pLastSeen > 0L && now - pLastSeen > 60_000L
+                        if (staleAndroid) {
                             try {
                                 val delUrl = buildUrl("shared_social/voice_rooms/$roomId/participants/$pUid", token)
                                 client.newCall(Request.Builder().url(delUrl).delete().build()).execute().close()
@@ -966,7 +943,6 @@ object NuxSocialManager {
                             } catch (_: Exception) {}
                             continue
                         }
-
                         participants[pUid] = NuxParticipant(
                             uid = pUid,
                             username = pObj.optString("username", "Peserta"),
@@ -979,137 +955,108 @@ object NuxSocialManager {
                     }
                 }
 
-                // Jika tidak ada peserta, bersihkan room kosong dari shared_social dan root voice_rooms
-                if (participants.isEmpty()) {
-                    try {
-                        val del1 = buildUrl("shared_social/voice_rooms/$roomId", token)
-                        client.newCall(Request.Builder().url(del1).delete().build()).execute().close()
-                        val del2 = buildUrl("voice_rooms/$roomId", token)
-                        client.newCall(Request.Builder().url(del2).delete().build()).execute().close()
-                    } catch (_: Exception) {}
-                    continue
+                val createdAt = try {
+                    java.time.Instant.parse(item.optString("created_at")).toEpochMilli()
+                } catch (_: Exception) {
+                    roomState?.optLong("createdAt", 0L) ?: 0L
                 }
-
                 rooms.add(
                     NuxVoiceRoom(
                         id = roomId,
-                        name = rObj.optString("name", "Voice Room"),
-                        hostUid = rObj.optString("hostUid", ""),
-                        hostName = rObj.optString("hostName", "Host"),
-                        password = rObj.optString("password", ""),
-                        maxUsers = rObj.optInt("maxUsers", 5),
-                        createdAt = rObj.optLong("createdAt", 0L),
+                        name = item.optString("room_name", roomState?.optString("name", "Voice Room") ?: "Voice Room"),
+                        hostUid = item.optString("created_by", roomState?.optString("hostUid", "") ?: ""),
+                        hostName = item.optString("host_name", roomState?.optString("hostName", "Host") ?: "Host"),
+                        password = roomState?.optString("password", "") ?: "",
+                        maxUsers = item.optInt("max_participants", roomState?.optInt("maxUsers", 5) ?: 5),
+                        createdAt = createdAt,
                         participants = participants
                     )
                 )
             }
 
             _voiceRooms.value = rooms.filter { it.participantCount > 0 }
-
-            val curActive = _activeVoiceRoom.value
-            if (curActive != null) {
-                val updated = rooms.find { it.id == curActive.id }
-                if (updated != null) {
-                    _activeVoiceRoom.value = updated
-                }
+            val active = _activeVoiceRoom.value
+            if (active != null) {
+                _voiceRooms.value.find { it.id == active.id }?.let { _activeVoiceRoom.value = it }
             }
-        } catch (_: Exception) {}
+        } catch (e: Exception) {
+            Log.w(TAG, "Supabase TG Voice Room sync failed", e)
+        }
     }
 
     suspend fun createVoiceRoom(name: String, password: String, maxUsers: Int): Result<NuxVoiceRoom> = withContext(Dispatchers.IO) {
         if (!isSocialFeatureEnabled("voiceEnabled")) return@withContext Result.failure(Exception("Voice Room dinonaktifkan oleh administrator TG Launcher."))
         val user = getCurrentUser() ?: return@withContext Result.failure(Exception("Belum login"))
         var token = getAuthToken()
-        if (token.isNullOrBlank()) {
-            token = getAuthToken(forceRefresh = true)
-        }
-        if (token.isNullOrBlank()) {
-            return@withContext Result.failure(Exception("Session expired. Please log in again."))
-        }
+        if (token.isNullOrBlank()) token = getAuthToken(forceRefresh = true)
+        if (token.isNullOrBlank()) return@withContext Result.failure(Exception("Session expired. Please log in again."))
 
         val now = System.currentTimeMillis()
-
-        val payload = JSONObject().apply {
-            put("name", name.trim())
-            put("hostUid", user.uid)
-            put("hostName", user.username)
-            put("creatorPlatform", "android")
-            put("password", password.trim())
-            put("maxUsers", maxUsers.coerceIn(2, 20))
-            put("createdAt", now)
-            put("participants", JSONObject().apply {
-                put(user.uid, JSONObject().apply {
-                    put("uid", user.uid)
-                    put("username", user.username)
-                    put("photoURL", user.photoURL)
-                    put("platform", "android")
-                    put("isAndroid", true)
-                    put("lastSeen", now)
-                })
-            })
-        }
-
         try {
-            var req = Request.Builder()
-                .url(buildUrl("shared_social/voice_rooms", token))
-                .post(payload.toString().toRequestBody(JSON_MEDIA))
-                .build()
-            var resp = client.newCall(req).execute()
-            var body = resp.body?.string() ?: ""
+            // Create the canonical room record through the authenticated TG API;
+            // the returned Supabase ID is reused for transient RTDB participants.
+            val createPayload = JSONObject().apply {
+                put("action", "create")
+                put("roomName", name.trim().ifBlank { "Voice Room" })
+                put("visibility", "friends")
+                put("maxParticipants", maxUsers.coerceIn(2, 50))
+            }.toString()
+            val createResult = AuthService.postApi("/api/social/voice/token", createPayload, bearerToken = token)
+            val createJson = JSONObject(createResult.getOrElse { throw it })
+            val roomId = createJson.optString("roomId", "")
+            if (roomId.isBlank()) throw Exception("Server tidak mengembalikan ID Voice Room.")
 
-            // Auto retry on 401 Unauthorized
-            if (resp.code == 401) {
-                resp.close()
-                token = getAuthToken(forceRefresh = true)
-                if (!token.isNullOrBlank()) {
-                    req = Request.Builder()
-                        .url(buildUrl("shared_social/voice_rooms", token))
-                        .post(payload.toString().toRequestBody(JSON_MEDIA))
-                        .build()
-                    resp = client.newCall(req).execute()
-                    body = resp.body?.string() ?: ""
-                }
+            val participant = JSONObject().apply {
+                put("uid", user.uid)
+                put("username", user.username)
+                put("photoURL", user.photoURL)
+                put("platform", "android")
+                put("isAndroid", true)
+                put("lastSeen", now)
             }
+            val roomPayload = JSONObject().apply {
+                put("name", name.trim().ifBlank { "Voice Room" })
+                put("hostUid", user.uid)
+                put("hostName", user.username)
+                put("creatorPlatform", "android")
+                put("password", password.trim())
+                put("maxUsers", maxUsers.coerceIn(2, 20))
+                put("createdAt", now)
+                put("participants", JSONObject().put(user.uid, participant))
+            }.toString().toRequestBody(JSON_MEDIA)
 
-            val isSuccess = resp.isSuccessful
-            val code = resp.code
-            resp.close()
+            val roomUrl = buildUrl("shared_social/voice_rooms/$roomId", token)
+            client.newCall(Request.Builder().url(roomUrl).put(roomPayload).build()).execute().use {
+                if (!it.isSuccessful) throw Exception("Gagal menyiapkan peserta Voice Room (${it.code}).")
+            }
+            // Keep the legacy root mirror for older TG clients while Supabase
+            // remains authoritative for the Admin Panel and room availability.
+            try {
+                val rootUrl = buildUrl("voice_rooms/$roomId", token)
+                client.newCall(Request.Builder().url(rootUrl).put(roomPayload).build()).execute().close()
+            } catch (_: Exception) {}
 
-            if (isSuccess && body.isNotEmpty()) {
-                val roomId = JSONObject(body).optString("name", "")
-
-                // Mirror ke root voice_rooms seperti pada versi Windows
-                if (roomId.isNotEmpty() && !token.isNullOrBlank()) {
-                    try {
-                        val rootUrl = buildUrl("voice_rooms/$roomId", token)
-                        client.newCall(Request.Builder().url(rootUrl).put(payload.toString().toRequestBody(JSON_MEDIA)).build()).execute().close()
-                    } catch (_: Exception) {}
-                }
-
-                val newRoom = NuxVoiceRoom(
-                    id = roomId,
-                    name = name.trim(),
-                    hostUid = user.uid,
-                    hostName = user.username,
-                    password = password.trim(),
-                    maxUsers = maxUsers,
-                    createdAt = now,
-                    participants = mapOf(
-                        user.uid to NuxParticipant(
-                            uid = user.uid,
-                            username = user.username,
-                            photoURL = user.photoURL,
-                            platform = "android",
-                            isAndroid = true
-                        )
+            val newRoom = NuxVoiceRoom(
+                id = roomId,
+                name = name.trim().ifBlank { "Voice Room" },
+                hostUid = user.uid,
+                hostName = user.username,
+                password = password.trim(),
+                maxUsers = maxUsers.coerceIn(2, 20),
+                createdAt = now,
+                participants = mapOf(
+                    user.uid to NuxParticipant(
+                        uid = user.uid,
+                        username = user.username,
+                        photoURL = user.photoURL,
+                        platform = "android",
+                        isAndroid = true
                     )
                 )
-                joinVoiceRoomInternal(newRoom)
-                fetchVoiceRooms()
-                Result.success(newRoom)
-            } else {
-                Result.failure(Exception("Failed to create room ($code)"))
-            }
+            )
+            joinVoiceRoomInternal(newRoom)
+            fetchVoiceRooms()
+            Result.success(newRoom)
         } catch (e: Exception) {
             Result.failure(e)
         }
