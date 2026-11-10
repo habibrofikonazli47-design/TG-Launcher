@@ -11,7 +11,7 @@ on:
       - ".github/workflows/verify-tg206-repairs.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: tg206-feature-repairs
@@ -92,6 +92,20 @@ jobs:
           unzip -Z1 "$APK" | grep -Eq '^lib/arm64-v8a/.*[.]so$'
           unzip -tq "$APK"
           sha256sum "$APK"
+
+      - name: Publish direct TG208 APK release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: tg-launcher-1.1.6-tg208
+          name: TG Launcher 1.1.6 TG208
+          body: |
+            TG208 built from the existing TG206 codebase.
+            Package: com.tg.launcher
+            Version code: 271
+            Signing identity verified against TG206.
+            Install this APK over TG206; keep the existing app installed.
+          files: app/build/outputs/apk/release/app-release.apk
+          make_latest: true
 
       - name: Upload test APK
         uses: actions/upload-artifact@v4
