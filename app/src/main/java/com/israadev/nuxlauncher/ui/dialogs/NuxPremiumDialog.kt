@@ -657,7 +657,7 @@ fun NuxPremiumDialog(
                                             )
                                             Spacer(modifier = Modifier.width(5.dp))
                                             Text(
-                                                text = "All 7 Premium Exclusive Features Active",
+                                                text = "FITUR PREMIUM SESUAI AKSES ADMIN AKTIF",
                                                 color = Color.White,
                                                 fontSize = 7.5.sp,
                                                 fontWeight = FontWeight.Bold
