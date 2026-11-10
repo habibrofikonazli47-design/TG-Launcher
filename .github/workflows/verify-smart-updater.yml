@@ -6,10 +6,12 @@ on:
       - feature/smart-updater-current
     paths:
       - "app/**"
+      - "admin/**"
       - ".github/workflows/verify-smart-updater.yml"
   pull_request:
     paths:
       - "app/**"
+      - "admin/**"
       - ".github/workflows/verify-smart-updater.yml"
 
 permissions:
@@ -28,26 +30,54 @@ jobs:
       - uses: android-actions/setup-android@v3
         with:
           packages: platform-tools
+      - name: Configure persistent TG Launcher signing key
+        shell: bash
+        env:
+          TG_SIGNING_KEYSTORE_BASE64: ${{ secrets.TG_SIGNING_KEYSTORE_BASE64 }}
+          TG_SIGNING_STORE_PASSWORD: ${{ secrets.TG_SIGNING_STORE_PASSWORD }}
+          TG_SIGNING_KEY_ALIAS: ${{ secrets.TG_SIGNING_KEY_ALIAS }}
+          TG_SIGNING_KEY_PASSWORD: ${{ secrets.TG_SIGNING_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$TG_SIGNING_KEYSTORE_BASE64" || -z "$TG_SIGNING_STORE_PASSWORD" || -z "$TG_SIGNING_KEY_ALIAS" || -z "$TG_SIGNING_KEY_PASSWORD" ]]; then
+            echo "::error::Persistent TG Launcher signing secrets are required. Refusing to produce an install-over-update APK."
+            exit 1
+          fi
+          KEYSTORE_PATH="$RUNNER_TEMP/tg-launcher-release.jks"
+          printf '%s' "$TG_SIGNING_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+          test -s "$KEYSTORE_PATH"
+          echo "TG_SIGNING_STORE_FILE=$KEYSTORE_PATH" >> "$GITHUB_ENV"
+          echo "TG_SIGNING_STORE_PASSWORD=$TG_SIGNING_STORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "TG_SIGNING_KEY_ALIAS=$TG_SIGNING_KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "TG_SIGNING_KEY_PASSWORD=$TG_SIGNING_KEY_PASSWORD" >> "$GITHUB_ENV"
+          TG_VERSION_CODE=$((GITHUB_RUN_NUMBER + 224))
+          echo "TG_VERSION_CODE=$TG_VERSION_CODE" >> "$GITHUB_ENV"
+          echo "TG_VERSION_NAME=1.1.6-smart$TG_VERSION_CODE" >> "$GITHUB_ENV"
       - name: Build release APK
         run: |
           chmod +x ./gradlew
           ./gradlew --no-daemon clean assembleRelease
-      - name: Verify APK package, signature, alignment and archive
+      - name: Verify APK package, version, build identity, signature and archive
         shell: bash
         run: |
           set -euo pipefail
           APK="app/build/outputs/apk/release/app-release.apk"
           test -s "$APK"
           BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
-          "$BUILD_TOOLS/apksigner" verify --verbose "$APK"
+          SIGNATURE_REPORT="$("$BUILD_TOOLS/apksigner" verify --min-sdk-version 18 --verbose --print-certs "$APK")"
+          printf '%s\\n' "$SIGNATURE_REPORT"
+          grep -q "Verified using v1 scheme (JAR signing): true" <<< "$SIGNATURE_REPORT"
+          grep -q "Verified using v2 scheme (APK Signature Scheme v2): true" <<< "$SIGNATURE_REPORT"
+          grep -q "Verified using v3 scheme (APK Signature Scheme v3): true" <<< "$SIGNATURE_REPORT"
+          grep -qi "Signer #1 certificate SHA-256 digest: e5aa76841020b79e40f8612021d262f53afdb3d918b3dbc4df97afca1af3b73f" <<< "$SIGNATURE_REPORT"
           "$BUILD_TOOLS/zipalign" -c -v 4 "$APK"
           "$BUILD_TOOLS/aapt" dump badging "$APK" | tee /tmp/tg-badging.txt
-          grep -q "package: name='com.tg.launcher'" /tmp/tg-badging.txt
+          grep -q "package: name='com.tg.launcher' versionCode='$TG_VERSION_CODE'" /tmp/tg-badging.txt
           grep -q "application-label:'TG Launcher'" /tmp/tg-badging.txt
           grep -q "native-code: 'arm64-v8a'" /tmp/tg-badging.txt
           unzip -tq "$APK"
           sha256sum "$APK"
-          echo "Release APK build validation passed."
+          echo "Release APK signature matches TG Launcher build 206."
       - name: Upload validation APK
         uses: actions/upload-artifact@v4
         with:
