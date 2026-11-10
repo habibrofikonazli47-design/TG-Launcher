@@ -72,6 +72,29 @@ async function authorizeAdmin(req: Request) {
   } catch { return false; }
 }
 
+async function authorizeWorldInviteProxy(req: Request) {
+  const token = req.headers.get("x-tg-world-invites-assertion") || "";
+  const parts = token.split(".");
+  if (parts.length !== 3 || token.length > 4096) return false;
+  try {
+    const header = JSON.parse(new TextDecoder().decode(decodeB64Url(parts[0])));
+    const payload = JSON.parse(new TextDecoder().decode(decodeB64Url(parts[1])));
+    const now = Math.floor(Date.now() / 1000);
+    if (header.alg !== "EdDSA" || header.typ !== "JWT" ||
+        payload.sub !== "tg-admin" || payload.aud !== "tg-world-invites-gate" ||
+        !payload.jti || !Number.isFinite(payload.iat) || !Number.isFinite(payload.exp) ||
+        payload.iat > now + 10 || payload.exp <= now || payload.exp - payload.iat > 45) return false;
+    const publicKeyBytes = Uint8Array.from(atob(ADMIN_PUBLIC_KEY_SPKI_B64), (char) => char.charCodeAt(0));
+    const publicKey = await crypto.subtle.importKey("spki", publicKeyBytes, { name: "Ed25519" }, false, ["verify"]);
+    return await crypto.subtle.verify(
+      { name: "Ed25519" },
+      publicKey,
+      decodeB64Url(parts[2]),
+      new TextEncoder().encode(parts[0] + "." + parts[1]),
+    );
+  } catch { return false; }
+}
+
 async function handle(req: Request) {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   const url = new URL(req.url);
@@ -397,6 +420,7 @@ async function handle(req: Request) {
 
 
   if (op === "world_invites" && ["GET", "POST", "PATCH"].includes(req.method)) {
+    if (!(await authorizeWorldInviteProxy(req))) return fail("Undangan dunia harus melalui kontrol Admin TG.", 401);
     const now = new Date();
     const nowIso = now.toISOString();
     const isFriend = async (otherUid: string) => {
