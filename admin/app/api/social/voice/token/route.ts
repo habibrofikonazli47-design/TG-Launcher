@@ -15,7 +15,8 @@ async function hasVoiceRoomEntitlement(uid:string){
  if(!profile||profile.status!=='active')return false;
  const expiry=profile.expires_at?new Date(profile.expires_at).getTime():null;
  if(expiry!==null&&(!Number.isFinite(expiry)||expiry<=Date.now()))return false;
- const features=Array.isArray(profile.feature_overrides)?profile.feature_overrides:(Array.isArray(profile.features)?profile.features:[]);
+ const overrides=Array.isArray(profile.feature_overrides)?profile.feature_overrides:[];
+ const features=overrides.length>0?overrides:(Array.isArray(profile.features)?profile.features:[]);
  return features.includes('voice_rooms');
 }
 function signLiveKitToken(apiKey:string,secret:string,identity:string,room:string){
@@ -51,6 +52,7 @@ export async function POST(req:NextRequest){
 export async function GET(req:NextRequest){
  const user=await verifySocialIdentity(req);if(!user)return NextResponse.json({error:'Token TG tidak valid'},{status:401});
  if(!(await isSocialFeatureEnabled('voiceEnabled',true)))return NextResponse.json({error:'Voice TG dinonaktifkan oleh admin.'},{status:403});
+ if(!(await isSocialFeatureEnabled('livekitEnabled',false)))return NextResponse.json({error:'Server Voice Room belum diaktifkan oleh admin TG Launcher.'},{status:403});
  if(!(await hasVoiceRoomEntitlement(user.uid)))return NextResponse.json({error:'Akses Voice Room belum diberikan untuk akun ini oleh admin TG.'},{status:403});
  return proxySocialRequest(req,'voice_rooms');
 }
