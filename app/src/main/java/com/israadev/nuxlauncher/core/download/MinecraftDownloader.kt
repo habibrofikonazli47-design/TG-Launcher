@@ -117,7 +117,11 @@ class MinecraftDownloader(
                                     try {
                                         downloadFile(artifact.url, targetFile, expectedSize)
                                     } catch (e: Exception) {
-                                        e.printStackTrace()
+                                        throw IOException("Gagal mengunduh library Minecraft ${lib.name}: ${e.message}", e)
+                                    }
+                                    if (!targetFile.exists() || targetFile.length() == 0L ||
+                                        (expectedSize > 0L && targetFile.length() != expectedSize)) {
+                                        throw IOException("Library Minecraft tidak lengkap: ${lib.name}")
                                     }
                                 }
                             }
@@ -143,9 +147,12 @@ class MinecraftDownloader(
                 }
 
                 // Download objects (Parallel concurrency: 48 Turbo for Premium, 24 for Free)
-                if (indexFile.exists()) {
-                    try {
+                if (!indexFile.exists() || indexFile.length() == 0L) {
+                    throw IOException("Asset index ${assetIndex.id} gagal diunduh.")
+                }
+                run {
                         val indexContent = gson.fromJson(indexFile.readText(), AssetIndexContent::class.java)
+                            ?: throw IOException("Asset index ${assetIndex.id} tidak valid.")
                         val objects = indexContent.objects.entries.toList()
                         val totalObjects = objects.size
                         val objectsDir = File(assetsDir, "objects")
@@ -164,9 +171,11 @@ class MinecraftDownloader(
                                     if (!targetObj.exists() || targetObj.length() == 0L || (expectedSize > 0L && targetObj.length() != expectedSize)) {
                                         targetObj.parentFile?.mkdirs()
                                         val objUrl = "https://resources.download.minecraft.net/$prefix/$hash"
-                                        try {
-                                            downloadFile(objUrl, targetObj, expectedSize)
-                                        } catch (_: Exception) {}
+                                        downloadFile(objUrl, targetObj, expectedSize)
+                                    }
+                                    if (!targetObj.exists() || targetObj.length() == 0L ||
+                                        (expectedSize > 0L && targetObj.length() != expectedSize)) {
+                                        throw IOException("Asset Minecraft tidak lengkap: $hash")
                                     }
                                     val count = downloadedAssets.incrementAndGet()
                                     val p = 0.65f + (count.toFloat() / totalObjects) * 0.27f
@@ -175,9 +184,6 @@ class MinecraftDownloader(
                             }
                         }
                         assetJobs.awaitAll()
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
                 }
             }
 
@@ -236,8 +242,17 @@ class MinecraftDownloader(
                                             } catch (_: Exception) {}
                                         }
                                         if (!success) {
-                                            android.util.Log.w("MinecraftDownloader", "Failed to download Fabric library: ${lib.name}")
+                                            throw IOException("Gagal mengunduh library Fabric: ${lib.name}")
                                         }
+                                    }
+                                    if (relPath != null) {
+                                        val installedFile = File(libDir, relPath)
+                                        val expectedSize = lib.size ?: 0L
+                                        if (!installedFile.exists() || installedFile.length() == 0L ||
+                                            (expectedSize > 0L && installedFile.length() != expectedSize)) {
+                                            throw IOException("Library Fabric tidak lengkap: ${lib.name}")
+                                        }
+                                    }
                                     }
                                 }
                                 val count = downloadedFabric.incrementAndGet()
