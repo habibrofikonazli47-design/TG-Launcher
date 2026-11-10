@@ -95,9 +95,6 @@ object UpdateManager {
         try {
             if (Uri.parse(update.downloadUrl).scheme != "https")
                 return@withContext Result.failure(Exception("Tautan update harus menggunakan HTTPS."))
-            if (!update.sha256.matches(Regex("^[a-fA-F0-9]{64}$")))
-                return@withContext Result.failure(Exception("Checksum SHA-256 tidak tersedia. Update dibatalkan demi keamanan."))
-
             val dir = File(context.cacheDir, "updates").apply { mkdirs() }
             val safeName = update.fileName.substringAfterLast('/').replace(Regex("[^A-Za-z0-9._-]"), "_")
             val temp = File(dir, "$safeName.part")
@@ -111,19 +108,26 @@ object UpdateManager {
                     return@withContext Result.failure(Exception("Ukuran file update tidak cocok dengan metadata server."))
                 body.byteStream().use { input -> temp.outputStream().buffered().use { output -> input.copyTo(output) } }
             }
-            val digest = MessageDigest.getInstance("SHA-256")
-            val actualHash = temp.inputStream().buffered().use { input ->
-                val buffer = ByteArray(64 * 1024)
-                while (true) {
-                    val count = input.read(buffer)
-                    if (count < 0) break
-                    digest.update(buffer, 0, count)
+            // Existing Admin Panel metadata has no SHA-256 field. Prefer SHA-256 when
+            // supplied; otherwise verify the APK package and installed signing certificate.
+            if (update.sha256.matches(Regex("^[a-fA-F0-9]{64}$"))) {
+                val digest = MessageDigest.getInstance("SHA-256")
+                val actualHash = temp.inputStream().buffered().use { input ->
+                    val buffer = ByteArray(64 * 1024)
+                    while (true) {
+                        val count = input.read(buffer)
+                        if (count < 0) break
+                        digest.update(buffer, 0, count)
+                    }
+                    digest.digest().joinToString("") { "%02x".format(it) }
                 }
-                digest.digest().joinToString("") { "%02x".format(it) }
-            }
-            if (!actualHash.equals(update.sha256, ignoreCase = true)) {
+                if (!actualHash.equals(update.sha256, ignoreCase = true)) {
+                    temp.delete()
+                    return@withContext Result.failure(Exception("Verifikasi update gagal (SHA-256 tidak cocok)."))
+                }
+            } else if (!hasSameSigningCertificate(context, temp)) {
                 temp.delete()
-                return@withContext Result.failure(Exception("Verifikasi update gagal (SHA-256 tidak cocok)."))
+                return@withContext Result.failure(Exception("Verifikasi tanda tangan APK gagal. File bukan pembaruan resmi TG Launcher."))
             }
             if (apk.exists()) apk.delete()
             if (!temp.renameTo(apk)) return@withContext Result.failure(Exception("Tidak dapat menyiapkan file instalasi."))
@@ -136,6 +140,44 @@ object UpdateManager {
             Result.success(Unit)
         } catch (error: Exception) {
             Result.failure(error)
+        }
+    }
+
+    /**
+     * The existing Admin Panel endpoint does not expose asset SHA-256 metadata.
+     * In that case, require the downloaded APK package and signing certificate
+     * to match the currently installed TG Launcher before opening Android Installer.
+     */
+    private fun hasSameSigningCertificate(context: Context, apkFile: File): Boolean {
+        return try {
+            val flags = PackageManager.GET_SIGNING_CERTIFICATES
+            val installed = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.packageManager.getPackageInfo(
+                    context.packageName,
+                    PackageManager.PackageInfoFlags.of(flags.toLong())
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                context.packageManager.getPackageInfo(context.packageName, flags)
+            }
+            val downloaded = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.packageManager.getPackageArchiveInfo(
+                    apkFile.absolutePath,
+                    PackageManager.PackageInfoFlags.of(flags.toLong())
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                context.packageManager.getPackageArchiveInfo(apkFile.absolutePath, flags)
+            } ?: return false
+
+            if (downloaded.packageName != context.packageName) return false
+            val installedSigners = installed.signingInfo?.apkContentsSigners
+                ?.map { it.toCharsString() }?.toSet().orEmpty()
+            val downloadedSigners = downloaded.signingInfo?.apkContentsSigners
+                ?.map { it.toCharsString() }?.toSet().orEmpty()
+            installedSigners.isNotEmpty() && installedSigners == downloadedSigners
+        } catch (_: Exception) {
+            false
         }
     }
 
