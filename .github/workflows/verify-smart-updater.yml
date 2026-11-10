@@ -15,7 +15,7 @@ on:
       - ".github/workflows/verify-smart-updater.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   android-release-build:
@@ -78,6 +78,18 @@ jobs:
           unzip -tq "$APK"
           sha256sum "$APK"
           echo "Release APK signature matches TG Launcher build 206."
+      - name: Publish direct APK download as GitHub prerelease
+        if: github.event_name == 'push' && contains(github.event.head_commit.message, 'Publish TG Launcher Smart Updater APK')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/release/app-release.apk"
+          TAG="tg-launcher-$TG_VERSION_NAME"
+          gh release create "$TAG" "$APK" \
+            --title "TG Launcher $TG_VERSION_NAME" \
+            --notes "TG Launcher Smart Updater validation build. Signed with the persistent TG Launcher release certificate matching build 206. Package: com.tg.launcher." \
+            --prerelease
       - name: Upload validation APK
         uses: actions/upload-artifact@v4
         with:
