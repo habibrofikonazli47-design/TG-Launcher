@@ -358,6 +358,59 @@ object NuxSocialManager {
     }
 
     // =========================================================
+    // PRIVATE WORLD INVITATIONS (PHASE 1)
+    // =========================================================
+
+    private fun worldInvitesAvailable(): Boolean = isSocialFeatureEnabled("worldInvitesEnabled")
+
+    suspend fun fetchPrivateWorldInvites(): Result<JSONObject> = withContext(Dispatchers.IO) {
+        if (!worldInvitesAvailable()) return@withContext Result.failure(Exception("Fitur undangan dunia privat belum diaktifkan admin."))
+        val token = getAuthToken(forceRefresh = true)
+            ?: return@withContext Result.failure(Exception("Sesi login kedaluwarsa. Silakan login ulang."))
+        AuthService.getApi("/api/social/world-invites", bearerToken = token).map { JSONObject(it) }
+    }
+
+    suspend fun createPrivateWorldInvite(
+        targetUid: String,
+        worldName: String,
+        minecraftVersion: String = ""
+    ): Result<JSONObject> = withContext(Dispatchers.IO) {
+        if (!worldInvitesAvailable()) return@withContext Result.failure(Exception("Fitur undangan dunia privat belum diaktifkan admin."))
+        if (targetUid.isBlank()) return@withContext Result.failure(Exception("Pilih teman yang akan diundang."))
+        val token = getAuthToken(forceRefresh = true)
+            ?: return@withContext Result.failure(Exception("Sesi login kedaluwarsa. Silakan login ulang."))
+        val payload = JSONObject().apply {
+            put("action", "create")
+            put("targetUserId", targetUid)
+            put("worldName", worldName.trim().ifBlank { "Dunia privat" }.take(48))
+            put("minecraftVersion", minecraftVersion.trim().take(32))
+        }.toString()
+        AuthService.postApi("/api/social/world-invites", payload, bearerToken = token)
+            .map { JSONObject(it) }
+    }
+
+    suspend fun acceptPrivateWorldInvite(inviteCode: String): Result<JSONObject> = withContext(Dispatchers.IO) {
+        if (!worldInvitesAvailable()) return@withContext Result.failure(Exception("Fitur undangan dunia privat belum diaktifkan admin."))
+        val code = inviteCode.trim().uppercase()
+        if (!code.matches(Regex("[A-HJ-NP-Z2-9]{10}"))) {
+            return@withContext Result.failure(Exception("Kode undangan harus terdiri dari 10 karakter."))
+        }
+        val token = getAuthToken(forceRefresh = true)
+            ?: return@withContext Result.failure(Exception("Sesi login kedaluwarsa. Silakan login ulang."))
+        val payload = JSONObject().put("action", "accept").put("inviteCode", code).toString()
+        AuthService.postApi("/api/social/world-invites", payload, bearerToken = token)
+            .map { JSONObject(it) }
+    }
+
+    suspend fun closePrivateWorldSession(sessionId: String): Result<Unit> = withContext(Dispatchers.IO) {
+        if (!worldInvitesAvailable()) return@withContext Result.failure(Exception("Fitur undangan dunia privat belum diaktifkan admin."))
+        val token = getAuthToken(forceRefresh = true)
+            ?: return@withContext Result.failure(Exception("Sesi login kedaluwarsa. Silakan login ulang."))
+        val payload = JSONObject().put("action", "close").put("sessionId", sessionId).toString()
+        AuthService.postApi("/api/social/world-invites", payload, bearerToken = token).map { Unit }
+    }
+
+    // =========================================================
     // 2. PERTEMANAN (FRIENDS)
     // =========================================================
 
