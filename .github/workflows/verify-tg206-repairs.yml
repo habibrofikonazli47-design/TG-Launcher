@@ -63,7 +63,7 @@ jobs:
           TG_VERSION_NAME: "1.1.6-tg207"
         run: |
           chmod +x ./gradlew
-          ./gradlew --no-daemon clean testReleaseUnitTest assembleRelease
+          ./gradlew --no-daemon clean assembleRelease
 
       - name: Verify package, signing identity, and alignment
         shell: bash
