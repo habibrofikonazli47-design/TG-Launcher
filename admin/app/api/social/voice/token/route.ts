@@ -7,6 +7,16 @@ import { decryptLiveKitSecret } from '@/lib/livekit-config';
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
 function b64(value:unknown){return Buffer.from(JSON.stringify(value)).toString('base64url');}
+async function hasVoiceRoomEntitlement(uid:string){
+ await ensureSchema();
+ const rows=await database()`SELECT p.plan,p.status,p.expires_at,p.feature_overrides,pl.features FROM profiles p LEFT JOIN plans pl ON pl.code=p.plan WHERE p.id=${uid} LIMIT 1`;
+ const profile=rows[0];
+ if(!profile||profile.status!=='active')return false;
+ const expiry=profile.expires_at?new Date(profile.expires_at).getTime():null;
+ if(expiry!==null&&(!Number.isFinite(expiry)||expiry<=Date.now()))return false;
+ const features=Array.isArray(profile.feature_overrides)?profile.feature_overrides:(Array.isArray(profile.features)?profile.features:[]);
+ return features.includes('voice_rooms');
+}
 function signLiveKitToken(apiKey:string,secret:string,identity:string,room:string){
  const now=Math.floor(Date.now()/1000);
  const header=b64({alg:'HS256',typ:'JWT'});
@@ -18,13 +28,7 @@ function signLiveKitToken(apiKey:string,secret:string,identity:string,room:strin
 export async function POST(req:NextRequest){
  const user=await verifySocialIdentity(req);if(!user)return NextResponse.json({error:'Token TG tidak valid'},{status:401});
  if(!(await isSocialFeatureEnabled('voiceEnabled',true))||!(await isSocialFeatureEnabled('livekitEnabled',false)))return NextResponse.json({error:'Voice TG belum diaktifkan oleh admin.'},{status:403});
- await ensureSchema();
- const entitlement=await database()`SELECT p.plan,p.status,p.expires_at,pl.features FROM profiles p LEFT JOIN plans pl ON pl.code=p.plan WHERE p.id=${user.uid} LIMIT 1`;
- const account=entitlement[0];
- const features=Array.isArray(account?.features)?account.features:[];
- const expiry=account?.expires_at?new Date(account.expires_at).getTime():null;
- const active=account?.status==='active'&&(!expiry||expiry>Date.now());
- if(!active||(!features.includes('voice_rooms')&&account?.plan!=='premium'))return NextResponse.json({error:'Voice Room TG hanya tersedia untuk akun Premium yang aktif.'},{status:403});
+ if(!(await hasVoiceRoomEntitlement(user.uid)))return NextResponse.json({error:'Akses Voice Room belum diberikan untuk akun ini oleh admin TG Launcher.'},{status:403});
 
  const configRows=await database()`SELECT value FROM app_settings WHERE key='social' LIMIT 1`;
  const config=(configRows[0]?.value||{}) as Record<string,any>;
@@ -65,6 +69,7 @@ export async function POST(req:NextRequest){
 export async function GET(req:NextRequest){
  const user=await verifySocialIdentity(req);if(!user)return NextResponse.json({error:'Token TG tidak valid'},{status:401});
  if(!(await isSocialFeatureEnabled('voiceEnabled',true)))return NextResponse.json({error:'Voice TG dinonaktifkan oleh admin.'},{status:403});
+ if(!(await hasVoiceRoomEntitlement(user.uid)))return NextResponse.json({error:'Akses Voice Room belum diberikan untuk akun ini oleh admin TG Launcher.'},{status:403});
  try{
   await ensureSocialSchema();const sql=socialDatabase();
   const rows=await sql`SELECT r.id,r.room_name,r.created_by,r.visibility,r.max_participants,r.created_at,p.username AS host_name FROM social_voice_rooms r LEFT JOIN social_profiles p ON p.user_id=r.created_by WHERE r.is_active=true ORDER BY r.created_at DESC LIMIT 100`;
