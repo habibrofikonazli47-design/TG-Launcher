@@ -73,7 +73,7 @@ jobs:
           test -s "$APK"
           BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
           "$BUILD_TOOLS/apksigner" verify --min-sdk-version 18 --verbose --print-certs "$APK" | tee /tmp/tg-signature.txt
-          grep -q "V3.0 Signer: certificate SHA-256 digest: e5aa76841020b79e40e8612021d262f53afdb3d918b3dbc4df97afca1af3b73f" /tmp/tg-signature.txt
+          grep -q "V3.0 Signer: certificate SHA-256 digest: e5aa76841020b79e40f8612021d262f53afdb3d918b3dbc4df97afca1af3b73f" /tmp/tg-signature.txt
           "$BUILD_TOOLS/zipalign" -c -v 4 "$APK"
           APKANALYZER="$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer"
           if [ ! -x "$APKANALYZER" ]; then
