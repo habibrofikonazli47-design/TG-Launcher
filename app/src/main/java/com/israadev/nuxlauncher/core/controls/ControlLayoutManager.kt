@@ -331,6 +331,36 @@ object ControlLayoutManager {
         saveButtons(context, current)
     }
 
+    fun exportLayoutJson(buttons: List<CustomControlButton> = _buttons.value): String {
+        require(buttons.isNotEmpty() && buttons.size <= 100) { "Layout must contain 1-100 controls" }
+        return gson.toJson(buttons)
+    }
+
+    fun importLayoutJson(context: Context, json: String): Boolean {
+        return try {
+            if (json.isBlank() || json.length > 512_000) return false
+            val type = object : TypeToken<List<CustomControlButton>>() {}.type
+            val imported: List<CustomControlButton>? = gson.fromJson(json, type)
+            if (imported.isNullOrEmpty() || imported.size > 100) return false
+            val valid = imported.all { button ->
+                button.id.isNotBlank() &&
+                    button.name.isNotBlank() && button.name.length <= 24 &&
+                    button.xPercent.isFinite() && button.xPercent in 0f..100f &&
+                    button.yPercent.isFinite() && button.yPercent in 0f..100f &&
+                    button.widthDp in 20..400 && button.heightDp in 20..400 &&
+                    button.opacity.isFinite() && button.opacity in 0.1f..1f &&
+                    button.cornerRadiusDp in 0..200 &&
+                    button.macroComboKeys.size <= 32 &&
+                    button.macroCommand.length <= 256
+            }
+            if (!valid || imported.map { it.id }.distinct().size != imported.size) return false
+            saveButtons(context, imported)
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     private fun save(context: Context, list: List<CustomControlButton>) {
         try {
             val file = getLayoutFile(context)
