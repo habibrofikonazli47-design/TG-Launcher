@@ -95,7 +95,13 @@ export async function GET(req: NextRequest) {
     const planCode = isPremium ? 'premium' : 'free';
     const plans = await sql`SELECT code,name,features,limits FROM plans WHERE code=${planCode} LIMIT 1`;
     const plan = plans[0] || { code: planCode, name: isPremium ? 'Premium' : 'Free', features: ['base_launcher'], limits: { instances: 3, accounts: 2, ai_daily: 5 } };
-    const features = Array.isArray(profile.feature_overrides) ? profile.feature_overrides : plan.features;
+    // An empty override means "follow the selected plan" (same behavior as an unset override).
+    // Only a non-empty explicit allow-list replaces the plan's default feature set.
+    const planFeatures = Array.isArray(plan.features) ? plan.features : ['base_launcher'];
+    const explicitFeatureOverrides = Array.isArray(profile.feature_overrides) && profile.feature_overrides.length > 0
+      ? profile.feature_overrides
+      : null;
+    const features = explicitFeatureOverrides || planFeatures;
     const limits = { ...(plan.limits || {}), ...(profile.limit_overrides || {}) };
 
     return NextResponse.json({
