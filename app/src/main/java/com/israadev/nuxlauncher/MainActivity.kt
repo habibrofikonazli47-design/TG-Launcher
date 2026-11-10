@@ -92,22 +92,6 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            // Refresh token dan paket server saat aplikasi dibuka agar perubahan admin berlaku
-            // tanpa pengguna harus logout/login ulang.
-            LaunchedEffect(Unit) {
-                val savedUser = AccountManager.getActiveUser()
-                if (savedUser != null) {
-                    val refreshedToken = AuthService.refreshIdToken(savedUser.refreshToken)
-                    val tokenUser = if (!refreshedToken.isNullOrBlank()) savedUser.copy(idToken = refreshedToken) else savedUser
-                    val syncedUser = AuthService.syncEntitlements(tokenUser)
-                    if (syncedUser.tier == "blocked") {
-                        AccountManager.logout(this@MainActivity)
-                    } else {
-                        AccountManager.saveAuthUser(this@MainActivity, syncedUser)
-                    }
-                }
-            }
-
             // Pengguna yang sudah login (baik Free maupun Premium) langsung masuk ke Dashboard
             val isLoggedIn = launcherUser != null
 
@@ -165,6 +149,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        syncAccountEntitlements()
         lifecycleScope.launch { RemoteLauncherConfig.refresh() }
         hideSystemBars()
         // Re-init instances in case storage permission was just granted
@@ -192,6 +177,22 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
         com.israadev.nuxlauncher.core.skin.OfflineSkinServerManager.stopServer()
         com.israadev.nuxlauncher.core.social.NuxSocialManager.onAppBackground()
+    }
+
+    // Refresh server-side Free/Premium entitlements whenever the launcher returns
+    // to foreground so Admin Panel changes take effect without logout/reinstall.
+    private fun syncAccountEntitlements() {
+        lifecycleScope.launch {
+            val savedUser = AccountManager.getActiveUser() ?: return@launch
+            val refreshedToken = AuthService.refreshIdToken(savedUser.refreshToken)
+            val tokenUser = if (!refreshedToken.isNullOrBlank()) savedUser.copy(idToken = refreshedToken) else savedUser
+            val syncedUser = AuthService.syncEntitlements(tokenUser)
+            if (syncedUser.tier == "blocked") {
+                AccountManager.logout(this@MainActivity)
+            } else {
+                AccountManager.saveAuthUser(this@MainActivity, syncedUser)
+            }
+        }
     }
 
     private fun hideSystemBars() {
