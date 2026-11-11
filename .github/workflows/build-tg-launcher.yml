@@ -62,9 +62,18 @@ jobs:
           NEXT_RELEASE_BUILD=$((LATEST_RELEASE_BUILD + 1))
           RUN_BASE_BUILD=$((GITHUB_RUN_NUMBER + 80))
           TG_BUILD_NUMBER=$((NEXT_RELEASE_BUILD > RUN_BASE_BUILD ? NEXT_RELEASE_BUILD : RUN_BASE_BUILD))
-          TG_VERSION_CODE=$((TG_BUILD_NUMBER + 17))
+          # Android requires versionCode to increase across every installable release.
+          # Historical TG213 already used versionCode 276, so deriving this from the
+          # TG tag suffix can produce an invalid downgrade (TG214 previously became 231).
+          # The workflow run number is monotonic for this workflow; reserve a high range
+          # to remain above all previously published TG Launcher APKs.
+          TG_VERSION_CODE=$((GITHUB_RUN_NUMBER + 1000))
           if (( TG_BUILD_NUMBER <= LATEST_RELEASE_BUILD )); then
             echo "TG build number is not newer than the latest release." >&2
+            exit 1
+          fi
+          if (( TG_VERSION_CODE <= 276 )); then
+            echo "Android versionCode is not newer than the highest verified historical release (276)." >&2
             exit 1
           fi
           echo "TG_BUILD_NUMBER=$TG_BUILD_NUMBER" >> "$GITHUB_ENV"
