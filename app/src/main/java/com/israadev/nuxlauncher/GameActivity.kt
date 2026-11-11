@@ -143,6 +143,7 @@ class GameActivity : ComponentActivity(), SurfaceHolder.Callback {
         const val EXTRA_LOADER_VERSION = "extra_loader_version"
         const val EXTRA_INSTALLED_MODS = "extra_installed_mods"
         const val EXTRA_LAUNCHER_UID = "extra_launcher_uid"
+        const val EXTRA_PRIVATE_WORLD_LOCAL_PORT = "extra_private_world_local_port"
     }
 
     private var pendingRecordConfig: ScreenRecordConfig = ScreenRecordConfig()
@@ -280,6 +281,7 @@ class GameActivity : ComponentActivity(), SurfaceHolder.Callback {
     }
 
     private var launcherUid: String = ""
+    @Volatile private var privateWorldLanPort: Int? = null
     private var presenceHeartbeatJob: Job? = null
     private val presenceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
@@ -485,6 +487,7 @@ class GameActivity : ComponentActivity(), SurfaceHolder.Callback {
         loaderVersion = intent.getStringExtra(EXTRA_LOADER_VERSION)
         installedMods = intent.getStringArrayListExtra(EXTRA_INSTALLED_MODS) ?: CrashManager.getInstalledMods(gameDirPath)
         launcherUid = intent.getStringExtra(EXTRA_LAUNCHER_UID) ?: ""
+        privateWorldLanPort = intent.getIntExtra(EXTRA_PRIVATE_WORLD_LOCAL_PORT, 0).takeIf { it in 1..65535 }
         startInGamePresenceHeartbeat()
 
         // Setup real-time native LoggerBridge
@@ -547,12 +550,31 @@ class GameActivity : ComponentActivity(), SurfaceHolder.Callback {
         applyImmersiveFullscreen()
     }
 
+    private fun detectPrivateWorldLanPort(line: String): Int? {
+        val patterns = listOf(
+            Regex("""(?i)Started serving on \\*:(\\d{1,5})"""),
+            Regex("""(?i)Started serving on (?:0\\.0\\.0\\.0|\\[[0-9a-f:]+\\]|[0-9a-f:.]+):(\\d{1,5})"""),
+            Regex("""(?i)Local game hosted on port (\\d{1,5})""")
+        )
+        val port = patterns.firstNotNullOfOrNull { pattern ->
+            pattern.find(line)?.groupValues?.getOrNull(1)?.toIntOrNull()
+        }
+        return port?.takeIf { it in 1..65535 }
+    }
+
     private fun setupLogger() {
         val logFile = File(filesDir, "latestlog.txt")
         if (logFile.exists()) logFile.delete()
         logFile.createNewFile()
 
         LoggerBridge.setListener { text ->
+            val detectedLanPort = detectPrivateWorldLanPort(text)
+            if (detectedLanPort != null && privateWorldLanPort == null) {
+                privateWorldLanPort = detectedLanPort
+                runOnUiThread {
+                    liveLogs.add("[TG Private World] Minecraft LAN world detected on port $detectedLanPort")
+                }
+            }
             runOnUiThread {
                 liveLogs.add(text)
                 if (liveLogs.size > 200) {
@@ -1288,6 +1310,16 @@ class GameActivity : ComponentActivity(), SurfaceHolder.Callback {
                 jvmArgs.add(userType)
                 jvmArgs.add("--versionType")
                 jvmArgs.add("release")
+
+                // A private-world join uses a local TCP bridge; the bridge forwards to the host
+                // transport while Minecraft itself connects to loopback like a normal server.
+                privateWorldLanPort?.takeIf { it in 1..65535 }?.let { localPort ->
+                    jvmArgs.add("--server")
+                    jvmArgs.add("127.0.0.1")
+                    jvmArgs.add("--port")
+                    jvmArgs.add(localPort.toString())
+                    LoggerBridge.append("[TG Private World] Joining through local bridge on 127.0.0.1:$localPort")
+                }
 
                 LoggerBridge.appendTitle("JVM Launch Command")
                 jvmArgs.forEach { LoggerBridge.append("▷ $it") }
