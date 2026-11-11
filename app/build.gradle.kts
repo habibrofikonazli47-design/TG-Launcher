@@ -28,7 +28,7 @@ val hasStableSigning = listOf(tgSigningStoreFile, tgSigningStorePassword, tgSign
 
 android {
     namespace = "com.israadev.nuxlauncher"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.tg.launcher"
