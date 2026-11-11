@@ -342,7 +342,7 @@ fun NuxAboutDialog(
                                     }
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "TG Launcher is an unofficial modified launcher adapted from NUX Launcher, Zalith Launcher 2, and PojavLauncher. TG Launcher is NOT an official application from the Zalith Launcher Team or Mojang Studios.",
+                                        text = "TG Launcher is an independent, unofficial Minecraft Java launcher. It is not affiliated with Mojang Studios, Microsoft, or other third-party launcher teams.",
                                         color = Color(0xFFE4E4E7),
                                         fontSize = 8.5.sp,
                                         lineHeight = 12.5.sp
@@ -398,12 +398,12 @@ fun NuxAboutDialog(
                                 }
                             )
 
-                            // 3. Original NUX Launcher upstream source repository
+                            // 3. Original upstream open-source project attribution
                             UpstreamProjectCard(
-                                title = "NUX Launcher (Original Upstream Source)",
+                                title = "Original Upstream Open-Source Project",
                                 copyright = "Copyright © 2026 IsraaDeveloper & Contributors",
                                 license = "GNU General Public License v3.0 (GPL-3.0)",
-                                description = "Original upstream NUX Launcher codebase used in the TG Launcher adaptation. Licensed under GNU GPL-3.0 terms.",
+                                description = "Open-source project used as an upstream code reference for TG Launcher. Attribution and GNU GPL-3.0 licensing are retained.",
                                 url = "https://github.com/IsraaDeveloper/nuxlabs",
                                 onOpenUrl = { url ->
                                     try {
