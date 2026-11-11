@@ -92,6 +92,8 @@ fun NuxButton(
     )
 
     val shape = RoundedCornerShape(cornerRadius)
+    // Resolve responsive dimensions in the composable scope, not inside graphicsLayer.
+    val pressedTranslation = (2.dp).resp()
 
     val depthColor = if (enabled) {
         backgroundColor.copy(
@@ -136,7 +138,7 @@ fun NuxButton(
             modifier = Modifier
                 .fillMaxWidth()
                 .graphicsLayer {
-                    translationY = if (isPressed && enabled) (2.dp).resp().toPx() else 0f
+                    translationY = if (isPressed && enabled) pressedTranslation.toPx() else 0f
                 }
                 .shadow(if (enabled) (5.dp).resp() else 0.dp, shape, clip = false)
                 .clip(shape)
