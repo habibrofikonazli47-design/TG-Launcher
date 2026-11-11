@@ -52,12 +52,20 @@ jobs:
           set -euo pipefail
           # Never derive the Android version from a workflow run number alone:
           # other build workflows may already have published a higher TG number.
-          LATEST_RELEASE_BUILD="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/releases?per_page=100" --jq '.[].tag_name' | sed -nE 's/^tg-launcher-1\\.1\\.6-tg([0-9]+)$/\\1/p' | sort -n | tail -n 1)"
-          LATEST_RELEASE_BUILD="${LATEST_RELEASE_BUILD:-0}"
+          RELEASE_TAGS="$(gh release list --limit 100 --json tagName --jq '.[].tagName')"
+          LATEST_RELEASE_BUILD="$(printf '%s\\n' "$RELEASE_TAGS" | sed -nE 's/^tg-launcher-1\\.1\\.6-tg([0-9]+)$/\\1/p' | sort -n | tail -n 1)"
+          if [[ -z "$LATEST_RELEASE_BUILD" ]]; then
+            echo "Could not determine the latest published TG release; refusing to publish with an unsafe version." >&2
+            exit 1
+          fi
           NEXT_RELEASE_BUILD=$((LATEST_RELEASE_BUILD + 1))
           RUN_BASE_BUILD=$((GITHUB_RUN_NUMBER + 80))
           TG_BUILD_NUMBER=$((NEXT_RELEASE_BUILD > RUN_BASE_BUILD ? NEXT_RELEASE_BUILD : RUN_BASE_BUILD))
           TG_VERSION_CODE=$((TG_BUILD_NUMBER + 17))
+          if (( TG_BUILD_NUMBER <= LATEST_RELEASE_BUILD )); then
+            echo "TG build number is not newer than the latest release." >&2
+            exit 1
+          fi
           echo "TG_BUILD_NUMBER=$TG_BUILD_NUMBER" >> "$GITHUB_ENV"
           echo "TG_VERSION_CODE=$TG_VERSION_CODE" >> "$GITHUB_ENV"
           echo "TG_VERSION_NAME=1.1.6-tg${TG_BUILD_NUMBER}" >> "$GITHUB_ENV"
