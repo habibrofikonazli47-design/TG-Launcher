@@ -60,7 +60,9 @@ async function ensureProfile(uid: string, email: string, displayName: string) {
       await sql`UPDATE profiles SET id=${uid},email=${email},updated_at=now() WHERE id=${previousUid}`;
     }
   } else {
-    await sql`INSERT INTO profiles(id,email,display_name,plan,status) VALUES(${uid},${email},${displayName},'free','active') ON CONFLICT (id) DO NOTHING`;
+    const settings = await sql`SELECT value FROM app_settings WHERE key='general' LIMIT 1`;
+    const defaultPlan = settings[0]?.value?.defaultPlan === 'premium' ? 'premium' : 'free';
+    await sql`INSERT INTO profiles(id,email,display_name,plan,status) VALUES(${uid},${email},${displayName},${defaultPlan},'active') ON CONFLICT (id) DO NOTHING`;
   }
   const rows = await sql`SELECT id,email,display_name,plan,status,expires_at,created_at FROM profiles WHERE id=${uid} LIMIT 1`;
   if (!rows.length) throw new Error('Profil akun gagal dibuat.');
