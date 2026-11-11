@@ -116,8 +116,11 @@ jobs:
         run: |
           set -euo pipefail
           APK="app/build/outputs/apk/release/TG-Launcher-v1.1.6-tg${TG_BUILD_NUMBER}.apk"
+          METADATA="app/build/outputs/apk/release/output-metadata.json"
           cp app/build/outputs/apk/release/app-release.apk "$APK"
           test -s "$APK"
+          test -s "$METADATA"
+          jq -e --argjson code "$TG_VERSION_CODE" --arg name "$TG_VERSION_NAME" '.elements[0].versionCode == $code and .elements[0].versionName == $name' "$METADATA"
           BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
           test -x "$BUILD_TOOLS/apksigner"
           test -x "$BUILD_TOOLS/zipalign"
@@ -177,12 +180,17 @@ jobs:
             Automated TG Launcher beta-channel APK build.
             This APK is signed with the persistent TG Launcher release key when repository signing secrets are configured.
             Install over an existing TG Launcher only when the signing certificate matches.
-          files: app/build/outputs/apk/release/TG-Launcher-v1.1.6-tg${{ env.TG_BUILD_NUMBER }}.apk
+            Android versionCode: ${{ env.TG_VERSION_CODE }}
+          files: |
+            app/build/outputs/apk/release/TG-Launcher-v1.1.6-tg${{ env.TG_BUILD_NUMBER }}.apk
+            app/build/outputs/apk/release/output-metadata.json
 
       - name: Upload TG Launcher APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: TG-Launcher-release-verified
-          path: app/build/outputs/apk/release/TG-Launcher-v1.1.6-tg${{ env.TG_BUILD_NUMBER }}.apk
+          path: |
+            app/build/outputs/apk/release/TG-Launcher-v1.1.6-tg${{ env.TG_BUILD_NUMBER }}.apk
+            app/build/outputs/apk/release/output-metadata.json
           if-no-files-found: error
           retention-days: 30
