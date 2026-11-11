@@ -48,9 +48,11 @@ android {
             useSupportLibrary = true
         }
 
+        // Ship a universal ARM APK for both 64-bit and 32-bit Android userspace.
+        // Infinix Smart 10 (X6725) supports arm64-v8a and armeabi-v7a.
         ndk {
             abiFilters.clear()
-            abiFilters.add("arm64-v8a")
+            abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a"))
         }
     }
 
