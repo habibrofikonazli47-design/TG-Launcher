@@ -46,6 +46,23 @@ object NuxWorldTransportManager {
     private var appContext: Context? = null
     private var bridgeReady = CompletableDeferred<Unit>()
     @Volatile private var packetListener: ((ByteArray, String) -> Unit)? = null
+    @Volatile private var tcpBridge: NuxWorldTcpBridge? = null
+
+    /** Create the TCP bridge before connecting so incoming packets are not lost. */
+    fun prepareTcpBridge(): NuxWorldTcpBridge {
+        tcpBridge?.close()
+        return NuxWorldTcpBridge(::sendPacket).also { tcpBridge = it }
+    }
+
+    fun startHostTcpBridge(lanPort: Int) {
+        val bridge = tcpBridge ?: error("TCP bridge belum disiapkan")
+        bridge.startHost(lanPort)
+    }
+
+    fun startGuestTcpBridge(): Int {
+        val bridge = tcpBridge ?: error("TCP bridge belum disiapkan")
+        return bridge.startGuest()
+    }
 
     private val _connected = MutableStateFlow(false)
     val connected: StateFlow<Boolean> = _connected.asStateFlow()
@@ -142,7 +159,10 @@ object NuxWorldTransportManager {
             if (serverUrl.isBlank() || token.isBlank()) error("Respons relay dunia tidak lengkap")
 
             withContext(Dispatchers.Main) {
-                packetListener = onPacket
+                packetListener = { payload, sender ->
+                    onPacket(payload, sender)
+                    tcpBridge?.onPacket(payload, sender)
+                }
                 _lastError.value = null
                 ensureWebView(activity)
                 withTimeout(20_000L) { bridgeReady.await() }
@@ -169,6 +189,8 @@ object NuxWorldTransportManager {
     fun disconnect() {
         webView?.post { webView?.evaluateJavascript("disconnectWorldTransport();", null) }
         packetListener = null
+        tcpBridge?.close()
+        tcpBridge = null
         _connected.value = false
         _roomIdentity.value = null
     }
