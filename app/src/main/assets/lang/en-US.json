@@ -3,9 +3,9 @@
     "code": "en-US",
     "name": "English (US)",
     "flag": "🇺🇸",
-    "author": "NUX Team"
+    "author": "TG Launcher Team"
   },
-  "app_name": "NUX Launcher",
+  "app_name": "TG Launcher",
   "common": {
     "ok": "OK",
     "cancel": "Cancel",
@@ -57,10 +57,10 @@
     "about": "About"
   },
   "auth": {
-    "tag_client": "NUX CLIENT",
+    "tag_client": "TG CLIENT",
     "tag_gateway": "ONLINE GATEWAY",
     "headline_game": "MINECRAFT JAVA",
-    "headline_launcher": "NUX LAUNCHER",
+    "headline_launcher": "TG LAUNCHER",
     "headline_desc": "Play Minecraft Java Edition on Android with maximum performance, custom controls, and live voice rooms.",
     "pill_fabric_forge": "FABRIC / FORGE",
     "pill_voice": "LIVEKIT VOICE",
@@ -75,7 +75,7 @@
     "confirm_password_label": "Confirm Password",
     "confirm_password_placeholder": "Repeat password",
     "username_label": "Player Username",
-    "username_placeholder": "NuxGamer",
+    "username_placeholder": "TGPlayer",
     "forgot_password": "Forgot Password?",
     "forgot_password_title": "Reset Account Password",
     "forgot_password_desc": "Enter your registered email address. Firebase will send an official link to create a new password.",
@@ -87,7 +87,7 @@
     "btn_register": "CREATE NEW ACCOUNT",
     "btn_registering": "CREATING ACCOUNT...",
     "spam_reminder": "Code didn't arrive in Inbox? Make sure to check your SPAM / JUNK email folder.",
-    "license_title": "NUX Android License Key",
+    "license_title": "TG Android License Key",
     "license_subtitle": "Format: XXXX-XXXX-XXXX-XXXX (16 characters)",
     "license_placeholder": "PASTE YOUR LICENSE KEY HERE",
     "btn_buy_key": "Buy Key",
@@ -132,15 +132,15 @@
     "video_too_long_toast": "Video duration is too long (%ds)! Maximum is 20 seconds."
   },
   "settings": {
-    "title": "SETTINGS",
+    "title": "TG AI ASSISTANT",
     "tab_profile": "ACCOUNT PROFILE",
     "tab_game": "GAME PREFERENCES",
     "tab_ai": "AI ANALYTICS",
     "dashboard_nav": "DASHBOARD",
     "language_label": "Application Language",
-    "language_desc": "Select the display language for NUX Launcher",
+    "language_desc": "Select the display language for TG Launcher",
     "section_profile": "PROFILE PICTURE & IDENTITY",
-    "section_change_username": "CHANGE NUX USERNAME",
+    "section_change_username": "CHANGE TG USERNAME",
     "change_username_desc": "Update your display name. Username is globally unique and used in Minecraft and voice rooms.",
     "new_username_label": "New Username",
     "username_requirements": "3 - 20 alphanumeric characters & underscores (_).",
@@ -320,10 +320,10 @@
     "search_username_placeholder": "Type username to search..."
   },
   "ai": {
-    "title": "NUX AI ASSISTANT",
+    "title": "TG AI ASSISTANT",
     "quota_label": "Remaining Quota Today: %d / 5",
     "input_placeholder": "Ask about mods, FPS optimizations, or Minecraft issues...",
-    "welcome_title": "Hello! I am NUX AI Assistant.",
+    "welcome_title": "Hello! I am TG AI Assistant.",
     "welcome_desc": "I am ready to help you diagnose game crashes, recommend the best mods, optimize graphics rendering settings, and answer any questions regarding Minecraft Java Edition on Android.",
     "btn_send": "SEND",
     "btn_clear_chat": "Clear Chat",
@@ -334,7 +334,7 @@
     "quota_badge": "QUOTA: %d/5",
     "active_instance_label": "ACTIVE INSTANCE: ",
     "btn_switch": "SWITCH",
-    "agent_name": "NUX AI DIAGNOSTICIAN",
+    "agent_name": "TG AI DIAGNOSTICIAN",
     "thinking": "AI is analyzing context & thinking..."
   },
   "controls": {
@@ -353,7 +353,7 @@
     "search_key": "Search key (e.g. W, SPACE, SHIFT, F3)...",
     "reset_dialog_title": "Reset Control Layout?",
     "reset_dialog_desc": "All custom buttons and positions will be reset to factory defaults.",
-    "saved_toast": "Control layout saved successfully!",
+    "saved_toast": "Recording saved to Movies/TG-Launcher!",
     "btn_joystick": "+ JOYSTICK",
     "btn_delete_button": "DELETE BUTTON",
     "search_key_placeholder": "Search key (W, Alt, F3, Tab, Shift...)"
@@ -369,7 +369,7 @@
     "framerate": "Frame Rate (FPS)",
     "mic_audio": "Record Microphone Audio",
     "mic_audio_desc": "Record voice commentary and in-game audio",
-    "saved_toast": "Recording saved to Movies/NUX-Launcher!"
+    "saved_toast": "Recording saved to Movies/TG-Launcher!"
   },
   "ingame": {
     "settings_title": "IN-GAME SETTINGS",
@@ -416,17 +416,17 @@
     "downloading_instance": "Preparing: %s",
     "crash_title": "MINECRAFT HAS CRASHED",
     "crash_subtitle": "Exit Code: %s",
-    "crash_ai_tab": "NUX AI Analysis",
+    "crash_ai_tab": "TG AI Analysis",
     "crash_raw_tab": "Raw Log",
     "btn_copy_logs": "Copy Log",
     "btn_upload_mclogs": "Upload to mclo.gs",
     "btn_share_logs": "Share Log",
-    "about_title": "ABOUT NUX LAUNCHER",
+    "about_title": "ABOUT TG LAUNCHER",
     "about_subtitle": "Minecraft Java Edition Mobile Launcher",
-    "about_desc": "NUX Launcher is a modern high-performance Minecraft Java Edition launcher for Android, integrating Vulkan renderers, flexible virtual controls, live voice chat, and an intelligent AI assistant.",
-    "about_license_notice": "NUX Launcher is licensed under the GNU General Public License v3.0 (GPL-3.0) and respects all upstream open-source projects.",
+    "about_desc": "TG Launcher is a modern Minecraft Java Edition launcher for Android, with graphics optimization, flexible virtual controls, voice chat, and an AI assistant.",
+    "about_license_notice": "TG Launcher respects the GNU General Public License v3.0 (GPL-3.0) and open-source project attributions.",
     "open_source_libraries": "Open Source Libraries & Projects",
-    "premium_title": "NUX LAUNCHER PREMIUM",
+    "premium_title": "TG LAUNCHER PREMIUM",
     "premium_subtitle": "Unlock the Full Potential of Your Minecraft Java Experience",
     "premium_badge_active": "PREMIUM ACTIVE",
     "premium_badge_free": "FREE ACCOUNT",
