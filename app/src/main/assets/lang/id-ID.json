@@ -3,9 +3,9 @@
     "code": "id-ID",
     "name": "Bahasa Indonesia",
     "flag": "🇮🇩",
-    "author": "NUX Team"
+    "author": "TG Launcher Team"
   },
-  "app_name": "NUX Launcher",
+  "app_name": "TG Launcher",
   "common": {
     "ok": "OK",
     "cancel": "Batal",
@@ -57,10 +57,10 @@
     "about": "Tentang"
   },
   "auth": {
-    "tag_client": "NUX CLIENT",
+    "tag_client": "TG CLIENT",
     "tag_gateway": "ONLINE GATEWAY",
     "headline_game": "MINECRAFT JAVA",
-    "headline_launcher": "NUX LAUNCHER",
+    "headline_launcher": "TG LAUNCHER",
     "headline_desc": "Mainkan Minecraft Java Edition di Android dengan performa maksimal, kontrol kustom, dan ruang obrolan suara.",
     "pill_fabric_forge": "FABRIC / FORGE",
     "pill_voice": "LIVEKIT VOICE",
@@ -75,7 +75,7 @@
     "confirm_password_label": "Konfirmasi Kata Sandi",
     "confirm_password_placeholder": "Ulangi kata sandi",
     "username_label": "Nama Pengguna",
-    "username_placeholder": "NuxGamer",
+    "username_placeholder": "TGPlayer",
     "forgot_password": "Lupa Kata Sandi?",
     "forgot_password_title": "Atur Ulang Kata Sandi Akun",
     "forgot_password_desc": "Masukkan alamat email terdaftar. Firebase akan mengirimkan tautan resmi ke email Anda untuk membuat kata sandi baru.",
@@ -87,7 +87,7 @@
     "btn_register": "BUAT AKUN BARU",
     "btn_registering": "MEMBUAT AKUN...",
     "spam_reminder": "Kode tidak masuk di Kotak Masuk? Pastikan untuk memeriksa folder SPAM / JUNK di email Anda.",
-    "license_title": "Kunci Lisensi NUX Android",
+    "license_title": "Kunci Lisensi TG Android",
     "license_subtitle": "Format: XXXX-XXXX-XXXX-XXXX (16 karakter)",
     "license_placeholder": "TEMPEL KUNCI LISENSI ANDA DI SINI",
     "btn_buy_key": "Beli Kunci",
@@ -132,15 +132,15 @@
     "video_too_long_toast": "Durasi video terlalu panjang (%ds)! Maksimal 20 detik."
   },
   "settings": {
-    "title": "PENGATURAN",
+    "title": "TG AI ASSISTANT",
     "tab_profile": "PROFIL AKUN",
     "tab_game": "PREFERENSI GAME",
     "tab_ai": "AI ANALITIK",
     "dashboard_nav": "DASHBOARD",
     "language_label": "Bahasa Aplikasi (Language)",
-    "language_desc": "Pilih bahasa antarmuka untuk NUX Launcher",
+    "language_desc": "Pilih bahasa antarmuka untuk TG Launcher",
     "section_profile": "FOTO PROFIL & IDENTITAS",
-    "section_change_username": "GANTI NAMA PENGGUNA NUX",
+    "section_change_username": "GANTI NAMA PENGGUNA TG",
     "change_username_desc": "Perbarui nama tampilan Anda. Nama ini unik secara global dan digunakan di Minecraft serta ruang obrolan suara.",
     "new_username_label": "Nama Pengguna Baru",
     "username_requirements": "3 - 20 karakter alfanumerik & garis bawah (_).",
@@ -320,10 +320,10 @@
     "search_username_placeholder": "Ketik nama pengguna untuk mencari..."
   },
   "ai": {
-    "title": "NUX AI ASSISTANT",
+    "title": "TG AI ASSISTANT",
     "quota_label": "Sisa Kuota Hari Ini: %d / 5",
     "input_placeholder": "Tanyakan seputar mod, optimasi FPS, atau kendala Minecraft...",
-    "welcome_title": "Halo! Saya NUX AI Assistant.",
+    "welcome_title": "Halo! Saya TG AI Assistant.",
     "welcome_desc": "Saya siap membantu Anda mendiagnosis crash game, merekomendasikan mod terbaik, mengoptimalkan pengaturan render grafis, dan menjawab semua pertanyaan seputar Minecraft Java Edition di Android.",
     "btn_send": "KIRIM",
     "btn_clear_chat": "Bersihkan Obrolan",
@@ -334,7 +334,7 @@
     "quota_badge": "KUOTA: %d/5",
     "active_instance_label": "INSTANCE AKTIF: ",
     "btn_switch": "GANTI",
-    "agent_name": "DIAGNOSTIK AI NUX",
+    "agent_name": "DIAGNOSTIK AI TG",
     "thinking": "AI sedang menganalisis konteks & berpikir..."
   },
   "controls": {
@@ -352,8 +352,8 @@
     "pick_key_title": "PILIH KODE TOMBOL",
     "search_key": "Cari tombol (misal W, SPACE, SHIFT, F3)...",
     "reset_dialog_title": "Atur Ulang Tata Letak?",
-    "reset_dialog_desc": "Semua posisi dan tombol kustom akan dikembalikan ke setelan pabrik bawaan NUX Launcher.",
-    "saved_toast": "Tata letak kontrol berhasil disimpan!",
+    "reset_dialog_desc": "Semua posisi dan tombol kustom akan dikembalikan ke setelan pabrik bawaan TG Launcher.",
+    "saved_toast": "Rekaman disimpan di Movies/TG-Launcher!",
     "btn_joystick": "+ JOYSTICK",
     "btn_delete_button": "HAPUS TOMBOL",
     "search_key_placeholder": "Cari tombol (W, Alt, F3, Tab, Shift...)"
@@ -369,7 +369,7 @@
     "framerate": "Kecepatan Bingkai (FPS)",
     "mic_audio": "Rekam Suara Mikrofon",
     "mic_audio_desc": "Rekam komentar suara dan audio permainan",
-    "saved_toast": "Rekaman disimpan di Movies/NUX-Launcher!"
+    "saved_toast": "Rekaman disimpan di Movies/TG-Launcher!"
   },
   "ingame": {
     "settings_title": "PENGATURAN IN-GAME",
@@ -416,17 +416,17 @@
     "downloading_instance": "Sedang Menyiapkan: %s",
     "crash_title": "MINECRAFT MENGALAMI CRASH",
     "crash_subtitle": "Kode Keluar: %s",
-    "crash_ai_tab": "Analisis AI NUX",
+    "crash_ai_tab": "Analisis AI TG",
     "crash_raw_tab": "Log Mentah",
     "btn_copy_logs": "Salin Log",
     "btn_upload_mclogs": "Unggah ke mclo.gs",
     "btn_share_logs": "Bagikan Log",
-    "about_title": "TENTANG NUX LAUNCHER",
+    "about_title": "TENTANG TG LAUNCHER",
     "about_subtitle": "Minecraft Java Edition Mobile Launcher",
-    "about_desc": "NUX Launcher adalah launcher Minecraft Java Edition modern berperforma tinggi untuk perangkat Android, yang mengintegrasikan optimasi renderer Vulkan, sistem kontrol virtual fleksibel, obrolan suara langsung, dan asisten AI pintar.",
-    "about_license_notice": "NUX Launcher berlisensi di bawah GNU General Public License v3.0 (GPL-3.0) dan sepenuhnya menghargai proyek sumber terbuka pendukungnya.",
+    "about_desc": "TG Launcher adalah launcher Minecraft Java Edition modern untuk Android, dengan optimasi grafis, kontrol virtual fleksibel, obrolan suara, dan asisten AI.",
+    "about_license_notice": "TG Launcher menghormati lisensi GNU General Public License v3.0 (GPL-3.0) serta atribusi proyek sumber terbuka.",
     "open_source_libraries": "Perpustakaan & Proyek Sumber Terbuka",
-    "premium_title": "NUX LAUNCHER PREMIUM",
+    "premium_title": "TG LAUNCHER PREMIUM",
     "premium_subtitle": "Buka Potensi Penuh Pengalaman Bermain Minecraft Java Anda",
     "premium_badge_active": "PREMIUM AKTIF",
     "premium_badge_free": "AKUN GRATIS",
