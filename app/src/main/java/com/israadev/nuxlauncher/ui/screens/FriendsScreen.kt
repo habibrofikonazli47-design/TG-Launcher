@@ -72,6 +72,7 @@ fun FriendsScreen(
     val remoteConfig by RemoteLauncherConfig.config.collectAsState()
     val friendsEnabled = RemoteLauncherConfig.isEnabled(remoteConfig, "social", "friendsEnabled")
     val voiceEnabled = RemoteLauncherConfig.isEnabled(remoteConfig, "social", "voiceEnabled") && RemoteLauncherConfig.isEnabled(remoteConfig, "social", "livekitEnabled", false)
+    val worldInvitesEnabled = RemoteLauncherConfig.isEnabled(remoteConfig, "social", "worldInvitesEnabled", false)
 
     LaunchedEffect(Unit) { RemoteLauncherConfig.refresh() }
     DisposableEffect(friendsEnabled) {
@@ -110,6 +111,11 @@ fun FriendsScreen(
 
     var showAddFriendDialog by remember { mutableStateOf(false) }
     var showCreateRoomDialog by remember { mutableStateOf(false) }
+    var showWorldInviteDialog by remember { mutableStateOf(false) }
+    var showJoinWorldDialog by remember { mutableStateOf(false) }
+    var worldInviteCode by remember { mutableStateOf("") }
+    var worldInviteBusy by remember { mutableStateOf(false) }
+    var joinWorldCode by remember { mutableStateOf("") }
     var showPremiumDialog by remember { mutableStateOf(false) }
     var premiumInitialPrompt by remember { mutableStateOf<String?>(null) }
     var roomToJoinWithPassword by remember { mutableStateOf<NuxVoiceRoom?>(null) }
@@ -184,7 +190,31 @@ fun FriendsScreen(
             }
 
             // Top Action Buttons: Cari Teman & Buat Room
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (worldInvitesEnabled) {
+                    Box(
+                        modifier = Modifier.height(26.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(NuxColors.ForestGreen.copy(alpha = 0.15f), RoundedCornerShape(6.dp))
+                            .border(1.dp, NuxColors.ForestGreen.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
+                            .clickable { worldInviteCode = ""; showWorldInviteDialog = true }
+                            .padding(horizontal = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("PRIVATE WORLD", color = NuxColors.MintGreen, fontWeight = FontWeight.Bold, fontSize = 9.sp)
+                    }
+                    Box(
+                        modifier = Modifier.height(26.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(NuxColors.SurfaceElevated, RoundedCornerShape(6.dp))
+                            .border(1.dp, NuxColors.CardBorder, RoundedCornerShape(6.dp))
+                            .clickable { joinWorldCode = ""; showJoinWorldDialog = true }
+                            .padding(horizontal = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("JOIN CODE", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 9.sp)
+                    }
+                }
                 // Button: Cari Teman
                 Box(
                     modifier = Modifier
@@ -601,6 +631,74 @@ fun FriendsScreen(
         )
     }
 
+    // Private World: create a host session or accept a guest invite, then launch the matching Minecraft version.
+    if (showWorldInviteDialog && worldInvitesEnabled) {
+        PrivateWorldInviteDialog(
+            friends = acceptedFriends,
+            inviteCode = worldInviteCode,
+            busy = worldInviteBusy,
+            onCreate = { targetUid, worldName ->
+                scope.launch {
+                    worldInviteBusy = true
+                    val result = NuxSocialManager.createPrivateWorldInvite(targetUid, worldName)
+                    worldInviteBusy = false
+                    result.onSuccess { response ->
+                        worldInviteCode = response.optString("inviteCode")
+                        val session = response.optJSONObject("session")
+                        val sessionId = session?.optString("id").orEmpty()
+                        val version = session?.optString("minecraftVersion").orEmpty()
+                        if (sessionId.isNotBlank()) {
+                            NuxPrivateWorldLaunchStore.save(context, sessionId, "host", version)
+                            val versionHint = version.ifBlank { "versi yang sama dengan teman" }
+                            Toast.makeText(context, "Undangan siap. Jalankan Minecraft $versionHint sebagai host, lalu buka dunia ke LAN.", Toast.LENGTH_LONG).show()
+                        } else {
+                            Toast.makeText(context, "Kode dibuat, tetapi data sesi tidak lengkap. Buat ulang undangan.", Toast.LENGTH_LONG).show()
+                        }
+                    }.onFailure {
+                        Toast.makeText(context, it.message ?: "Gagal membuat undangan", Toast.LENGTH_LONG).show()
+                    }
+                }
+            },
+            onCopy = {
+                val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                clipboard.setPrimaryClip(android.content.ClipData.newPlainText("TG Launcher world invite", worldInviteCode))
+                Toast.makeText(context, "Kode undangan disalin", Toast.LENGTH_SHORT).show()
+            },
+            onDismiss = { showWorldInviteDialog = false }
+        )
+    }
+
+    if (showJoinWorldDialog && worldInvitesEnabled) {
+        JoinPrivateWorldCodeDialog(
+            code = joinWorldCode,
+            busy = worldInviteBusy,
+            onCodeChange = { joinWorldCode = it.uppercase().filter { ch -> ch in "ABCDEFGHJKLMNPQRSTUVWXYZ23456789" }.take(10) },
+            onJoin = {
+                scope.launch {
+                    worldInviteBusy = true
+                    val result = NuxSocialManager.acceptPrivateWorldInvite(joinWorldCode)
+                    worldInviteBusy = false
+                    result.onSuccess { response ->
+                        val session = response.optJSONObject("session")
+                        val sessionId = session?.optString("id").orEmpty()
+                        val version = session?.optString("minecraftVersion").orEmpty()
+                        if (sessionId.isNotBlank()) {
+                            NuxPrivateWorldLaunchStore.save(context, sessionId, "guest", version)
+                            showJoinWorldDialog = false
+                            val versionHint = version.ifBlank { "yang sama dengan host" }
+                            Toast.makeText(context, "Undangan diterima. Jalankan Minecraft $versionHint untuk bergabung.", Toast.LENGTH_LONG).show()
+                        } else {
+                            Toast.makeText(context, "Undangan diterima, tetapi data sesi tidak lengkap.", Toast.LENGTH_LONG).show()
+                        }
+                    }.onFailure {
+                        Toast.makeText(context, it.message ?: "Gagal menerima undangan", Toast.LENGTH_LONG).show()
+                    }
+                }
+            },
+            onDismiss = { showJoinWorldDialog = false }
+        )
+    }
+
     // 2. Dialog Buat Voice Room Baru (Landscape 2-Column Compact)
     if (showCreateRoomDialog && voiceEnabled) {
         CreateVoiceRoomDialog(
@@ -647,6 +745,94 @@ fun FriendsScreen(
             }
         )
     }
+}
+
+
+@Composable
+private fun PrivateWorldInviteDialog(
+    friends: List<NuxFriend>,
+    inviteCode: String,
+    busy: Boolean,
+    onCreate: (String, String) -> Unit,
+    onCopy: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    var selectedUid by remember(friends) { mutableStateOf(friends.firstOrNull()?.uid.orEmpty()) }
+    var worldName by remember { mutableStateOf("Dunia privat") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(if (inviteCode.isBlank()) "UNDANG TEMAN KE DUNIA" else "KODE UNDANGAN DUNIA") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (inviteCode.isNotBlank()) {
+                    Text("Bagikan kode ini kepada teman yang kamu pilih. Kode hanya berlaku 30 menit dan terikat ke akun teman tersebut.")
+                    Text(inviteCode, color = NuxColors.MintGreen, fontSize = 24.sp, fontWeight = FontWeight.Black)
+                    Text("Host harus membuka dunia melalui Open to LAN. Teman menjalankan Minecraft dengan versi yang sama untuk bergabung.")
+                } else {
+                    Text("Pilih teman TG yang sudah menerima permintaan pertemanan.")
+                    if (friends.isEmpty()) {
+                        Text("Kamu belum memiliki teman yang bisa diundang.")
+                    } else {
+                        friends.take(6).forEach { friend ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                RadioButton(selected = selectedUid == friend.uid, onClick = { selectedUid = friend.uid })
+                                Text(friend.username.ifBlank { friend.uid }, color = Color.White)
+                            }
+                        }
+                    }
+                    OutlinedTextField(
+                        value = worldName,
+                        onValueChange = { worldName = it.take(48) },
+                        label = { Text("Nama dunia") },
+                        singleLine = true
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            if (inviteCode.isNotBlank()) {
+                TextButton(onClick = onCopy) { Text("SALIN KODE") }
+            } else {
+                TextButton(
+                    onClick = { onCreate(selectedUid, worldName) },
+                    enabled = !busy && selectedUid.isNotBlank()
+                ) { Text(if (busy) "MEMBUAT..." else "BUAT UNDANGAN") }
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("TUTUP") } }
+    )
+}
+
+@Composable
+private fun JoinPrivateWorldCodeDialog(
+    code: String,
+    busy: Boolean,
+    onCodeChange: (String) -> Unit,
+    onJoin: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("GABUNG DUNIA PRIVAT") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Masukkan kode undangan 10 karakter dari teman TG kamu.")
+                OutlinedTextField(
+                    value = code,
+                    onValueChange = onCodeChange,
+                    label = { Text("Kode undangan") },
+                    singleLine = true
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onJoin, enabled = !busy && code.length == 10) {
+                Text(if (busy) "MEMERIKSA..." else "TERIMA UNDANGAN")
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("BATAL") } }
+    )
 }
 
 // =====================================================================

@@ -134,7 +134,7 @@ class MainActivity : ComponentActivity() {
                                         )
                                     },
                                     confirmButton = {
-                                        Button(onClick = { UpdateManager.openDownloadUrl(this@MainActivity, update.downloadUrl) }) {
+                                        Button(onClick = { lifecycleScope.launch { UpdateManager.downloadAndInstall(this@MainActivity, update).onFailure { error -> android.widget.Toast.makeText(this@MainActivity, error.message ?: "Gagal mengunduh pembaruan.", android.widget.Toast.LENGTH_LONG).show() } } }) {
                                             Text("Unduh & Pasang")
                                         }
                                     }

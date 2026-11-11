@@ -22,29 +22,29 @@ object InstanceManager {
     val selectedInstance: StateFlow<Instance?> = _selectedInstance.asStateFlow()
 
     fun getNuxDir(context: Context): File {
-        // 1. Primary user-visible storage: /storage/emulated/0/nuxlauncher
+        // 1. Primary user-visible storage: /storage/emulated/0/tglauncher
         try {
             val extStorage = android.os.Environment.getExternalStorageDirectory()
-            val nuxPublicDir = File(extStorage, "nuxlauncher")
-            if (!nuxPublicDir.exists()) {
-                nuxPublicDir.mkdirs()
+            val tgPublicDir = File(extStorage, "tglauncher")
+            if (!tgPublicDir.exists()) {
+                tgPublicDir.mkdirs()
             }
-            if (nuxPublicDir.exists() && nuxPublicDir.canWrite()) {
-                return nuxPublicDir
+            if (tgPublicDir.exists() && tgPublicDir.canWrite()) {
+                return tgPublicDir
             }
         } catch (_: Exception) {}
 
-        // 2. Secondary fallback: /storage/emulated/0/Android/data/com.israadev.nuxlauncher/files/nuxlauncher
+        // 2. Secondary fallback: app-specific TG Launcher storage
         val appExt = context.getExternalFilesDir(null)
         if (appExt != null) {
-            val appExtDir = File(appExt, "nuxlauncher")
+            val appExtDir = File(appExt, "tglauncher")
             if (appExtDir.exists() || appExtDir.mkdirs()) {
                 return appExtDir
             }
         }
 
         // 3. Fallback: internal app storage
-        val internalDir = File(context.filesDir, "nuxlauncher")
+        val internalDir = File(context.filesDir, "tglauncher")
         if (!internalDir.exists()) internalDir.mkdirs()
         return internalDir
     }
@@ -220,6 +220,8 @@ object InstanceManager {
 
             // Previous possible locations
             val oldLocations = listOf(
+                // Previous public folder used by older NUX-branded builds.
+                File(android.os.Environment.getExternalStorageDirectory(), "nuxlauncher"),
                 File(context.dataDir ?: context.filesDir, "nuxlauncher"),
                 File(context.filesDir, "nuxlauncher"),
                 File(context.filesDir, ".minecraft")

@@ -11,7 +11,7 @@ const defaults:any={
  recorder:{screenRecordingEnabled:true},
  ai:{assistantEnabled:true,crashAnalyzerEnabled:true,freeDailyQuota:5,premiumDailyQuota:-1,model:'default',maxTokens:2048,customApiKeyAllowed:true},
  accounts:{offlineLoginEnabled:true,microsoftLoginEnabled:true,elybyLoginEnabled:true,registrationEnabled:true,otpEnabled:true,otpCooldownSeconds:60},
- social:{friendsEnabled:true,voiceEnabled:true,livekitEnabled:false,uploadsEnabled:true,maximumUploadMb:20},
+ social:{friendsEnabled:true,voiceEnabled:true,worldInvitesEnabled:false,livekitEnabled:false,uploadsEnabled:true,maximumUploadMb:20},
  updates:{releaseEnabled:true,autoUpdateCheck:true,stableChannel:true,betaChannel:false,forceUpdate:false,minimumSupportedVersion:'1.0.0',releaseNotes:''},
  appearance:{backgroundImageUrl:'',backgroundOverlayAlpha:65,announcementEnabled:false,announcementTitle:'',announcementContent:'',announcementImageUrl:'',announcementLinkUrl:'',announcementTarget:'all',bannerEnabled:true,bannerImageUrl:'',bannerLinkUrl:''}
 };
@@ -28,11 +28,12 @@ export async function GET(){
   config.social={
    friendsEnabled:social.friendsEnabled!==false,
    voiceEnabled:social.voiceEnabled!==false,
+   worldInvitesEnabled:social.worldInvitesEnabled===true,
    livekitEnabled:social.livekitEnabled===true,
    uploadsEnabled:social.uploadsEnabled!==false,
    maximumUploadMb:Number.isFinite(Number(social.maximumUploadMb))?Math.max(1,Math.min(100,Number(social.maximumUploadMb))):20,
   };
-  config.features={game:config.game.minecraftReleaseEnabled||config.game.minecraftSnapshotEnabled,runtimes:config.runtimes.java8Enabled||config.runtimes.java17Enabled||config.runtimes.java21Enabled||config.runtimes.java25Enabled,mods:config.mods.modrinthEnabled||config.mods.curseforgeEnabled||config.mods.allowManualImport,renderer:config.renderer.virglEnabled||config.renderer.gl4esEnabled||config.renderer.mesaEnabled||config.renderer.zinkEnabled,recorder:config.recorder.screenRecordingEnabled,ai:config.ai.assistantEnabled,accounts:config.accounts.offlineLoginEnabled||config.accounts.microsoftLoginEnabled||config.accounts.elybyLoginEnabled,social:config.social.friendsEnabled||config.social.voiceEnabled};
+  config.features={game:config.game.minecraftReleaseEnabled||config.game.minecraftSnapshotEnabled,runtimes:config.runtimes.java8Enabled||config.runtimes.java17Enabled||config.runtimes.java21Enabled||config.runtimes.java25Enabled,mods:config.mods.modrinthEnabled||config.mods.curseforgeEnabled||config.mods.allowManualImport,renderer:config.renderer.virglEnabled||config.renderer.gl4esEnabled||config.renderer.mesaEnabled||config.renderer.zinkEnabled,recorder:config.recorder.screenRecordingEnabled,ai:config.ai.assistantEnabled,accounts:config.accounts.offlineLoginEnabled||config.accounts.microsoftLoginEnabled||config.accounts.elybyLoginEnabled,social:config.social.friendsEnabled||config.social.voiceEnabled||config.social.worldInvitesEnabled};
   config.branding={name:'TG Launcher',adminName:'TG Launcher Control Center'};
   return NextResponse.json(config,{headers:{'Cache-Control':'no-store, max-age=0'}});
  }catch(error){console.error('[app/config]',error);return NextResponse.json({error:'Konfigurasi TG Launcher sementara tidak tersedia'},{status:503,headers:{'Cache-Control':'no-store'}});}

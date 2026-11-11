@@ -1,7 +1,7 @@
 import { database, ensureSchema } from '@/lib/db';
 
 export async function isSocialFeatureEnabled(
-  feature: 'friendsEnabled' | 'voiceEnabled' | 'livekitEnabled' | 'uploadsEnabled',
+  feature: 'friendsEnabled' | 'voiceEnabled' | 'livekitEnabled' | 'uploadsEnabled' | 'worldInvitesEnabled',
   fallback = true,
 ) {
   try {

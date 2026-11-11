@@ -4,7 +4,10 @@ import com.israadev.nuxlauncher.core.lang.tr
 import com.israadev.nuxlauncher.core.lang.trStr
 import com.israadev.nuxlauncher.core.lang.NuxLanguageManager
 
+import android.content.Intent
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -70,7 +73,58 @@ fun CustomGuiEditorScreen(
     var keyPickerTargetMode by remember { mutableStateOf("MAIN") } // "MAIN" or "COMBO"
     var keyPickerSearchQuery by remember { mutableStateOf("") }
     var showResetConfirmDialog by remember { mutableStateOf(false) }
+    var showLayoutMenu by remember { mutableStateOf(false) }
     var manualFlipSide by remember { mutableStateOf<Boolean?>(null) }
+
+    val exportLayoutLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        if (uri != null) {
+            try {
+                val json = ControlLayoutManager.exportLayoutJson(buttonsList)
+                context.contentResolver.openOutputStream(uri)?.use { it.write(json.toByteArray(Charsets.UTF_8)) }
+                    ?: throw IllegalStateException("Tidak bisa menulis file")
+                Toast.makeText(context, "Layout berhasil diekspor.", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Toast.makeText(context, "Gagal ekspor layout: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    val importLayoutLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            try {
+                val json = context.contentResolver.openInputStream(uri)?.use {
+                    it.readBytes().toString(Charsets.UTF_8)
+                } ?: throw IllegalStateException("Tidak bisa membaca file")
+                if (ControlLayoutManager.importLayoutJson(context, json)) {
+                    buttonsList = ControlLayoutManager.buttons.value
+                    selectedButtonId = null
+                    Toast.makeText(context, "Layout berhasil diimpor.", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, "File layout tidak valid atau rusak.", Toast.LENGTH_LONG).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(context, "Gagal impor layout: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    fun shareCurrentLayout() {
+        try {
+            val json = ControlLayoutManager.exportLayoutJson(buttonsList)
+            val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_SUBJECT, "TG Launcher Control Layout")
+                putExtra(Intent.EXTRA_TEXT, "TG Launcher Control Layout (JSON)\n$json")
+            }
+            context.startActivity(Intent.createChooser(sendIntent, "Bagikan Layout Control"))
+        } catch (e: Exception) {
+            Toast.makeText(context, "Gagal menyiapkan layout: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
 
     LaunchedEffect(Unit) {
         ControlLayoutManager.init(context)
@@ -510,6 +564,44 @@ fun CustomGuiEditorScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text("SAVE", color = Color.White, fontWeight = FontWeight.Black, fontSize = 11.sp)
+            }
+
+            Box {
+                Box(
+                    modifier = Modifier
+                        .background(Color(0xFF243B63), RoundedCornerShape(6.dp))
+                        .clickable { showLayoutMenu = true }
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("SHARE / IMPORT", color = Color.White, fontWeight = FontWeight.Black, fontSize = 10.sp)
+                }
+                DropdownMenu(
+                    expanded = showLayoutMenu,
+                    onDismissRequest = { showLayoutMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Share layout") },
+                        onClick = {
+                            showLayoutMenu = false
+                            shareCurrentLayout()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Export JSON file") },
+                        onClick = {
+                            showLayoutMenu = false
+                            exportLayoutLauncher.launch("TG-Launcher-Control-Layout.json")
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Import JSON file") },
+                        onClick = {
+                            showLayoutMenu = false
+                            importLayoutLauncher.launch(arrayOf("application/json", "text/json", "text/plain"))
+                        }
+                    )
+                }
             }
         }
 

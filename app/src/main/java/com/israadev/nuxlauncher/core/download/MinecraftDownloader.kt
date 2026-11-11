@@ -20,6 +20,7 @@ import okhttp3.Request
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -117,7 +118,11 @@ class MinecraftDownloader(
                                     try {
                                         downloadFile(artifact.url, targetFile, expectedSize)
                                     } catch (e: Exception) {
-                                        e.printStackTrace()
+                                        throw IOException("Gagal mengunduh library Minecraft ${lib.name}: ${e.message}", e)
+                                    }
+                                    if (!targetFile.exists() || targetFile.length() == 0L ||
+                                        (expectedSize > 0L && targetFile.length() != expectedSize)) {
+                                        throw IOException("Library Minecraft tidak lengkap: ${lib.name}")
                                     }
                                 }
                             }
@@ -143,9 +148,12 @@ class MinecraftDownloader(
                 }
 
                 // Download objects (Parallel concurrency: 48 Turbo for Premium, 24 for Free)
-                if (indexFile.exists()) {
-                    try {
+                if (!indexFile.exists() || indexFile.length() == 0L) {
+                    throw IOException("Asset index ${assetIndex.id} gagal diunduh.")
+                }
+                run {
                         val indexContent = gson.fromJson(indexFile.readText(), AssetIndexContent::class.java)
+                            ?: throw IOException("Asset index ${assetIndex.id} tidak valid.")
                         val objects = indexContent.objects.entries.toList()
                         val totalObjects = objects.size
                         val objectsDir = File(assetsDir, "objects")
@@ -161,12 +169,18 @@ class MinecraftDownloader(
                                     val prefix = hash.substring(0, 2)
                                     val targetObj = File(objectsDir, "$prefix/$hash")
                                     val expectedSize = entry.value.size
-                                    if (!targetObj.exists() || targetObj.length() == 0L || (expectedSize > 0L && targetObj.length() != expectedSize)) {
+                                    val assetNeedsDownload = !targetObj.exists() || targetObj.length() == 0L ||
+                                        (expectedSize > 0L && targetObj.length() != expectedSize) ||
+                                        !fileMatchesSha1(targetObj, hash)
+                                    if (assetNeedsDownload) {
                                         targetObj.parentFile?.mkdirs()
                                         val objUrl = "https://resources.download.minecraft.net/$prefix/$hash"
-                                        try {
-                                            downloadFile(objUrl, targetObj, expectedSize)
-                                        } catch (_: Exception) {}
+                                        downloadFile(objUrl, targetObj, expectedSize)
+                                    }
+                                    if (!targetObj.exists() || targetObj.length() == 0L ||
+                                        (expectedSize > 0L && targetObj.length() != expectedSize) ||
+                                        !fileMatchesSha1(targetObj, hash)) {
+                                        throw IOException("Asset Minecraft gagal diverifikasi SHA-1: $hash")
                                     }
                                     val count = downloadedAssets.incrementAndGet()
                                     val p = 0.65f + (count.toFloat() / totalObjects) * 0.27f
@@ -175,9 +189,6 @@ class MinecraftDownloader(
                             }
                         }
                         assetJobs.awaitAll()
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
                 }
             }
 
@@ -236,7 +247,15 @@ class MinecraftDownloader(
                                             } catch (_: Exception) {}
                                         }
                                         if (!success) {
-                                            android.util.Log.w("MinecraftDownloader", "Failed to download Fabric library: ${lib.name}")
+                                            throw IOException("Gagal mengunduh library Fabric: ${lib.name}")
+                                        }
+                                    }
+                                    if (relPath != null) {
+                                        val installedFile = File(libDir, relPath)
+                                        val expectedSize = lib.size ?: 0L
+                                        if (!installedFile.exists() || installedFile.length() == 0L ||
+                                            (expectedSize > 0L && installedFile.length() != expectedSize)) {
+                                            throw IOException("Library Fabric tidak lengkap: ${lib.name}")
                                         }
                                     }
                                 }
@@ -256,6 +275,24 @@ class MinecraftDownloader(
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    private fun fileMatchesSha1(file: File, expectedHash: String): Boolean {
+        if (!file.isFile || expectedHash.length != 40) return false
+        return try {
+            val digest = MessageDigest.getInstance("SHA-1")
+            file.inputStream().buffered().use { input ->
+                val buffer = ByteArray(64 * 1024)
+                while (true) {
+                    val read = input.read(buffer)
+                    if (read < 0) break
+                    digest.update(buffer, 0, read)
+                }
+            }
+            digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) }.equals(expectedHash, ignoreCase = true)
+        } catch (_: Exception) {
+            false
         }
     }
 

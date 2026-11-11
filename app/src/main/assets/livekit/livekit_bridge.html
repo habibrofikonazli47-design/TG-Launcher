@@ -40,12 +40,8 @@
                 }
             });
 
-            room.on(LivekitClient.RoomEvent.Connected, () => {
-                console.log("[LiveKitBridge] RoomEvent.Connected!");
-                if (window.AndroidVoiceBridge && window.AndroidVoiceBridge.onConnected) {
-                    window.AndroidVoiceBridge.onConnected();
-                }
-            });
+            // Report connected only after the local microphone is successfully published.
+            // This prevents the UI from showing a working call when the user cannot transmit audio.
 
             room.on(LivekitClient.RoomEvent.Disconnected, (reason) => {
                 console.log("[LiveKitBridge] RoomEvent.Disconnected! reason:", reason);
@@ -112,7 +108,7 @@
                 console.warn("[LiveKitBridge] Error attaching existing tracks:", attachErr);
             }
 
-            // Enable local microphone
+            // Enable and publish the local microphone before reporting a successful connection.
             try {
                 console.log("[LiveKitBridge] Enabling local microphone...");
                 await room.localParticipant.setMicrophoneEnabled(true);
@@ -126,16 +122,26 @@
                         noiseSuppression: false,
                         autoGainControl: false
                     });
-                    console.log("[LiveKitBridge] Local microphone enabled successfully with basic constraints!");
+                    console.log("[LiveKitBridge] Local microphone enabled with basic constraints!");
                 } catch (retryErr) {
-                    console.error("[LiveKitBridge] Failed to enable microphone on retry:", retryErr);
+                    const retryMessage = (retryErr && (retryErr.name + ": " + retryErr.message)) || String(retryErr);
+                    throw new Error("Mikrofon tidak dapat diaktifkan: " + retryMessage);
                 }
+            }
+
+            if (window.AndroidVoiceBridge && window.AndroidVoiceBridge.onConnected) {
+                window.AndroidVoiceBridge.onConnected();
             }
 
         } catch (err) {
             console.error("[LiveKitBridge] Fatal error in connectVoice:", err);
+            if (currentRoom) {
+                try { await currentRoom.disconnect(); } catch (_) {}
+                currentRoom = null;
+            }
+            const message = (err && err.message) || String(err);
             if (window.AndroidVoiceBridge && window.AndroidVoiceBridge.onError) {
-                window.AndroidVoiceBridge.onError(err.message || String(err));
+                window.AndroidVoiceBridge.onError(message);
             }
         }
     }
@@ -163,6 +169,8 @@
             }
             currentRoom = null;
         }
+        const container = document.getElementById('audio-container');
+        if (container) container.innerHTML = '';
     }
 </script>
 </body>
