@@ -60,3 +60,7 @@ This is not "zero infrastructure". Game traffic should use a peer-to-peer transp
 - Develop on `feature/private-world-invites`; do not change the production database, deploy the Edge Function, or alter Vercel production settings until the schema, authorization rules, and transport are reviewed.
 - Keep the Android APK release pipeline separate from the Admin Panel build/deploy pipeline.
 - A successful CI build is not proof of multiplayer connectivity. Report code, CI, deployment, and real two-device tests separately.
+
+
+## Release verification
+The current Private World implementation is built and checked through the dedicated Android, Admin Panel, and Supabase Edge verification workflow before the standard TG Launcher APK release workflow is run.
