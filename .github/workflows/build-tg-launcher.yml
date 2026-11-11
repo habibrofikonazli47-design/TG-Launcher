@@ -53,9 +53,10 @@ jobs:
           # Never derive the Android version from a workflow run number alone:
           # other build workflows may already have published a higher TG number.
           RELEASE_TAGS="$(gh release list --limit 100 --json tagName --jq '.[].tagName')"
-          LATEST_RELEASE_BUILD="$(printf '%s\\n' "$RELEASE_TAGS" | sed -nE 's/^tg-launcher-1\\.1\\.6-tg([0-9]+)$/\\1/p' | sort -n | tail -n 1)"
+          LATEST_RELEASE_BUILD="$(printf '%s\n' "$RELEASE_TAGS" | sed -nE 's/^tg-launcher-1\.1\.6-tg([0-9]+)$/\1/p' | sort -n | tail -n 1)"
           if [[ -z "$LATEST_RELEASE_BUILD" ]]; then
             echo "Could not determine the latest published TG release; refusing to publish with an unsafe version." >&2
+            printf 'Release tags returned by GitHub:\n%s\n' "$RELEASE_TAGS" >&2
             exit 1
           fi
           NEXT_RELEASE_BUILD=$((LATEST_RELEASE_BUILD + 1))
