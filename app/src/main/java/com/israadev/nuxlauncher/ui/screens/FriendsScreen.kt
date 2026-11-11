@@ -649,7 +649,8 @@ fun FriendsScreen(
                         val version = session?.optString("minecraftVersion").orEmpty()
                         if (sessionId.isNotBlank()) {
                             NuxPrivateWorldLaunchStore.save(context, sessionId, "host", version)
-                            Toast.makeText(context, "Undangan siap. Jalankan Minecraft versi $version untuk menjadi host, lalu buka dunia ke LAN.", Toast.LENGTH_LONG).show()
+                            val versionHint = version.ifBlank { "versi yang sama dengan teman" }
+                            Toast.makeText(context, "Undangan siap. Jalankan Minecraft $versionHint sebagai host, lalu buka dunia ke LAN.", Toast.LENGTH_LONG).show()
                         } else {
                             Toast.makeText(context, "Kode dibuat, tetapi data sesi tidak lengkap. Buat ulang undangan.", Toast.LENGTH_LONG).show()
                         }
@@ -684,7 +685,8 @@ fun FriendsScreen(
                         if (sessionId.isNotBlank()) {
                             NuxPrivateWorldLaunchStore.save(context, sessionId, "guest", version)
                             showJoinWorldDialog = false
-                            Toast.makeText(context, "Undangan diterima. Jalankan Minecraft versi $version untuk bergabung.", Toast.LENGTH_LONG).show()
+                            val versionHint = version.ifBlank { "yang sama dengan host" }
+                            Toast.makeText(context, "Undangan diterima. Jalankan Minecraft $versionHint untuk bergabung.", Toast.LENGTH_LONG).show()
                         } else {
                             Toast.makeText(context, "Undangan diterima, tetapi data sesi tidak lengkap.", Toast.LENGTH_LONG).show()
                         }
@@ -766,7 +768,7 @@ private fun PrivateWorldInviteDialog(
                 if (inviteCode.isNotBlank()) {
                     Text("Bagikan kode ini kepada teman yang kamu pilih. Kode hanya berlaku 30 menit dan terikat ke akun teman tersebut.")
                     Text(inviteCode, color = NuxColors.MintGreen, fontSize = 24.sp, fontWeight = FontWeight.Black)
-                    Text("Tahap ini baru menyiapkan undangan. Koneksi Minecraft lintas jaringan belum aktif.")
+                    Text("Host harus membuka dunia melalui Open to LAN. Teman menjalankan Minecraft dengan versi yang sama untuk bergabung.")
                 } else {
                     Text("Pilih teman TG yang sudah menerima permintaan pertemanan.")
                     if (friends.isEmpty()) {
