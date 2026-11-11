@@ -512,6 +512,35 @@ async function handle(req: Request) {
       return reply({ success: true, session: { id: session.id, hostUid: session.host_uid, worldName: session.world_name, minecraftVersion: session.minecraft_version, maxPlayers: session.max_players, expiresAt: session.expires_at } });
     }
 
+    if (req.method === "POST" && action === "transport_access") {
+      const sessionId = String(body.sessionId || "");
+      if (!/^[0-9a-f-]{36}$/i.test(sessionId)) return fail("ID sesi tidak valid");
+      const { data: session, error: sessionError } = await db.from("social_world_sessions")
+        .select("id,host_uid,status,expires_at,max_players")
+        .eq("id", sessionId).eq("status", "active").gt("expires_at", nowIso).maybeSingle();
+      if (sessionError) return fail("Gagal memeriksa sesi transport dunia", 503);
+      if (!session) return fail("Sesi dunia sudah berakhir atau ditutup", 404);
+
+      let role: "host" | "guest" | null = user.uid === session.host_uid ? "host" : null;
+      if (!role) {
+        const { data: membership, error: membershipError } = await db.from("social_world_members")
+          .select("status").eq("session_id", sessionId).eq("user_id", user.uid)
+          .in("status", ["accepted", "joined"]).maybeSingle();
+        if (membershipError) return fail("Gagal memeriksa keanggotaan dunia", 503);
+        if (membership) role = "guest";
+      }
+      if (!role) return fail("Akun ini tidak memiliki akses ke dunia privat tersebut", 403);
+
+      return reply({
+        success: true,
+        sessionId,
+        role,
+        roomName: `tg-world-${sessionId}`,
+        expiresAt: session.expires_at,
+        maxPlayers: session.max_players,
+      });
+    }
+
     if (["POST", "PATCH"].includes(req.method) && action === "close") {
       const sessionId = String(body.sessionId || "");
       if (!/^[0-9a-f-]{36}$/i.test(sessionId)) return fail("ID sesi tidak valid");
