@@ -159,7 +159,7 @@ jobs:
           grep -q "application-label:'TG Launcher'" /tmp/tg-badging.txt
           grep -q "native-code: .*arm64-v8a" /tmp/tg-badging.txt
           grep -q "native-code: .*armeabi-v7a" /tmp/tg-badging.txt
-          grep -q "platformBuildVersionCode='37'" /tmp/tg-badging.txt
+          grep -q "platformBuildVersionCode='36'" /tmp/tg-badging.txt
           grep -q "targetSdkVersion:'35'" /tmp/tg-badging.txt
           unzip -tq "$APK"
           sha256sum "$APK"
