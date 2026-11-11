@@ -18,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -92,40 +93,82 @@ fun NuxButton(
 
     val shape = RoundedCornerShape(cornerRadius)
 
+    val depthColor = if (enabled) {
+        backgroundColor.copy(
+            red = (backgroundColor.red * 0.48f).coerceIn(0f, 1f),
+            green = (backgroundColor.green * 0.48f).coerceIn(0f, 1f),
+            blue = (backgroundColor.blue * 0.58f).coerceIn(0f, 1f),
+            alpha = 1f
+        )
+    } else Color(0xFF171B24)
+    val faceBrush = if (enabled) {
+        Brush.verticalGradient(
+            listOf(
+                Color.White.copy(alpha = 0.13f),
+                backgroundColor.copy(alpha = 0.98f),
+                backgroundColor
+            )
+        )
+    } else Brush.verticalGradient(
+        listOf(Color(0xFF252A35), NuxColors.SurfaceElevated.copy(alpha = 0.6f))
+    )
+
+    // Two-layer button: a darker lower bezel remains visible as physical depth.
     Box(
         modifier = modifier
+            .defaultMinSize(minHeight = (35.dp).resp())
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
             }
-            .clip(shape)
-            .background(
-                if (enabled) backgroundColor else NuxColors.SurfaceElevated.copy(alpha = 0.6f),
-                shape
-            )
-            .border(
-                width = NuxSizes.BorderWidth,
-                color = if (enabled) borderColor else Color(0x1AFFFFFF),
-                shape = shape
-            )
-            .clickable(
-                enabled = enabled,
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = onClick
-            )
-            .defaultMinSize(minHeight = (32.dp).resp())
-            .padding(contentPadding),
-        contentAlignment = Alignment.Center
+            .padding(bottom = if (enabled) (3.dp).resp() else 0.dp),
+        contentAlignment = Alignment.TopCenter
     ) {
-        androidx.compose.runtime.CompositionLocalProvider(
-            androidx.compose.material3.LocalContentColor provides contentColor
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .padding(top = (3.dp).resp())
+                .clip(shape)
+                .background(depthColor, shape)
+                .border(1.dp, depthColor.copy(alpha = 0.95f), shape)
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .graphicsLayer {
+                    translationY = if (isPressed && enabled) (2.dp).resp().toPx() else 0f
+                }
+                .shadow(if (enabled) (5.dp).resp() else 0.dp, shape, clip = false)
+                .clip(shape)
+                .background(faceBrush, shape)
+                .border(
+                    width = (1.dp).resp(),
+                    brush = Brush.verticalGradient(
+                        listOf(
+                            if (enabled) Color.White.copy(alpha = 0.42f) else Color(0x1AFFFFFF),
+                            if (enabled) borderColor.copy(alpha = 0.9f) else Color(0x1AFFFFFF)
+                        )
+                    ),
+                    shape = shape
+                )
+                .clickable(
+                    enabled = enabled,
+                    interactionSource = interactionSource,
+                    indication = null,
+                    onClick = onClick
+                )
+                .padding(contentPadding),
+            contentAlignment = Alignment.Center
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
+            androidx.compose.runtime.CompositionLocalProvider(
+                androidx.compose.material3.LocalContentColor provides contentColor
             ) {
-                content()
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    content()
+                }
             }
         }
     }
