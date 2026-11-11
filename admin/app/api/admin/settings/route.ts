@@ -27,6 +27,18 @@ export async function PUT(req:NextRequest){
  try{const body=await req.json();const category=String(body.category||'');const value=body.value;if(!Object.prototype.hasOwnProperty.call(defaults,category)||!value||typeof value!=='object'||Array.isArray(value))return NextResponse.json({error:'Kategori atau konfigurasi tidak valid.'},{status:400});
  const allowed=Object.keys(defaults[category]);const clean:any={};for(const key of allowed){if(key==='livekitApiSecretConfigured'||key==='livekitApiKeyConfigured')continue;if((key==='livekitApiSecret'||key==='livekitApiKey')&&category==='social')continue;if(Object.prototype.hasOwnProperty.call(value,key))clean[key]=value[key];}
  if(category==='general'){for(const key of ['premiumPurchaseUrl','premiumMonthlyPurchaseUrl','premiumYearlyPurchaseUrl','premiumLifetimePurchaseUrl']){const url=String(clean[key]??'').trim();if(url){try{const parsed=new URL(url);if(parsed.protocol!=='https:')throw new Error();}catch{return NextResponse.json({error:'Link pembelian harus berupa URL HTTPS yang valid ('+key+').'},{status:400});}}}}
+ if(category==='appearance'){
+  for(const key of ['backgroundImageUrl','announcementImageUrl','announcementLinkUrl']){
+   const url=String(clean[key]??'').trim();
+   if(url){try{const parsed=new URL(url);if(parsed.protocol!=='https:')throw new Error();}catch{return NextResponse.json({error:'URL tampilan harus berupa HTTPS yang valid ('+key+').'},{status:400});}}
+   clean[key]=url;
+  }
+  const target=String(clean.announcementTarget||'all').trim().toLowerCase();
+  if(!['all','android','windows'].includes(target))return NextResponse.json({error:'Target pengumuman tidak valid.'},{status:400});
+  clean.announcementTarget=target;
+  clean.announcementTitle=String(clean.announcementTitle||'').slice(0,120);
+  clean.announcementContent=String(clean.announcementContent||'').slice(0,5000);
+ }
  await ensureSchema();const sql=database();if(category==='social'){const existing=await sql`SELECT value FROM app_settings WHERE key='social' LIMIT 1`;const previous=(existing[0]?.value||{}) as Record<string,any>;const secret=typeof value.livekitApiSecret==='string'?value.livekitApiSecret.trim():'';const apiKey=typeof value.livekitApiKey==='string'?value.livekitApiKey.trim():'';const serverUrl=String(clean.livekitServerUrl||'').trim();if(serverUrl&&!serverUrl.startsWith('wss://'))return NextResponse.json({error:'LiveKit Server URL harus menggunakan wss://.'},{status:400});clean.livekitApiSecretEncrypted=secret?encryptLiveKitSecret(secret):previous.livekitApiSecretEncrypted||'';clean.livekitApiKeyEncrypted=apiKey?encryptLiveKitSecret(apiKey):previous.livekitApiKeyEncrypted||'';}await sql`INSERT INTO app_settings(key,value,updated_at,updated_by) VALUES(${category},${JSON.stringify(clean)}::jsonb,now(),'admin') ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value,updated_at=now(),updated_by='admin'`;await sql`INSERT INTO admin_audit_logs(actor,action,detail) VALUES('admin','settings.update',${JSON.stringify({category,fields:Object.keys(clean)})}::jsonb)`;const responseValue={...clean};delete responseValue.livekitApiSecretEncrypted;delete responseValue.livekitApiKeyEncrypted;return NextResponse.json({success:true,message:'Pengaturan '+category+' berhasil disimpan.',value:responseValue});}
  catch(e:any){return NextResponse.json({error:e.message},{status:503});}
 }
