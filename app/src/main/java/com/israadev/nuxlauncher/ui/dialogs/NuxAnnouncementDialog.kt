@@ -124,7 +124,7 @@ fun NuxAnnouncementDialog(
                                     fontWeight = FontWeight.Black
                                 )
                                 Text(
-                                    text = "NUX LAUNCHER ANNOUNCEMENT",
+                                    text = "TG LAUNCHER ANNOUNCEMENT",
                                     color = Color(0xFF9E9E9E),
                                     fontSize = 9.sp,
                                     fontFamily = FontFamily.Monospace,
