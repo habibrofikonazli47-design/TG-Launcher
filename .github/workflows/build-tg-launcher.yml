@@ -157,7 +157,8 @@ jobs:
           "$BUILD_TOOLS/aapt" dump badging "$APK" | tee /tmp/tg-badging.txt
           grep -q "package: name='com.tg.launcher'" /tmp/tg-badging.txt
           grep -q "application-label:'TG Launcher'" /tmp/tg-badging.txt
-          grep -q "native-code: 'arm64-v8a'" /tmp/tg-badging.txt
+          grep -q "native-code: .*arm64-v8a" /tmp/tg-badging.txt
+          grep -q "native-code: .*armeabi-v7a" /tmp/tg-badging.txt
           grep -q "platformBuildVersionCode='37'" /tmp/tg-badging.txt
           grep -q "targetSdkVersion:'35'" /tmp/tg-badging.txt
           unzip -tq "$APK"
