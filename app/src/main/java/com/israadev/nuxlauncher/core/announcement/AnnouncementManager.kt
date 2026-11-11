@@ -60,13 +60,17 @@ object AnnouncementManager {
                 val title = appearance.get("announcementTitle")?.takeUnless { it.isJsonNull }?.asString.orEmpty()
                 val content = appearance.get("announcementContent")?.takeUnless { it.isJsonNull }?.asString.orEmpty()
                 val item = JsonObject().apply {
-                    addProperty("id", (title + "|" + content).hashCode().toString())
+                    val imageUrl = appearance.get("announcementImageUrl")?.takeUnless { it.isJsonNull }?.asString.orEmpty()
+                val linkUrl = appearance.get("announcementLinkUrl")?.takeUnless { it.isJsonNull }?.asString.orEmpty()
+                val targetPlatform = appearance.get("announcementTarget")?.takeUnless { it.isJsonNull }?.asString ?: "all"
+                // Any meaningful announcement edit should create a new ID so users see the update again.
+                addProperty("id", listOf(title, content, imageUrl, linkUrl, targetPlatform).joinToString("|").hashCode().toString())
                     addProperty("title", title)
                     addProperty("content", content)
-                    addProperty("imageUrl", appearance.get("announcementImageUrl")?.takeUnless { it.isJsonNull }?.asString.orEmpty())
-                    addProperty("linkUrl", appearance.get("announcementLinkUrl")?.takeUnless { it.isJsonNull }?.asString.orEmpty())
+                    addProperty("imageUrl", imageUrl)
+                    addProperty("linkUrl", linkUrl)
                     addProperty("enabled", appearance.get("announcementEnabled")?.takeUnless { it.isJsonNull }?.asBoolean ?: false)
-                    addProperty("targetPlatform", appearance.get("announcementTarget")?.takeUnless { it.isJsonNull }?.asString ?: "all")
+                    addProperty("targetPlatform", targetPlatform)
                 }
                 parseAnnouncementJson(item.toString())?.takeIf { isValidForAndroid(it) }
             }
