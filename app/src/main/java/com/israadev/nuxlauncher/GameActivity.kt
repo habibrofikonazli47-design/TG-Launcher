@@ -42,6 +42,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -49,6 +50,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.flow.first
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -144,6 +148,8 @@ class GameActivity : ComponentActivity(), SurfaceHolder.Callback {
         const val EXTRA_INSTALLED_MODS = "extra_installed_mods"
         const val EXTRA_LAUNCHER_UID = "extra_launcher_uid"
         const val EXTRA_PRIVATE_WORLD_LOCAL_PORT = "extra_private_world_local_port"
+        const val EXTRA_PRIVATE_WORLD_SESSION_ID = "extra_private_world_session_id"
+        const val EXTRA_PRIVATE_WORLD_ROLE = "extra_private_world_role"
     }
 
     private var pendingRecordConfig: ScreenRecordConfig = ScreenRecordConfig()
@@ -282,6 +288,11 @@ class GameActivity : ComponentActivity(), SurfaceHolder.Callback {
 
     private var launcherUid: String = ""
     @Volatile private var privateWorldLanPort: Int? = null
+    private var privateWorldSessionId: String = ""
+    private var privateWorldRole: String = ""
+    @Volatile private var privateWorldTransportStarting = false
+    private var privateWorldReady: CompletableDeferred<Unit>? = null
+    private val privateWorldScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var presenceHeartbeatJob: Job? = null
     private val presenceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
@@ -336,6 +347,10 @@ class GameActivity : ComponentActivity(), SurfaceHolder.Callback {
     override fun onDestroy() {
         super.onDestroy()
         try {
+            privateWorldScope.coroutineContext[Job]?.cancel()
+            if (privateWorldSessionId.isNotBlank()) {
+                com.israadev.nuxlauncher.core.social.NuxWorldTransportManager.disconnect()
+            }
             isManualExit = true
             notifyPresenceGameExit()
             CrashManager.onGameSessionEnded(this)
@@ -488,6 +503,34 @@ class GameActivity : ComponentActivity(), SurfaceHolder.Callback {
         installedMods = intent.getStringArrayListExtra(EXTRA_INSTALLED_MODS) ?: CrashManager.getInstalledMods(gameDirPath)
         launcherUid = intent.getStringExtra(EXTRA_LAUNCHER_UID) ?: ""
         privateWorldLanPort = intent.getIntExtra(EXTRA_PRIVATE_WORLD_LOCAL_PORT, 0).takeIf { it in 1..65535 }
+        privateWorldSessionId = intent.getStringExtra(EXTRA_PRIVATE_WORLD_SESSION_ID).orEmpty()
+        privateWorldRole = intent.getStringExtra(EXTRA_PRIVATE_WORLD_ROLE).orEmpty()
+        if (privateWorldSessionId.isNotBlank()) {
+            try {
+                val transport = com.israadev.nuxlauncher.core.social.NuxWorldTransportManager
+                transport.prepareTcpBridge()
+                if (privateWorldRole == "guest") {
+                    privateWorldLanPort = transport.startGuestTcpBridge()
+                    privateWorldReady = CompletableDeferred()
+                    privateWorldScope.launch {
+                        try {
+                            val result = transport.connect(this@GameActivity, privateWorldSessionId) { _, _ -> }
+                            result.getOrThrow()
+                            withTimeout(30_000L) { transport.connected.first { it } }
+                            privateWorldReady?.complete(Unit)
+                            runOnUiThread { liveLogs.add("[TG Private World] Relay connected. Starting Minecraft through local bridge.") }
+                        } catch (error: Throwable) {
+                            privateWorldReady?.completeExceptionally(error)
+                            Log.e("TGPrivateWorld", "Guest transport failed", error)
+                        }
+                    }
+                }
+            } catch (error: Throwable) {
+                Log.e("TGPrivateWorld", "Could not prepare private world transport", error)
+                privateWorldReady = CompletableDeferred()
+                privateWorldReady?.completeExceptionally(error)
+            }
+        }
         startInGamePresenceHeartbeat()
 
         // Setup real-time native LoggerBridge
@@ -573,6 +616,25 @@ class GameActivity : ComponentActivity(), SurfaceHolder.Callback {
                 privateWorldLanPort = detectedLanPort
                 runOnUiThread {
                     liveLogs.add("[TG Private World] Minecraft LAN world detected on port $detectedLanPort")
+                }
+                if (privateWorldRole == "host" && privateWorldSessionId.isNotBlank() && !privateWorldTransportStarting) {
+                    privateWorldTransportStarting = true
+                    privateWorldScope.launch {
+                        try {
+                            val transport = com.israadev.nuxlauncher.core.social.NuxWorldTransportManager
+                            val result = transport.connect(this@GameActivity, privateWorldSessionId) { _, _ -> }
+                            result.getOrThrow()
+                            withTimeout(30_000L) { transport.connected.first { it } }
+                            transport.startHostTcpBridge(detectedLanPort)
+                            runOnUiThread {
+                                liveLogs.add("[TG Private World] Host relay ready. Friends can now join with their invite.")
+                            }
+                        } catch (error: Throwable) {
+                            privateWorldTransportStarting = false
+                            Log.e("TGPrivateWorld", "Host transport failed", error)
+                            runOnUiThread { liveLogs.add("[TG Private World] Relay error: ${error.message}") }
+                        }
+                    }
                 }
             }
             runOnUiThread {
@@ -689,6 +751,10 @@ class GameActivity : ComponentActivity(), SurfaceHolder.Callback {
     private fun startGameJVM() {
         thread(name = "NUX-JVM-Thread") {
             try {
+                privateWorldReady?.let { ready ->
+                    LoggerBridge.append("[TG Private World] Waiting for secure relay connection...")
+                    runBlocking { withTimeout(35_000L) { ready.await() } }
+                }
                 val nativeLibDir = applicationInfo.nativeLibraryDir
                 val runtimeHome = File(runtimeHomePath)
                 val gameDir = File(gameDirPath)
