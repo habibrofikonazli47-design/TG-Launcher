@@ -552,9 +552,9 @@ class GameActivity : ComponentActivity(), SurfaceHolder.Callback {
 
     private fun detectPrivateWorldLanPort(line: String): Int? {
         val patterns = listOf(
-            Regex("""(?i)Started serving on \\*:(\\d{1,5})"""),
-            Regex("""(?i)Started serving on (?:0\\.0\\.0\\.0|\\[[0-9a-f:]+\\]|[0-9a-f:.]+):(\\d{1,5})"""),
-            Regex("""(?i)Local game hosted on port (\\d{1,5})""")
+            Regex("""(?i)Started serving on \*:(\d{1,5})"""),
+            Regex("""(?i)Started serving on (?:0\.0\.0\.0|\[[0-9a-f:]+\]|[0-9a-f:.]+):(\d{1,5})"""),
+            Regex("""(?i)Local game hosted on port (\d{1,5})""")
         )
         val port = patterns.firstNotNullOfOrNull { pattern ->
             pattern.find(line)?.groupValues?.getOrNull(1)?.toIntOrNull()
