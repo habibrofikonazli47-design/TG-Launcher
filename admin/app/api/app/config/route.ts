@@ -22,6 +22,27 @@ export async function GET(){
   const rows=await sql`SELECT key,value FROM app_settings WHERE key IN ('general','game','runtimes','mods','renderer','recorder','ai','accounts','social','updates','appearance')`;
   const config:any={...defaults};
   for(const row of rows){if(Object.prototype.hasOwnProperty.call(defaults,row.key)&&row.value&&typeof row.value==='object')config[row.key]={...defaults[row.key],...row.value};}
+  // Publish only capabilities that the Android client currently implements.
+  // Unsupported legacy flags remain stored for admin visibility but are not advertised to clients.
+  config.mods={
+   modrinthEnabled:config.mods.modrinthEnabled!==false,
+   fabricEnabled:config.mods.fabricEnabled!==false,
+   allowManualImport:config.mods.allowManualImport!==false,
+  };
+  config.runtimes={
+   java8Enabled:config.runtimes.java8Enabled!==false,
+   java17Enabled:config.runtimes.java17Enabled!==false,
+   java21Enabled:config.runtimes.java21Enabled!==false,
+   java25Enabled:config.runtimes.java25Enabled!==false,
+   autoSelectJava:config.runtimes.autoSelectJava!==false,
+   preferredRuntime:config.runtimes.preferredRuntime||'auto',
+  };
+  config.accounts={
+   offlineLoginEnabled:config.accounts.offlineLoginEnabled!==false,
+   microsoftLoginEnabled:config.accounts.microsoftLoginEnabled!==false,
+   elybyLoginEnabled:config.accounts.elybyLoginEnabled!==false,
+   registrationEnabled:config.accounts.registrationEnabled!==false,
+  };
   // Never expose encrypted LiveKit credentials or other admin-only Social settings
   // through the public launcher configuration endpoint.
   const social=config.social||{};
@@ -33,7 +54,7 @@ export async function GET(){
    uploadsEnabled:social.uploadsEnabled!==false,
    maximumUploadMb:Number.isFinite(Number(social.maximumUploadMb))?Math.max(1,Math.min(100,Number(social.maximumUploadMb))):20,
   };
-  config.features={game:config.game.minecraftReleaseEnabled||config.game.minecraftSnapshotEnabled,runtimes:config.runtimes.java8Enabled||config.runtimes.java17Enabled||config.runtimes.java21Enabled||config.runtimes.java25Enabled,mods:config.mods.modrinthEnabled||config.mods.curseforgeEnabled||config.mods.allowManualImport,renderer:config.renderer.virglEnabled||config.renderer.gl4esEnabled||config.renderer.mesaEnabled||config.renderer.zinkEnabled,recorder:config.recorder.screenRecordingEnabled,ai:config.ai.assistantEnabled,accounts:config.accounts.offlineLoginEnabled||config.accounts.microsoftLoginEnabled||config.accounts.elybyLoginEnabled,social:config.social.friendsEnabled||config.social.voiceEnabled||config.social.worldInvitesEnabled};
+  config.features={game:config.game.minecraftReleaseEnabled||config.game.minecraftSnapshotEnabled,runtimes:config.runtimes.java8Enabled||config.runtimes.java17Enabled||config.runtimes.java21Enabled||config.runtimes.java25Enabled,mods:config.mods.modrinthEnabled||config.mods.allowManualImport,renderer:config.renderer.virglEnabled||config.renderer.gl4esEnabled||config.renderer.mesaEnabled||config.renderer.zinkEnabled,recorder:config.recorder.screenRecordingEnabled,ai:config.ai.assistantEnabled,accounts:config.accounts.offlineLoginEnabled||config.accounts.microsoftLoginEnabled||config.accounts.elybyLoginEnabled,social:config.social.friendsEnabled||config.social.voiceEnabled||config.social.worldInvitesEnabled};
   config.branding={name:'TG Launcher',adminName:'TG Launcher Control Center'};
   return NextResponse.json(config,{headers:{'Cache-Control':'no-store, max-age=0'}});
  }catch(error){console.error('[app/config]',error);return NextResponse.json({error:'Konfigurasi TG Launcher sementara tidak tersedia'},{status:503,headers:{'Cache-Control':'no-store'}});}
