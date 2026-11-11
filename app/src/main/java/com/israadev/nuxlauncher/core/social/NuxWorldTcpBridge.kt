@@ -45,6 +45,10 @@ class NuxWorldTcpBridge(
     private val executor: ExecutorService = Executors.newCachedThreadPool { runnable ->
         Thread(runnable, "TGWorld-TCP").apply { isDaemon = true }
     }
+    // Preserve TCP byte order: LiveKit packets must be handled sequentially per room.
+    private val packetExecutor: ExecutorService = Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable, "TGWorld-Packets").apply { isDaemon = true }
+    }
     private val connections = ConcurrentHashMap<String, Connection>()
     private val closed = AtomicBoolean(false)
     @Volatile private var mode: Mode = Mode.NONE
@@ -101,7 +105,7 @@ class NuxWorldTcpBridge(
     /** Deliver one LiveKit data packet, including the authenticated sender identity. */
     fun onPacket(payload: ByteArray, senderIdentity: String) {
         if (closed.get() || payload.isEmpty() || payload.size > 16 * 1024) return
-        executor.execute {
+        packetExecutor.execute {
             try {
                 val message = JSONObject(payload.toString(Charsets.UTF_8))
                 if (message.optInt("v") != TOPIC_VERSION) return@execute
@@ -254,6 +258,7 @@ class NuxWorldTcpBridge(
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         stopSockets()
+        packetExecutor.shutdownNow()
         executor.shutdownNow()
     }
 }
