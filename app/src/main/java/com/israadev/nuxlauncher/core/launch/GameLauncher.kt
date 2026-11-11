@@ -13,7 +13,7 @@ import java.io.File
 object GameLauncher {
     private val gson = Gson()
 
-    fun launch(context: Context, instance: Instance, account: UserAccount) {
+    fun launch(context: Context, instance: Instance, account: UserAccount, privateWorldLocalPort: Int? = null) {
         val gameDir = InstanceManager.getInstanceGameDir(context, instance)
         val versionDir = File(InstanceManager.getVersionsDir(context), instance.mcVersion)
         val versionJson = File(versionDir, "${instance.mcVersion}.json")
@@ -188,8 +188,30 @@ object GameLauncher {
         val skinFile = if (isOffline) account.getSkinFile() else null
         val capeFile = if (isOffline) account.getCapeFile() else null
 
+        val validatedPrivateWorldPort = privateWorldLocalPort?.takeIf { it in 1..65535 }
+        require(privateWorldLocalPort == null || validatedPrivateWorldPort != null) {
+            "Invalid private-world local bridge port"
+        }
+
+        val pendingWorld = com.israadev.nuxlauncher.core.social.NuxPrivateWorldLaunchStore.peek(context)
+        if (pendingWorld != null && pendingWorld.minecraftVersion.isNotBlank() && pendingWorld.minecraftVersion != instance.mcVersion) {
+            android.widget.Toast.makeText(
+                context,
+                "Undangan Private World membutuhkan Minecraft ${pendingWorld.minecraftVersion}. Pilih instance dengan versi tersebut.",
+                android.widget.Toast.LENGTH_LONG
+            ).show()
+            return
+        }
+
         val intent = Intent(context, GameActivity::class.java).apply {
             putExtra(GameActivity.EXTRA_INSTANCE_NAME, instance.name)
+            validatedPrivateWorldPort?.let {
+                putExtra(GameActivity.EXTRA_PRIVATE_WORLD_LOCAL_PORT, it)
+            }
+            pendingWorld?.let {
+                putExtra(GameActivity.EXTRA_PRIVATE_WORLD_SESSION_ID, it.sessionId)
+                putExtra(GameActivity.EXTRA_PRIVATE_WORLD_ROLE, it.role)
+            }
             putExtra(GameActivity.EXTRA_MC_VERSION, instance.mcVersion)
             putExtra(GameActivity.EXTRA_LOADER, instance.loader)
             putExtra(GameActivity.EXTRA_LOADER_VERSION, instance.loaderVersion)
@@ -226,5 +248,8 @@ object GameLauncher {
 
         com.israadev.nuxlauncher.core.social.NuxSocialManager.setInGame(true)
         context.startActivity(intent)
+        if (pendingWorld != null) {
+            com.israadev.nuxlauncher.core.social.NuxPrivateWorldLaunchStore.clear(context)
+        }
     }
 }

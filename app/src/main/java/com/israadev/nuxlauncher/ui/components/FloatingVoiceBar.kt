@@ -47,8 +47,9 @@ fun FloatingVoiceBar(
     val isMuted by NuxVoiceManager.isMuted.collectAsState()
     val activeRoom by NuxSocialManager.activeVoiceRoom.collectAsState()
     val activeSpeakers by NuxVoiceManager.activeSpeakers.collectAsState()
+    val voiceError by NuxVoiceManager.lastError.collectAsState()
 
-    if (!isConnected && !isConnecting && activeRoom == null) return
+    if (!isConnected && !isConnecting && activeRoom == null && voiceError == null) return
 
     var offsetX by remember { mutableFloatStateOf(0f) }
     var offsetY by remember { mutableFloatStateOf(0f) }
@@ -135,8 +136,8 @@ fun FloatingVoiceBar(
                     )
                     Spacer(modifier = Modifier.width(3.dp))
                     Text(
-                        text = if (isConnecting) "Connecting..." else "$participantCount online",
-                        color = Color(0xFFA1A1AA),
+                        text = voiceError ?: if (isConnecting) "Connecting..." else "$participantCount online",
+                        color = if (voiceError != null) Color(0xFFF87171) else Color(0xFFA1A1AA),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium
                     )

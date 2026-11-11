@@ -12,7 +12,7 @@ const defaults:Record<string,any>={
   recorder:{screenRecordingEnabled:true},
   ai:{assistantEnabled:true,crashAnalyzerEnabled:true,freeDailyQuota:5,premiumDailyQuota:-1,model:'default',maxTokens:2048,customApiKeyAllowed:true},
   accounts:{offlineLoginEnabled:true,microsoftLoginEnabled:true,elybyLoginEnabled:true,registrationEnabled:true,otpEnabled:true,otpCooldownSeconds:60},
-  social:{friendsEnabled:true,voiceEnabled:true,livekitEnabled:false,uploadsEnabled:true,maximumUploadMb:20,livekitServerUrl:'',livekitApiKey:'',livekitApiKeyConfigured:false,livekitApiSecret:'',livekitApiSecretConfigured:false},
+  social:{friendsEnabled:true,voiceEnabled:true,worldInvitesEnabled:false,livekitEnabled:false,uploadsEnabled:true,maximumUploadMb:20,livekitServerUrl:'',livekitApiKey:'',livekitApiKeyConfigured:false,livekitApiSecret:'',livekitApiSecretConfigured:false},
   updates:{releaseEnabled:false,autoUpdateCheck:true,stableChannel:true,betaChannel:false,forceUpdate:false,minimumSupportedVersion:'1.0.0',releaseNotes:''},
   security:{apiKeyRequired:true,rateLimitPerMinute:60,blockRootedDevices:false,sessionHours:8,allowUnknownClients:false},
   appearance:{backgroundImageUrl:'',backgroundOverlayAlpha:65,announcementEnabled:false,announcementTitle:'',announcementContent:'',announcementImageUrl:'',announcementLinkUrl:'',announcementTarget:'all',bannerEnabled:true,bannerImageUrl:'',bannerLinkUrl:''}

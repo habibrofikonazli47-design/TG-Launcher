@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-export async function proxySocialRequest(req: Request, operation: string) {
+export async function proxySocialRequest(req: Request, operation: string, extraHeaders: Record<string, string> = {}) {
   const endpoint = process.env.TG_SOCIAL_SUPABASE_FUNCTION_URL?.trim();
   const publishableKey = process.env.TG_SOCIAL_SUPABASE_PUBLISHABLE_KEY?.trim();
   const authorization = req.headers.get('authorization') || '';
@@ -21,6 +21,7 @@ export async function proxySocialRequest(req: Request, operation: string) {
       apikey: publishableKey,
       authorization,
       accept: 'application/json',
+      ...extraHeaders,
     };
     let body: string | undefined;
     if (method !== 'GET' && method !== 'HEAD') {

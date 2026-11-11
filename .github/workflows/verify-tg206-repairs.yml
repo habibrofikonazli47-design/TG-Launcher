@@ -1,0 +1,150 @@
+name: Build TG Launcher
+
+# One Android APK release workflow. Admin Panel checks remain in their own workflow.
+
+on:
+  push:
+    branches: [fix/tg206-feature-integration]
+    paths:
+      - ".github/workflows/verify-tg206-repairs.yml"
+      - "app/**"
+      - "*.gradle.kts"
+      - "gradle/**"
+  workflow_dispatch:
+
+concurrency:
+  group: tg-launcher-android-release
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  android-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out TG Launcher
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+
+      - name: Set next TG Launcher build number
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --tags --force
+          LAST_BUILD="$(git tag --list 'tg-launcher-1.1.6-tg*' | sed -E 's/^tg-launcher-1\.1\.6-tg([0-9]+)$/\1/' | grep -E '^[0-9]+$' | sort -n | tail -n 1)"
+          if [[ -z "$LAST_BUILD" ]]; then
+            TG_BUILD_NUMBER=210
+          else
+            TG_BUILD_NUMBER=$((LAST_BUILD + 1))
+          fi
+          echo "TG_BUILD_NUMBER=$TG_BUILD_NUMBER" >> "$GITHUB_ENV"
+          echo "TG_VERSION_CODE=$((TG_BUILD_NUMBER + 63))" >> "$GITHUB_ENV"
+          echo "TG_VERSION_NAME=1.1.6-tg${TG_BUILD_NUMBER}" >> "$GITHUB_ENV"
+          echo "Next APK: 1.1.6-tg${TG_BUILD_NUMBER}"
+
+      - name: Configure persistent APK signing key
+        shell: bash
+        env:
+          TG_SIGNING_KEYSTORE_BASE64: ${{ secrets.TG_SIGNING_KEYSTORE_BASE64 }}
+          TG_SIGNING_STORE_PASSWORD: ${{ secrets.TG_SIGNING_STORE_PASSWORD }}
+          TG_SIGNING_KEY_ALIAS: ${{ secrets.TG_SIGNING_KEY_ALIAS }}
+          TG_SIGNING_KEY_PASSWORD: ${{ secrets.TG_SIGNING_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$TG_SIGNING_KEYSTORE_BASE64"
+          test -n "$TG_SIGNING_STORE_PASSWORD"
+          test -n "$TG_SIGNING_KEY_ALIAS"
+          test -n "$TG_SIGNING_KEY_PASSWORD"
+          KEYSTORE_PATH="$RUNNER_TEMP/tg-launcher-release.jks"
+          printf '%s' "$TG_SIGNING_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+          test -s "$KEYSTORE_PATH"
+          echo "TG_SIGNING_STORE_FILE=$KEYSTORE_PATH" >> "$GITHUB_ENV"
+          echo "TG_SIGNING_STORE_PASSWORD=$TG_SIGNING_STORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "TG_SIGNING_KEY_ALIAS=$TG_SIGNING_KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "TG_SIGNING_KEY_PASSWORD=$TG_SIGNING_KEY_PASSWORD" >> "$GITHUB_ENV"
+
+      - name: Build release APK
+        run: |
+          chmod +x ./gradlew
+          ./gradlew --no-daemon clean assembleRelease -PTG_VERSION_CODE="$TG_VERSION_CODE" -PTG_VERSION_NAME="$TG_VERSION_NAME"
+
+      - name: Verify APK package, signature, and alignment
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/release/app-release.apk"
+          test -s "$APK"
+          BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          test -x "$BUILD_TOOLS/apksigner"
+          test -x "$BUILD_TOOLS/zipalign"
+
+          # Explicitly create v1, v2 and v3 signatures using the persistent TG key.
+          "$BUILD_TOOLS/apksigner" sign \
+            --ks "$TG_SIGNING_STORE_FILE" \
+            --ks-key-alias "$TG_SIGNING_KEY_ALIAS" \
+            --ks-pass "env:TG_SIGNING_STORE_PASSWORD" \
+            --key-pass "env:TG_SIGNING_KEY_PASSWORD" \
+            --v1-signing-enabled true \
+            --v2-signing-enabled true \
+            --v3-signing-enabled true \
+            "$APK"
+
+          "$BUILD_TOOLS/apksigner" verify --min-sdk-version 18 --verbose --print-certs "$APK" | tee /tmp/tg-signature.txt
+          grep -q "Verified using v1 scheme (JAR signing): true" /tmp/tg-signature.txt
+          grep -q "Verified using v2 scheme (APK Signature Scheme v2): true" /tmp/tg-signature.txt
+          grep -q "Verified using v3 scheme (APK Signature Scheme v3): true" /tmp/tg-signature.txt
+          grep -q "V3.0 Signer: certificate SHA-256 digest: e5aa76841020b79e40f8612021d262f53afdb3d918b3dbc4df97afca1af3b73f" /tmp/tg-signature.txt
+
+          "$BUILD_TOOLS/zipalign" -c -v 4 "$APK"
+          "$BUILD_TOOLS/aapt" dump badging "$APK" | tee /tmp/tg-badging.txt
+          grep -q "package: name='com.tg.launcher'" /tmp/tg-badging.txt
+          grep -q "versionCode='$TG_VERSION_CODE'" /tmp/tg-badging.txt
+          grep -q "versionName='$TG_VERSION_NAME'" /tmp/tg-badging.txt
+          grep -q "targetSdkVersion:'35'" /tmp/tg-badging.txt
+          grep -q "native-code: 'arm64-v8a'" /tmp/tg-badging.txt
+          unzip -tq "$APK"
+          sha256sum "$APK"
+
+      - name: Prepare direct APK download
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp app/build/outputs/apk/release/app-release.apk "TG-Launcher-v${TG_VERSION_NAME}.apk"
+          test -s "TG-Launcher-v${TG_VERSION_NAME}.apk"
+
+      - name: Publish direct APK release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: tg-launcher-${{ env.TG_VERSION_NAME }}
+          name: TG Launcher ${{ env.TG_VERSION_NAME }}
+          draft: false
+          prerelease: true
+          make_latest: false
+          body: |
+            Automated TG Launcher APK release.
+            Package: com.tg.launcher
+            Signed with the persistent TG Launcher release key.
+            APK signature schemes v1, v2 and v3 are verified in CI.
+          files: TG-Launcher-v${{ env.TG_VERSION_NAME }}.apk
+
+      - name: Upload TG Launcher APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TG-Launcher-release-verified
+          path: TG-Launcher-v${{ env.TG_VERSION_NAME }}.apk
+          if-no-files-found: error
+          retention-days: 30
