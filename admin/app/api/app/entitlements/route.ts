@@ -41,6 +41,7 @@ export async function GET(req: NextRequest) {
     const settings = Object.fromEntries(policyRows.map((row: any) => [row.key, row.value || {}]));
     const updates = settings.updates || {};
     const general = settings.general || {};
+    const defaultPlan = general.defaultPlan === 'premium' ? 'premium' : 'free';
     const forceUpdate = updates.forceUpdate === true || general.forceUpdate === true;
     const minimumVersion = String(
       updates.forceUpdate === true ? updates.minimumSupportedVersion || '1.0.0'
@@ -72,7 +73,7 @@ export async function GET(req: NextRequest) {
     if (!uidProfile && emailProfile) {
       await sql`UPDATE profiles SET id=${identity.localId},email=${identity.email},display_name=CASE WHEN display_name='' THEN ${identity.displayName || identity.email.split('@')[0]} ELSE display_name END,updated_at=now() WHERE id=${emailProfile.id}`;
     } else if (!uidProfile && !emailProfile) {
-      await sql`INSERT INTO profiles(id,email,display_name,plan,status) VALUES(${identity.localId},${identity.email},${identity.displayName || identity.email.split('@')[0]},'free','active') ON CONFLICT (id) DO NOTHING`;
+      await sql`INSERT INTO profiles(id,email,display_name,plan,status) VALUES(${identity.localId},${identity.email},${identity.displayName || identity.email.split('@')[0]},${defaultPlan},'active') ON CONFLICT (id) DO NOTHING`;
     } else if (uidProfile && emailProfile && uidProfile.id !== emailProfile.id) {
       const emailExpiry = emailProfile.expires_at ? new Date(emailProfile.expires_at).getTime() : null;
       const emailPremiumActive = emailProfile.plan === 'premium' && emailProfile.status === 'active' && (emailExpiry === null || emailExpiry > Date.now());
