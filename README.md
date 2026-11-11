@@ -1,11 +1,11 @@
 # TG Launcher
 
-TG Launcher is an Android Minecraft Java launcher built from and modified from the open-source NUX Launcher v1.1.6 codebase. The installed application identity, product interface, backend and admin console are branded TG Launcher.
+TG Launcher is an Android launcher for Minecraft Java Edition, independently maintained with a customized interface, integrated services, backend and administration console.
 
 ## Upstream attribution and license
-- Upstream source: https://github.com/IsraaDeveloper/nuxlabs
+- Open-source attribution: [Original upstream project repository](https://github.com/IsraaDeveloper/nuxlabs)
 - Base release: `v1.1.6`
-- License: GNU GPL-3.0. Upstream copyright notices, license texts and required attribution are retained. TG Launcher is an independent modified project and is not presented as the upstream NUX product.
+- License: GNU GPL-3.0. Upstream copyright notices, license texts and required attribution are retained. TG Launcher is an independent community project and is not an official product of any upstream project.
 
 ## TG Launcher services
 - Android application package: `com.tg.launcher`
@@ -18,6 +18,6 @@ TG Launcher is an Android Minecraft Java launcher built from and modified from t
 - Android SDK 37
 - Minimum Android SDK 26
 - JDK 17
-- Main build workflow: GitHub Actions (`.github/workflows/import-nux-source.yml`)
+- Main build workflow: GitHub Actions (automated Android build and release)
 
-Changes should preserve upstream license compliance and TG Launcher branding.
+Changes must preserve applicable open-source license notices and TG Launcher branding.
