@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const rows = await database()\`SELECT value FROM app_settings WHERE key='social' LIMIT 1\`;
+    const rows = await database()`SELECT value FROM app_settings WHERE key='social' LIMIT 1`;
     const config = (rows[0]?.value || {}) as Record<string, unknown>;
     const serverUrl = String(config.livekitServerUrl || '').trim();
     let apiKey = '';
