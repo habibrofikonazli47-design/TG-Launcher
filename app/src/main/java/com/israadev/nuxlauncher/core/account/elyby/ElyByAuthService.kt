@@ -377,68 +377,82 @@ object ElyByAuthService {
     }
 
     /**
-     * Fallback login langsung (tidak ditampilkan di UI, disimpan untuk kompatibilitas)
+     * Direct Ely.by Minecraft authentication.
+     * Ely.by documents this legacy Yggdrasil-compatible endpoint; OAuth remains the preferred flow.
      */
     suspend fun loginWithCredentials(
         usernameOrEmail: String,
-        password: String
+        password: String,
+        twoFactorToken: String = ""
     ): Result<UserAccount> = withContext(Dispatchers.IO) {
         try {
-            val clientToken = UUID.randomUUID().toString().replace("-", "")
+            if (usernameOrEmail.isBlank() || password.isBlank()) {
+                return@withContext Result.failure(IllegalArgumentException("Email/username dan password wajib diisi."))
+            }
+
+            val clientToken = UUID.randomUUID().toString()
+            val passwordWithToken = if (twoFactorToken.isBlank()) password else "$password:${twoFactorToken.trim()}"
             val payload = JsonObject().apply {
-                val agent = JsonObject().apply {
-                    addProperty("name", "Minecraft")
-                    addProperty("version", 1)
-                }
-                add("agent", agent)
                 addProperty("username", usernameOrEmail.trim())
-                addProperty("password", password)
-                addProperty("requestUser", true)
+                addProperty("password", passwordWithToken)
                 addProperty("clientToken", clientToken)
+                addProperty("requestUser", true)
             }
 
             val request = Request.Builder()
-                .url("$AUTHLIB_INJECTOR_URL/authserver/authenticate")
+                .url("https://authserver.ely.by/auth/authenticate")
                 .header("Content-Type", "application/json")
                 .header("Accept", "application/json")
                 .post(payload.toString().toRequestBody(JSON_MEDIA_TYPE))
                 .build()
 
             httpClient.newCall(request).execute().use { response ->
-                val bodyStr = response.body?.string() ?: ""
+                val bodyStr = response.body?.string().orEmpty()
                 val json = runCatching { JsonParser.parseString(bodyStr).asJsonObject }.getOrNull()
 
-                if (json != null && json.has("errorMessage")) {
-                    val errMsg = json.get("errorMessage").asString
-                    return@withContext Result.failure(Exception("Ely.by: $errMsg"))
-                }
-
                 if (!response.isSuccessful || json == null) {
-                    return@withContext Result.failure(Exception("Failed to log in to Ely.by (HTTP ${response.code}): $bodyStr"))
+                    val message = json?.get("errorMessage")?.takeUnless { it.isJsonNull }?.asString
+                        ?: json?.get("error")?.takeUnless { it.isJsonNull }?.asString
+                        ?: "HTTP ${response.code}"
+                    val friendly = when {
+                        message.contains("two.factor", ignoreCase = true) ||
+                            message.contains("2fa", ignoreCase = true) ||
+                            message.contains("token", ignoreCase = true) ->
+                            "Akun mungkin memerlukan kode 2FA. Periksa kode autentikasi dan coba lagi."
+                        message.contains("invalid", ignoreCase = true) ||
+                            message.contains("password", ignoreCase = true) ->
+                            "Email/username atau password Ely.by tidak valid."
+                        else -> "Login langsung Ely.by gagal: $message"
+                    }
+                    return@withContext Result.failure(Exception(friendly))
                 }
 
-                val accessToken = json.get("accessToken")?.asString ?: "0"
-                val resClientToken = json.get("clientToken")?.asString ?: clientToken
+                val accessToken = json.get("accessToken")?.takeUnless { it.isJsonNull }?.asString
+                    ?.takeIf { it.isNotBlank() }
+                    ?: return@withContext Result.failure(Exception("Ely.by tidak mengembalikan access token."))
+
                 val selectedProfile = json.getAsJsonObject("selectedProfile")
-                    ?: return@withContext Result.failure(Exception("Ely.by profile not found in response."))
+                    ?: return@withContext Result.failure(Exception("Akun ini belum memiliki profil Minecraft Ely.by."))
 
-                val profileId = selectedProfile.get("id")?.asString ?: UUID.randomUUID().toString().replace("-", "")
-                val profileName = selectedProfile.get("name")?.asString ?: usernameOrEmail.trim()
+                val profileId = selectedProfile.get("id")?.takeUnless { it.isJsonNull }?.asString
+                    ?: return@withContext Result.failure(Exception("Ely.by tidak mengembalikan UUID profil."))
+                val profileName = selectedProfile.get("name")?.takeUnless { it.isJsonNull }?.asString
+                    ?.takeIf { it.isNotBlank() }
+                    ?: return@withContext Result.failure(Exception("Ely.by tidak mengembalikan nama profil."))
+
+                val cleanUuid = profileId.replace("-", "")
                 val skinUrl = "https://skinsystem.ely.by/skins/$profileName.png"
-
                 val account = UserAccount(
-                    id = "ely_${profileId.replace("-", "")}",
+                    id = "ely_$cleanUuid",
                     username = profileName,
-                    uuid = profileId.replace("-", ""),
+                    uuid = cleanUuid,
                     accessToken = accessToken,
-                    refreshToken = resClientToken,
                     isOffline = false,
                     accountType = "elyby",
                     authServerUrl = AUTHLIB_INJECTOR_URL,
-                    email = usernameOrEmail.trim(),
+                    email = usernameOrEmail.trim().takeIf { it.contains("@") } ?: "",
                     skinUrl = skinUrl
                 )
-
                 Result.success(account)
             }
         } catch (e: Exception) {
