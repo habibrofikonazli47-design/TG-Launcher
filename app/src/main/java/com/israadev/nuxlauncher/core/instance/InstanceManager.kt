@@ -400,10 +400,20 @@ object InstanceManager {
             return
         }
         val launcherUser = AccountManager.getActiveUser()
-        val hasUnlimitedInstances = launcherUser?.features?.contains("unlimited_instances") == true
-        val maxInstances = if (hasUnlimitedInstances) (launcherUser?.limits?.get("instances") ?: -1) else 3
+        // Premium status is server-verified by /api/app/entitlements. Do not require a
+        // second feature flag to recognize an active Premium subscription: older plans
+        // may not yet contain the "unlimited_instances" key even though Premium is active.
+        // An explicit server limit still wins; -1 (or a missing Premium limit) is unlimited.
+        val isPremiumActive = launcherUser?.isActivated == true
+        val configuredInstanceLimit = launcherUser?.limits?.get("instances")
+        val maxInstances = if (isPremiumActive) (configuredInstanceLimit ?: -1) else 3
         if (maxInstances >= 0 && _instances.value.size >= maxInstances) {
-            Toast.makeText(context, "Paket Free dibatasi maksimal $maxInstances instance. Upgrade ke Premium untuk tanpa batas.", Toast.LENGTH_LONG).show()
+            val message = if (isPremiumActive) {
+                "Paket Premium akun ini dibatasi maksimal $maxInstances instance oleh Admin TG Launcher."
+            } else {
+                "Paket Free dibatasi maksimal $maxInstances instance. Upgrade ke Premium untuk tanpa batas."
+            }
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
             return
         }
         // Create isolated instance folder structure
