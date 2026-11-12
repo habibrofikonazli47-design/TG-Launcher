@@ -65,7 +65,7 @@ sealed class ElyByLoginState {
 
 object ElyByAuthService {
     const val AUTHLIB_INJECTOR_URL = "https://authserver.ely.by/api/authlib-injector"
-    private const val CLIENT_ID = "ely"
+    private const val CLIENT_ID = "pineconemc"
     private const val SCOPE = "account_info minecraft_server_session"
     private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
 
