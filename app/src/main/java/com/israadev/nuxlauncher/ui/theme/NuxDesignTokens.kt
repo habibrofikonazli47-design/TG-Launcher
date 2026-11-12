@@ -11,11 +11,11 @@ import androidx.compose.ui.unit.dp
  */
 object NuxColors {
     // Primary Cyber Emerald Palette
-    val ForestGreen = Color(0xFF10B981) // Cyber Emerald Primary (#10b981)
-    val MintGreen = Color(0xFF34D399)   // Bright Mint Accent / Glow (#34d399)
-    val SageGreen = Color(0xFF059669)   // Darker Emerald (#059669)
-    val SoftLime = Color(0xFF102A1F)    // Dark Emerald Tint Container
-    val LightGreen = Color(0x2610B981)  // 15% Emerald Glow Container
+    val ForestGreen = Color(0xFF168BFF) // TG electric blue primary
+    val MintGreen = Color(0xFF45D6FF)   // Ice-blue neon accent
+    val SageGreen = Color(0xFF0756B8)   // Deep electric blue
+    val SoftLime = Color(0xFF10243D)    // Deep blue tint container
+    val LightGreen = Color(0x26168BFF)  // Blue glow container
 
     // Dark Obsidian Neutrals (Frosted Glass Translucent)
     val Background = Color(0xFF09090B)  // Deep Obsidian background (#09090b)
@@ -41,6 +41,9 @@ object NuxColors {
     val TextMuted = GrayNeutral
     val SuccessGreen = ForestGreen
     val SkyBlue = Color(0xFF38BDF8)
+    val NeonBlue = Color(0xFF168BFF)
+    val IceBlue = Color(0xFF45D6FF)
+    val PremiumGold = Color(0xFFFFB020)
 }
 
 object NuxSizes {
