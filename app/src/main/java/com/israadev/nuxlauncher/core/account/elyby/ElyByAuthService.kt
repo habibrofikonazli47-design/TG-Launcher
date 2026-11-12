@@ -71,8 +71,10 @@ object ElyByAuthService {
 
     private val gson = Gson()
     private val httpClient = OkHttpClient.Builder()
-        .connectTimeout(20, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
+        .connectTimeout(10, TimeUnit.SECONDS)
+        .readTimeout(12, TimeUnit.SECONDS)
+        .callTimeout(18, TimeUnit.SECONDS)
+        .retryOnConnectionFailure(true)
         .build()
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -188,19 +190,25 @@ object ElyByAuthService {
                 }
 
                 val json = JsonParser.parseString(bodyStr).asJsonObject
-                val deviceCode = json.get("device_code")?.asString ?: ""
-                val userCode = json.get("user_code")?.asString ?: ""
-                val verificationUri = json.get("verification_uri")?.asString ?: "https://account.ely.by/code"
+                val deviceCode = json.get("device_code")?.asString.orEmpty()
+                val userCode = json.get("user_code")?.asString.orEmpty()
+                val verificationUri = json.get("verification_uri_complete")?.asString
+                    ?: json.get("verification_uri")?.asString
+                    ?: "https://account.ely.by/code"
                 val expiresIn = json.get("expires_in")?.asLong ?: 600L
                 val interval = json.get("interval")?.asLong ?: 5L
+
+                if (deviceCode.isBlank() || userCode.isBlank()) {
+                    return@withContext Result.failure(Exception("Ely.by tidak mengirim kode otorisasi yang valid. Coba lagi."))
+                }
 
                 Result.success(
                     ElyByDeviceCode(
                         deviceCode = deviceCode,
                         userCode = userCode,
                         verificationUri = verificationUri,
-                        expiresIn = expiresIn,
-                        interval = interval
+                        expiresIn = expiresIn.coerceIn(60L, 1800L),
+                        interval = interval.coerceIn(2L, 30L)
                     )
                 )
             }
@@ -220,19 +228,13 @@ object ElyByAuthService {
         val startTime = System.currentTimeMillis()
         val timeoutMs = deviceCode.expiresIn * 1000L
         var pollIntervalMs = (if (deviceCode.interval <= 0) 5L else deviceCode.interval) * 1000L
-
         var accessToken: String? = null
+        var transientFailures = 0
 
         while (System.currentTimeMillis() - startTime < timeoutMs) {
-            if (isCancelled()) {
-                return@withContext Result.failure(Exception("Login was cancelled by user."))
-            }
-
+            if (isCancelled()) return@withContext Result.failure(Exception("Login dibatalkan."))
             delay(pollIntervalMs)
-
-            if (isCancelled()) {
-                return@withContext Result.failure(Exception("Login was cancelled by user."))
-            }
+            if (isCancelled()) return@withContext Result.failure(Exception("Login dibatalkan."))
 
             try {
                 val formBody = FormBody.Builder()
@@ -240,52 +242,63 @@ object ElyByAuthService {
                     .add("client_id", CLIENT_ID)
                     .add("device_code", deviceCode.deviceCode)
                     .build()
-
                 val request = Request.Builder()
                     .url("https://account.ely.by/api/oauth2/v1/token")
                     .post(formBody)
+                    .header("Accept", "application/json")
                     .build()
 
                 httpClient.newCall(request).execute().use { response ->
-                    val bodyStr = response.body?.string() ?: ""
+                    val bodyStr = response.body?.string().orEmpty()
                     val json = runCatching { JsonParser.parseString(bodyStr).asJsonObject }.getOrNull()
-
-                    if (response.isSuccessful && json != null) {
-                        val token = json.get("access_token")?.asString
-                        if (!token.isNullOrBlank()) {
-                            accessToken = token
-                        }
+                    val token = json?.get("access_token")?.takeUnless { it.isJsonNull }?.asString
+                    if (response.isSuccessful && !token.isNullOrBlank()) {
+                        accessToken = token
+                        return@use
                     }
 
-                    if (json != null && json.has("error")) {
-                        val err = json.get("error").asString
-                        when (err) {
-                            "authorization_pending" -> {
-                                onStatusUpdate("Menunggu konfirmasi di browser...")
-                            }
-                            "slow_down" -> {
-                                pollIntervalMs += 2000L
-                                onStatusUpdate("Memperlambat polling...")
-                            }
-                            else -> {
-                                return@withContext Result.failure(Exception("Ely.by OAuth Error: $err"))
+                    val error = json?.get("error")?.takeUnless { it.isJsonNull }?.asString
+                    when (error) {
+                        "authorization_pending" -> {
+                            transientFailures = 0
+                            onStatusUpdate("Menunggu persetujuan akun Ely.by...")
+                        }
+                        "slow_down" -> {
+                            pollIntervalMs += 5000L
+                            onStatusUpdate("Server meminta jeda lebih lama. Tetap menunggu persetujuan...")
+                        }
+                        "access_denied" -> return@withContext Result.failure(Exception("Permintaan login Ely.by ditolak. Silakan coba lagi."))
+                        "expired_token" -> return@withContext Result.failure(Exception("Kode Ely.by kedaluwarsa. Mulai login lagi untuk mendapatkan kode baru."))
+                        null -> {
+                            if (response.code == 429 || response.code >= 500) {
+                                transientFailures++
+                                pollIntervalMs = (deviceCode.interval.coerceAtLeast(5L) * 1000L +
+                                    (transientFailures.coerceAtMost(4) * 2000L)).coerceAtMost(15000L)
+                                onStatusUpdate("Server Ely.by sedang lambat (${response.code}). Mencoba kembali...")
+                            } else {
+                                return@withContext Result.failure(Exception("Ely.by menolak permintaan otorisasi (HTTP ${response.code})."))
                             }
                         }
+                        else -> return@withContext Result.failure(Exception("Ely.by OAuth Error: $error"))
                     }
                 }
-
-                if (accessToken != null) {
-                    break
-                }
+                if (accessToken != null) break
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: java.io.IOException) {
+                transientFailures++
+                pollIntervalMs = (deviceCode.interval.coerceAtLeast(5L) * 1000L +
+                    (transientFailures.coerceAtMost(4) * 2000L)).coerceAtMost(15000L)
+                onStatusUpdate("Koneksi ke Ely.by terputus sementara. Menghubungkan kembali...")
             } catch (e: Exception) {
-                // Abaikan error jaringan sementara
+                return@withContext Result.failure(Exception("Gagal memproses respons Ely.by: ${e.message ?: "respons tidak valid"}"))
             }
         }
 
         val token = accessToken ?: return@withContext Result.failure(Exception("Waktu otorisasi Ely.by habis."))
 
         // Step 2: Ambil info akun (username & email)
-        onStatusUpdate("Fetching Ely.by account details...")
+        onStatusUpdate("Otorisasi berhasil. Mengambil data akun Ely.by...")
         val infoReq = Request.Builder()
             .url("https://account.ely.by/api/account/v1/info")
             .header("Authorization", "Bearer $token")
@@ -305,7 +318,7 @@ object ElyByAuthService {
         }
 
         // Step 3: Ambil Minecraft UUID dari server Ely.by
-        onStatusUpdate("Fetching Minecraft UUID for $username...")
+        onStatusUpdate("Mengambil profil Minecraft untuk $username...")
         var playerUuid = UUID.nameUUIDFromBytes("OfflinePlayer:$username".toByteArray(Charsets.UTF_8)).toString().replace("-", "")
         try {
             val uuidReq = Request.Builder()
