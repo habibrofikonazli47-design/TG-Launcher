@@ -20,7 +20,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -126,17 +128,47 @@ fun NuxSidebar(
                     Box(
                         modifier = Modifier
                             .size(width = (44.dp).resp(), height = (26.dp).resp())
+                            .shadow(
+                                elevation = if (isSelected) (9.dp).resp() else 0.dp,
+                                shape = pillShape,
+                                ambientColor = NuxColors.NeonBlue.copy(alpha = 0.42f),
+                                spotColor = NuxColors.NeonBlue.copy(alpha = 0.58f)
+                            )
+                            .clip(pillShape)
                             .background(
-                                color = if (isSelected) NuxColors.ForestGreen else Color.Transparent,
+                                brush = if (isSelected) {
+                                    Brush.horizontalGradient(
+                                        listOf(
+                                            NuxColors.NeonBlue.copy(alpha = 0.96f),
+                                            NuxColors.IceBlue.copy(alpha = 0.82f)
+                                        )
+                                    )
+                                } else {
+                                    Brush.verticalGradient(
+                                        listOf(Color.White.copy(alpha = 0.035f), Color.Transparent)
+                                    )
+                                },
                                 shape = pillShape
                             )
-                            .clip(pillShape),
+                            .border(
+                                width = if (isSelected) 1.dp else 0.5.dp,
+                                brush = if (isSelected) {
+                                    Brush.verticalGradient(
+                                        listOf(Color.White.copy(alpha = 0.78f), NuxColors.NeonBlue.copy(alpha = 0.45f))
+                                    )
+                                } else {
+                                    Brush.verticalGradient(
+                                        listOf(Color.White.copy(alpha = 0.10f), Color.Transparent)
+                                    )
+                                },
+                                shape = pillShape
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = item.icon,
                             contentDescription = tr(item.labelKey),
-                            tint = if (isSelected) Color(0xFF09090B) else Color(0xFFA1A1AA),
+                            tint = if (isSelected) Color(0xFF06111D) else Color(0xFFA1A1AA),
                             modifier = Modifier.size((17.dp).resp())
                         )
 
@@ -156,7 +188,7 @@ fun NuxSidebar(
 
                     Text(
                         text = tr(item.labelKey),
-                        color = if (isSelected) NuxColors.ForestGreen else Color(0xFFA1A1AA),
+                        color = if (isSelected) NuxColors.IceBlue else Color(0xFFA1A1AA),
                         fontWeight = if (isSelected) FontWeight.Black else FontWeight.Medium,
                         fontSize = (8.5.sp).resp(),
                         maxLines = 1
