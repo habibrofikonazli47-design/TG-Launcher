@@ -185,8 +185,11 @@ object AccountManager {
     fun addAccount(context: Context, account: UserAccount) {
         val list = _accounts.value.toMutableList()
         val isExisting = list.any { it.id == account.id || (it.username.equals(account.username, ignoreCase = true) && it.safeAccountType == account.safeAccountType) }
-        val hasUnlimitedAccounts = _launcherUser.value?.features?.contains("unlimited_accounts") == true
-        val maxAccounts = if (hasUnlimitedAccounts) (_launcherUser.value?.limits?.get("accounts") ?: -1) else 2
+        // Server entitlement limits are the source of truth for every plan.
+        // -1 means unlimited; when older sessions have no limit payload, keep safe defaults.
+        val activeUser = _launcherUser.value
+        val maxAccounts = activeUser?.limits?.get("accounts")
+            ?: if (activeUser?.isActivated == true) -1 else 2
         if (!isExisting && maxAccounts >= 0 && list.size >= maxAccounts) {
             android.widget.Toast.makeText(context, "Batas akun tersimpan untuk paket ini adalah $maxAccounts. Hubungi admin TG Launcher untuk menambah kuota.", android.widget.Toast.LENGTH_LONG).show()
             return
