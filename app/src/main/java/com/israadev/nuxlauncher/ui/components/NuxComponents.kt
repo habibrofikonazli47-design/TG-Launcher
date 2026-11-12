@@ -55,9 +55,22 @@ fun NuxCard(
 
     Box(
         modifier = cardModifier
+            .shadow(
+                elevation = if (shadowOffset > 0.dp) shadowOffset + 10.dp else 8.dp,
+                shape = shape,
+                ambientColor = if (shadowColor == Color.Transparent) Color(0x66000000) else shadowColor.copy(alpha = 0.38f),
+                spotColor = if (shadowColor == Color.Transparent) NuxColors.NeonBlue.copy(alpha = 0.20f) else shadowColor.copy(alpha = 0.42f)
+            )
             .clip(shape)
-            .background(backgroundColor, shape)
-            .border(borderWidth, borderColor, shape)
+            .background(
+                Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.055f), backgroundColor, Color.Black.copy(alpha = 0.10f))),
+                shape
+            )
+            .border(
+                borderWidth,
+                Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.34f), borderColor, Color.Black.copy(alpha = 0.24f))),
+                shape
+            )
     ) {
         content()
     }
