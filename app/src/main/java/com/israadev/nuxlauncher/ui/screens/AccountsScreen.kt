@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,6 +35,7 @@ import com.israadev.nuxlauncher.core.skin.SkinUtils
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -759,6 +761,11 @@ private fun AddAccountModal(
 
     // Ely.by State (Browser Device Code Flow)
     val elyLoginState by ElyByAuthService.loginState.collectAsState()
+    var elyUsername by remember { mutableStateOf("") }
+    var elyPassword by remember { mutableStateOf("") }
+    var elyTwoFactor by remember { mutableStateOf("") }
+    var isElyDirectLoading by remember { mutableStateOf(false) }
+    var elyDirectError by remember { mutableStateOf<String?>(null) }
 
     // Handle Ely.by login success
     LaunchedEffect(elyLoginState) {
@@ -1118,62 +1125,121 @@ private fun AddAccountModal(
                         else -> {
                             val isStarting = state is ElyByLoginState.Starting
                             val errMsg = (state as? ElyByLoginState.Error)?.message
-
-                            Row(
+                            Column(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalArrangement = Arrangement.spacedBy(7.dp)
                             ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = "Ely.by Account Authorization",
-                                        color = Color(0xFFA855F7),
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 12.sp
-                                    )
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
-                                        text = "Browser will open automatically to authorize your Ely.by account.",
-                                        color = NuxColors.GrayNeutral,
-                                        fontSize = 10.sp
-                                    )
-                                    if (errMsg != null) {
-                                        Spacer(modifier = Modifier.height(2.dp))
-                                        Text(text = errMsg, color = NuxColors.ErrorRed, fontSize = 10.sp)
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.width(10.dp))
-
-                                NuxButton(
-                                    onClick = {
-                                        ElyByAuthService.startLogin(context)
-                                    },
-                                    backgroundColor = Color(0xFFA855F7),
-                                    contentColor = Color.White,
-                                    enabled = !isStarting,
-                                    cornerRadius = NuxSizes.CornerRadiusSmall,
-                                    modifier = Modifier.height(40.dp)
+                                Text(
+                                    text = "Login langsung dengan akun Ely.by",
+                                    color = Color(0xFFA855F7),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp
+                                )
+                                Text(
+                                    text = "Masukkan email/username dan password Ely.by. Password hanya digunakan untuk request login dan tidak disimpan.",
+                                    color = NuxColors.GrayNeutral,
+                                    fontSize = 10.sp,
+                                    lineHeight = 13.sp
+                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    if (isStarting) {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(12.dp),
-                                            color = Color.White,
-                                            strokeWidth = 2.dp
-                                        )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text("CONNECTING...", fontWeight = FontWeight.Bold, fontSize = 10.sp)
-                                    } else {
-                                        Icon(
-                                            imageVector = Icons.Outlined.OpenInBrowser,
-                                            contentDescription = null,
-                                            tint = Color.White,
-                                            modifier = Modifier.size(15.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text("OPEN ELY.BY BROWSER", fontWeight = FontWeight.Black, fontSize = 10.sp)
+                                    OutlinedTextField(
+                                        value = elyUsername,
+                                        onValueChange = { elyUsername = it; elyDirectError = null },
+                                        modifier = Modifier.weight(1.2f),
+                                        singleLine = true,
+                                        label = { Text("Email / Username") }
+                                    )
+                                    OutlinedTextField(
+                                        value = elyPassword,
+                                        onValueChange = { elyPassword = it; elyDirectError = null },
+                                        modifier = Modifier.weight(1f),
+                                        singleLine = true,
+                                        visualTransformation = PasswordVisualTransformation(),
+                                        label = { Text("Password") }
+                                    )
+                                    OutlinedTextField(
+                                        value = elyTwoFactor,
+                                        onValueChange = { elyTwoFactor = it; elyDirectError = null },
+                                        modifier = Modifier.weight(0.7f),
+                                        singleLine = true,
+                                        label = { Text("2FA (opsional)") }
+                                    )
+                                }
+                                if (elyDirectError != null || errMsg != null) {
+                                    Text(
+                                        text = elyDirectError ?: errMsg.orEmpty(),
+                                        color = NuxColors.ErrorRed,
+                                        fontSize = 10.sp,
+                                        lineHeight = 13.sp
+                                    )
+                                }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    NuxButton(
+                                        onClick = {
+                                            if (elyUsername.isBlank() || elyPassword.isBlank()) {
+                                                elyDirectError = "Email/username dan password wajib diisi."
+                                            } else {
+                                                isElyDirectLoading = true
+                                                elyDirectError = null
+                                                scope.launch {
+                                                    val result = ElyByAuthService.loginWithCredentials(
+                                                        usernameOrEmail = elyUsername.trim(),
+                                                        password = elyPassword,
+                                                        twoFactorToken = elyTwoFactor
+                                                    )
+                                                    isElyDirectLoading = false
+                                                    result.fold(
+                                                        onSuccess = { account ->
+                                                            elyPassword = ""
+                                                            elyTwoFactor = ""
+                                                            onAccountAdded(account)
+                                                        },
+                                                        onFailure = { error ->
+                                                            elyDirectError = error.message ?: "Login Ely.by gagal."
+                                                        }
+                                                    )
+                                                }
+                                            }
+                                        },
+                                        backgroundColor = Color(0xFFA855F7),
+                                        contentColor = Color.White,
+                                        enabled = !isElyDirectLoading && !isStarting,
+                                        cornerRadius = NuxSizes.CornerRadiusSmall,
+                                        modifier = Modifier.height(40.dp)
+                                    ) {
+                                        if (isElyDirectLoading) {
+                                            CircularProgressIndicator(modifier = Modifier.size(12.dp), color = Color.White, strokeWidth = 2.dp)
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text("SIGNING IN...", fontWeight = FontWeight.Bold, fontSize = 10.sp)
+                                        } else {
+                                            Text("LOGIN ELY.BY", fontWeight = FontWeight.Black, fontSize = 10.sp)
+                                        }
+                                    }
+                                    NuxButton(
+                                        onClick = { ElyByAuthService.startLogin(context) },
+                                        backgroundColor = NuxColors.SurfaceElevated,
+                                        contentColor = NuxColors.DarkGray,
+                                        enabled = !isStarting && !isElyDirectLoading,
+                                        cornerRadius = NuxSizes.CornerRadiusSmall,
+                                        modifier = Modifier.height(40.dp)
+                                    ) {
+                                        Text("LOGIN VIA BROWSER", fontWeight = FontWeight.Bold, fontSize = 9.sp)
                                     }
                                 }
+                                Text(
+                                    text = "Catatan: metode password adalah endpoint kompatibilitas lama Ely.by dan dapat dinonaktifkan oleh Ely.by. OAuth/browser tetap tersedia sebagai alternatif.",
+                                    color = NuxColors.GrayNeutral,
+                                    fontSize = 9.sp,
+                                    lineHeight = 12.sp
+                                )
                             }
                         }
                     }
