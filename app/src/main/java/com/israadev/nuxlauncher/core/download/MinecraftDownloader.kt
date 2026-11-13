@@ -61,17 +61,29 @@ class MinecraftDownloader(
             val versionDir = File(InstanceManager.getVersionsDir(context), instance.mcVersion)
             if (!versionDir.exists()) versionDir.mkdirs()
 
-            // 1. Save version.json
+            // 1. Refresh version.json on every install/repair. GameLauncher reads this file
+            // to choose mainClass, Java major, asset index and library coordinates; leaving
+            // an old cached manifest here can mix metadata from different release revisions.
             val versionJsonFile = File(versionDir, "${instance.mcVersion}.json")
-            if (!versionJsonFile.exists()) {
-                downloadFile(versionItem.url, versionJsonFile)
+            downloadFile(versionItem.url, versionJsonFile)
+            if (!versionJsonFile.isFile || versionJsonFile.length() == 0L) {
+                throw IOException("Metadata Minecraft ${instance.mcVersion} kosong atau tidak tersimpan.")
+            }
+            val savedDetail = runCatching {
+                gson.fromJson(versionJsonFile.readText(), VersionDetail::class.java)
+            }.getOrNull() ?: throw IOException("Metadata Minecraft ${instance.mcVersion} tidak valid.")
+            if (savedDetail.id != instance.mcVersion) {
+                throw IOException("Metadata versi tidak cocok: diminta ${instance.mcVersion}, diterima ${savedDetail.id}.")
             }
 
             // 2. Download Client JAR
             val clientJar = File(versionDir, "${instance.mcVersion}.jar")
             val clientUrl = detail.downloads?.client?.url
             val expectedClientSize = detail.downloads?.client?.size ?: 0L
-            val needsClientDownload = !clientJar.exists() || clientJar.length() == 0L || (expectedClientSize > 0L && clientJar.length() != expectedClientSize)
+            val expectedClientSha1 = detail.downloads?.client?.sha1
+            val needsClientDownload = !clientJar.exists() || clientJar.length() == 0L ||
+                (expectedClientSize > 0L && clientJar.length() != expectedClientSize) ||
+                (!expectedClientSha1.isNullOrBlank() && !fileMatchesSha1(clientJar, expectedClientSha1))
             if (clientUrl != null && needsClientDownload) {
                 downloadFile(
                     url = clientUrl,
@@ -87,6 +99,12 @@ class MinecraftDownloader(
                         onProgress(p, String.format(java.util.Locale.US, "Downloading Minecraft client (%.1f / %.1f MB - %d%%)...", mbRead, mbTotal, percent))
                     }
                 )
+            }
+
+            if (!clientJar.isFile || clientJar.length() == 0L ||
+                (expectedClientSize > 0L && clientJar.length() != expectedClientSize) ||
+                (!expectedClientSha1.isNullOrBlank() && !fileMatchesSha1(clientJar, expectedClientSha1))) {
+                throw IOException("Minecraft client JAR ${instance.mcVersion} gagal diunduh atau checksum SHA-1 tidak cocok.")
             }
 
             // 3. Download Libraries (Parallel with 48 Turbo threads for Premium, 20 threads for Free)
@@ -112,7 +130,10 @@ class MinecraftDownloader(
                             if (artifact?.url != null && artifact.path != null) {
                                 val targetFile = File(libDir, artifact.path)
                                 val expectedSize = artifact.size ?: 0L
-                                val needsDownload = !targetFile.exists() || targetFile.length() == 0L || (expectedSize > 0L && targetFile.length() != expectedSize)
+                                val expectedSha1 = artifact.sha1
+                                val needsDownload = !targetFile.exists() || targetFile.length() == 0L ||
+                                    (expectedSize > 0L && targetFile.length() != expectedSize) ||
+                                    (!expectedSha1.isNullOrBlank() && !fileMatchesSha1(targetFile, expectedSha1))
                                 if (needsDownload) {
                                     targetFile.parentFile?.mkdirs()
                                     try {
@@ -121,8 +142,9 @@ class MinecraftDownloader(
                                         throw IOException("Gagal mengunduh library Minecraft ${lib.name}: ${e.message}", e)
                                     }
                                     if (!targetFile.exists() || targetFile.length() == 0L ||
-                                        (expectedSize > 0L && targetFile.length() != expectedSize)) {
-                                        throw IOException("Library Minecraft tidak lengkap: ${lib.name}")
+                                        (expectedSize > 0L && targetFile.length() != expectedSize) ||
+                                        (!expectedSha1.isNullOrBlank() && !fileMatchesSha1(targetFile, expectedSha1))) {
+                                        throw IOException("Library Minecraft tidak lengkap atau checksum SHA-1 tidak cocok: ${lib.name}")
                                     }
                                 }
                             }
@@ -143,8 +165,14 @@ class MinecraftDownloader(
                 val indexesDir = File(assetsDir, "indexes")
                 if (!indexesDir.exists()) indexesDir.mkdirs()
                 val indexFile = File(indexesDir, "${assetIndex.id}.json")
-                if (!indexFile.exists() || indexFile.length() == 0L) {
+                val indexNeedsDownload = !indexFile.exists() || indexFile.length() == 0L ||
+                    (assetIndex.sha1.isNotBlank() && !fileMatchesSha1(indexFile, assetIndex.sha1))
+                if (indexNeedsDownload) {
                     downloadFile(assetIndex.url, indexFile)
+                }
+                if (!indexFile.isFile || indexFile.length() == 0L ||
+                    (assetIndex.sha1.isNotBlank() && !fileMatchesSha1(indexFile, assetIndex.sha1))) {
+                    throw IOException("Asset index ${assetIndex.id} gagal diverifikasi SHA-1.")
                 }
 
                 // Download objects (Parallel concurrency: 48 Turbo for Premium, 24 for Free)
