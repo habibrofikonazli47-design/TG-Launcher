@@ -799,7 +799,7 @@ private fun AddAccountModal(
             ) {
                 Column {
                     Text(
-                        text = tr("accounts.dialog_add_title"),
+                        text = "TAMBAH AKUN",
                         color = NuxColors.DarkGray,
                         fontWeight = FontWeight.Black,
                         fontSize = 14.sp,
@@ -928,7 +928,7 @@ private fun AddAccountModal(
                             NuxTextField(
                                 value = offlineName,
                                 onValueChange = { offlineName = it },
-                                placeholder = tr("accounts.offline_username_placeholder")
+                                placeholder = "Masukkan nama akun Minecraft..."
                             )
                         }
 
@@ -957,7 +957,7 @@ private fun AddAccountModal(
                             contentColor = Color.White,
                             enabled = offlineName.trim().isNotBlank(),
                             cornerRadius = NuxSizes.CornerRadiusSmall,
-                            modifier = Modifier.height(42.dp)
+                            modifier = Modifier.width(148.dp).height(42.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Check,
@@ -967,7 +967,7 @@ private fun AddAccountModal(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = tr("accounts.btn_save_account"),
+                                text = "SIMPAN AKUN",
                                 fontWeight = FontWeight.Black,
                                 fontSize = 11.sp,
                                 letterSpacing = 0.5.sp
