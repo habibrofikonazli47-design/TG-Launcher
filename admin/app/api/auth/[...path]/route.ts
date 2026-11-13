@@ -109,7 +109,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ path: 
       const existing = await sql`SELECT id,verified_at,sent_at FROM email_otp_verifications WHERE email=${email} LIMIT 1`;
       if (existing.length && existing[0].verified_at) return NextResponse.json({ success: true, message: 'Email sudah diverifikasi. Silakan lanjutkan pendaftaran.' });
       if (existing.length && Date.now() - new Date(existing[0].sent_at).getTime() < Math.max(30, Number(cfg.otpCooldownSeconds) || 60) * 1000) return NextResponse.json({ error: 'Tunggu sebelum meminta kode OTP berikutnya.' }, { status: 429 });
-      const counts = await sql`SELECT count(*)::int AS total FROM email_otp_verifications WHERE email=${email} AND sent_at > now() - interval '1 hour'`;
+      const counts = await sql`SELECT count(*)::int AS total FROM email_otp_send_log WHERE email=${email} AND sent_at > now() - interval '1 hour'`;
       if (Number(counts[0]?.total || 0) >= Math.max(1, Number(cfg.otpMaxPerHour) || 5)) return NextResponse.json({ error: 'Batas pengiriman OTP per jam tercapai.' }, { status: 429 });
       const code = String(randomInt(0, 1000000)).padStart(6, '0');
       const expires = Math.max(1, Number(cfg.otpExpiryMinutes) || 5);
@@ -117,6 +117,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ path: 
       await sql`INSERT INTO email_otp_verifications(email,username,code_hash,expires_at,sent_at,attempts,verified_at) VALUES(${email},${username},${hash},now() + (${expires} || ' minutes')::interval,now(),0,NULL) ON CONFLICT(email) DO UPDATE SET username=EXCLUDED.username,code_hash=EXCLUDED.code_hash,expires_at=EXCLUDED.expires_at,sent_at=now(),attempts=0,verified_at=NULL`;
       const sent = await fetch('https://api.resend.com/emails', { method:'POST', headers:{Authorization:'Bearer '+apiKey,'Content-Type':'application/json'}, body:JSON.stringify({from,to:[email],subject:'Kode verifikasi TG Launcher',html:`<div style="font-family:Arial,sans-serif"><h2>Verifikasi email TG Launcher</h2><p>Kode OTP kamu:</p><div style="font-size:32px;font-weight:bold;letter-spacing:8px">${code}</div><p>Kode berlaku ${expires} menit. Jangan bagikan kode ini kepada siapa pun.</p></div>`}), cache:'no-store' });
       if (!sent.ok) { await sql`DELETE FROM email_otp_verifications WHERE email=${email}`; return NextResponse.json({ error: 'Email OTP gagal dikirim. Periksa konfigurasi layanan email.' }, { status: 502 }); }
+      await sql`INSERT INTO email_otp_send_log(email) VALUES(${email})`;
       return NextResponse.json({ success:true, message:'Kode OTP telah dikirim ke email.' });
     }
 
@@ -126,7 +127,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ path: 
       const code = String(body.code || '').trim();
       if (!/^\\d{6}$/.test(code)) return NextResponse.json({ error:'Masukkan kode OTP 6 digit.' }, { status:400 });
       const sql = database();
-      const rows = await sql`SELECT code_hash,expires_at,attempts FROM email_otp_verifications WHERE email=${email} LIMIT 1`;
+      const rows = await sql`SELECT code_hash,expires_at,attempts,verified_at FROM email_otp_verifications WHERE email=${email} LIMIT 1`;
       if (!rows.length || rows[0].verified_at || new Date(rows[0].expires_at).getTime() < Date.now()) return NextResponse.json({ error:'Kode OTP tidak tersedia atau sudah kedaluwarsa.' }, { status:400 });
       const cfgRows = await sql`SELECT value FROM app_settings WHERE key='accounts' LIMIT 1`;
       const maxAttempts = Math.max(1, Number(cfgRows[0]?.value?.otpMaxAttempts) || 5);
