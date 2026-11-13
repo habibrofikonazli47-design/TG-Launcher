@@ -10,7 +10,7 @@ const defaults:any={
  renderer:{virglEnabled:true,gl4esEnabled:true,mesaEnabled:true,zinkEnabled:true,defaultRenderer:'auto',experimentalRenderers:false},
  recorder:{screenRecordingEnabled:true},
  ai:{assistantEnabled:true,crashAnalyzerEnabled:true,freeDailyQuota:5,premiumDailyQuota:-1,model:'default',maxTokens:2048,customApiKeyAllowed:true},
- accounts:{offlineLoginEnabled:true,microsoftLoginEnabled:true,elybyLoginEnabled:true,registrationEnabled:true,otpEnabled:true,otpCooldownSeconds:60},
+ accounts:{offlineLoginEnabled:true,microsoftLoginEnabled:true,elybyLoginEnabled:true,registrationEnabled:true,otpEnabled:false,otpCooldownSeconds:60},
  social:{friendsEnabled:true,voiceEnabled:true,worldInvitesEnabled:false,livekitEnabled:false,uploadsEnabled:true,maximumUploadMb:20},
  updates:{releaseEnabled:false,autoUpdateCheck:true,stableChannel:true,betaChannel:false,forceUpdate:false,minimumSupportedVersion:'1.0.0',releaseNotes:''},
  appearance:{backgroundImageUrl:'',backgroundOverlayAlpha:65,announcementEnabled:false,announcementTitle:'',announcementContent:'',announcementImageUrl:'',announcementLinkUrl:'',announcementTarget:'all',bannerEnabled:true,bannerImageUrl:'',bannerLinkUrl:''}
@@ -42,7 +42,7 @@ export async function GET(){
    microsoftLoginEnabled:config.accounts.microsoftLoginEnabled!==false,
    elybyLoginEnabled:config.accounts.elybyLoginEnabled!==false,
    registrationEnabled:config.accounts.registrationEnabled!==false,
-   otpEnabled:config.accounts.otpEnabled===true,
+   otpEnabled:false,
   };
   // Never expose encrypted LiveKit credentials or other admin-only Social settings
   // through the public launcher configuration endpoint.
