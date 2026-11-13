@@ -42,6 +42,7 @@ export async function GET(){
    microsoftLoginEnabled:config.accounts.microsoftLoginEnabled!==false,
    elybyLoginEnabled:config.accounts.elybyLoginEnabled!==false,
    registrationEnabled:config.accounts.registrationEnabled!==false,
+   otpEnabled:config.accounts.otpEnabled===true,
   };
   // Never expose encrypted LiveKit credentials or other admin-only Social settings
   // through the public launcher configuration endpoint.
