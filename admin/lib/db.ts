@@ -9,6 +9,8 @@ export function database() {
 export async function ensureSchema() {
   if (!schemaReady) schemaReady = (async () => {
     const sql = database();
+    await sql`CREATE TABLE IF NOT EXISTS email_otp_verifications (email text PRIMARY KEY, username text NOT NULL DEFAULT '', code_hash text NOT NULL, expires_at timestamptz NOT NULL, sent_at timestamptz NOT NULL DEFAULT now(), attempts integer NOT NULL DEFAULT 0, verified_at timestamptz)`;
+    await sql`CREATE INDEX IF NOT EXISTS email_otp_sent_at_idx ON email_otp_verifications(sent_at)`;
     await sql`CREATE TABLE IF NOT EXISTS profiles (
       id text PRIMARY KEY, email text UNIQUE, display_name text NOT NULL DEFAULT '',
       role text NOT NULL DEFAULT 'user', plan text NOT NULL DEFAULT 'free',
