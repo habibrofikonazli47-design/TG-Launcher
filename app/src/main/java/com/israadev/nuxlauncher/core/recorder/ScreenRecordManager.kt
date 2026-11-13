@@ -24,7 +24,7 @@ object ScreenRecordManager {
     }
 
     /** Check the server-assigned entitlement for the signed-in launcher account. */
-    fun hasFeature(feature: String): Boolean = AccountManager.getActiveUser()?.features?.contains(feature) == true
+    fun hasFeature(feature: String): Boolean = AccountManager.getActiveUser()?.let { it.isActivated || feature in it.features } == true
 
     fun isUserPremium(): Boolean = AccountManager.getActiveUser()?.isActivated == true
 
