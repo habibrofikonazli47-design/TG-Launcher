@@ -378,6 +378,18 @@ object AuthService {
         }
     }
 
+    suspend fun verifyOtp(email: String, code: String): Result<String> {
+        val payload = JsonObject().apply {
+            addProperty("email", email.trim().lowercase())
+            addProperty("code", code.trim())
+        }
+        val result = postApi("/api/auth/verify-otp", payload.toString())
+        return result.mapCatching { json ->
+            val obj = gson.fromJson(json, JsonObject::class.java)
+            obj.get("message").asStringOrNull() ?: "Email berhasil diverifikasi."
+        }
+    }
+
     /**
      * 2. Registrasi Akun Android Baru (Langsung tanpa OTP)
      */
