@@ -96,7 +96,7 @@ class MinecraftDownloader(
             if (!libDir.exists()) libDir.mkdirs()
 
             val currentLauncherUser = com.israadev.nuxlauncher.core.account.AccountManager.launcherUser.value
-            val hasTurboDownloader = currentLauncherUser?.features?.contains("turbo_downloader") == true
+            val hasTurboDownloader = currentLauncherUser?.let { it.isActivated || "turbo_downloader" in it.features } == true
             val configuredWorkers = currentLauncherUser?.limits?.get("download_workers") ?: if (hasTurboDownloader) 48 else 20
             val libThreads = if (hasTurboDownloader) (configuredWorkers.takeIf { it > 0 } ?: 48).coerceIn(1, 64) else 20
 
