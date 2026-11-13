@@ -586,6 +586,25 @@ fun AuthScreen(
                                     return@NuxButton
                                 }
 
+                                if (RemoteLauncherConfig.isEnabled(remoteConfig, "accounts", "otpEnabled")) {
+                                    isLoading = true
+                                    errorMessage = ""
+                                    coroutineScope.launch {
+                                        AuthService.sendOtp(cleanEmail, cleanUser).fold(
+                                            onSuccess = { message ->
+                                                isLoading = false
+                                                successMessage = message
+                                                mode = AuthMode.VERIFY_REGISTER_OTP
+                                            },
+                                            onFailure = { err ->
+                                                isLoading = false
+                                                errorMessage = err.message ?: "Gagal mengirim OTP."
+                                            }
+                                        )
+                                    }
+                                    return@NuxButton
+                                }
+
                                 isLoading = true
                                 errorMessage = ""
                                 coroutineScope.launch {
@@ -630,9 +649,44 @@ fun AuthScreen(
                     // 3. VERIFY REGISTER OTP (DEPRECATED - BYPASS)
                     // ==========================================
                     AuthMode.VERIFY_REGISTER_OTP -> {
-                        LaunchedEffect(Unit) {
-                            mode = AuthMode.REGISTER
-                        }
+                        Text("VERIFIKASI EMAIL", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Black)
+                        Text("Masukkan kode 6 digit yang dikirim ke $email", color = Color(0xFF94A3B8), fontSize = 11.sp)
+                        AuthInputField(
+                            value = otpCode,
+                            onValueChange = { otpCode = it.filter(Char::isDigit).take(6); errorMessage = "" },
+                            label = "Kode OTP",
+                            placeholder = "000000",
+                            leadingIcon = Icons.Default.MarkEmailRead
+                        )
+                        NuxButton(
+                            onClick = {
+                                if (otpCode.length != 6) { errorMessage = "Masukkan kode OTP 6 digit."; return@NuxButton }
+                                isLoading = true
+                                errorMessage = ""
+                                coroutineScope.launch {
+                                    AuthService.verifyOtp(email, otpCode).fold(
+                                        onSuccess = {
+                                            AuthService.register(email, username, password).fold(
+                                                onSuccess = { regResult ->
+                                                    val syncedUser = AuthService.syncEntitlements(regResult.user)
+                                                    AccountManager.saveAuthUser(context, syncedUser)
+                                                    if (AccountManager.accounts.value.isEmpty()) AccountManager.addAccount(context, AccountManager.createGuestAccount(regResult.user.username))
+                                                    isLoading = false
+                                                    onAuthSuccess()
+                                                },
+                                                onFailure = { err -> isLoading = false; errorMessage = err.message ?: "Pendaftaran gagal." }
+                                            )
+                                        },
+                                        onFailure = { err -> isLoading = false; errorMessage = err.message ?: "Kode OTP tidak valid." }
+                                    )
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            backgroundColor = NuxColors.ForestGreen,
+                            contentColor = Color.White,
+                            enabled = !isLoading
+                        ) { Text(if (isLoading) tr("common.loading") else "Verifikasi & Buat Akun", fontWeight = FontWeight.Black, fontSize = 12.sp) }
+                        Text("Kembali ke pendaftaran", color = Color(0xFF38BDF8), fontSize = 11.sp, modifier = Modifier.clickable { mode = AuthMode.REGISTER; otpCode = "" })
                     }
 
                     // ==========================================
