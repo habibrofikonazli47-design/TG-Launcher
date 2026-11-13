@@ -17,7 +17,11 @@ async function hasVoiceRoomEntitlement(uid:string){
  if(expiry!==null&&(!Number.isFinite(expiry)||expiry<=Date.now()))return false;
  const overrides=Array.isArray(profile.feature_overrides)?profile.feature_overrides:[];
  const features=overrides.length>0?overrides:(Array.isArray(profile.features)?profile.features:[]);
- return features.includes('voice_rooms');
+ // Explicit per-user overrides remain authoritative. Otherwise an active,
+ // unexpired Premium plan grants Premium features even if a legacy plan row
+ // has not yet been backfilled with the voice_rooms feature key.
+ if(overrides.length>0)return features.includes('voice_rooms');
+ return profile.plan==='premium' || features.includes('voice_rooms');
 }
 function signLiveKitToken(apiKey:string,secret:string,identity:string,room:string){
  const now=Math.floor(Date.now()/1000);
