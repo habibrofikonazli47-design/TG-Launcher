@@ -156,18 +156,12 @@ export async function POST(req: NextRequest, context: { params: Promise<{ path: 
       if (policies.general?.allowRegistration === false || policies.accounts?.registrationEnabled === false) {
         return NextResponse.json({ error: 'Pendaftaran akun sedang dinonaktifkan oleh administrator.' }, { status: 403 });
       }
-      const accountSettings = policies.accounts || {};
-      if (accountSettings.otpEnabled === true && accountSettings.otpRequireEmailVerification !== false) {
-        const verified = await database()`SELECT email FROM email_otp_verifications WHERE email=${String(body.email || '').trim().toLowerCase()} AND verified_at > now() - interval '15 minutes' LIMIT 1`;
-        if (!verified.length) return NextResponse.json({ error:'Verifikasi email OTP wajib diselesaikan sebelum membuat akun.' }, { status:403 });
-      }
       const auth = await firebasePost('accounts:signUp', {
         email: String(body.email || '').trim().toLowerCase(), password: String(body.password || ''), returnSecureToken: true,
       });
       const displayName = String(body.username || auth.email.split('@')[0]).trim();
       await firebasePost('accounts:update', { idToken: auth.idToken, displayName, returnSecureToken: true });
       const profile = await ensureProfile(String(auth.localId), String(auth.email).toLowerCase(), displayName);
-      await database()`DELETE FROM email_otp_verifications WHERE email=${String(auth.email).toLowerCase()}`;
       return NextResponse.json(await userResponse(profile, { idToken: auth.idToken, refreshToken: auth.refreshToken, message: 'Registrasi berhasil.' }));
     }
 
