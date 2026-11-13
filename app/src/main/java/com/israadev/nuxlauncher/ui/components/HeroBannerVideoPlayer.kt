@@ -31,7 +31,7 @@ fun HeroBannerVideoPlayer(
     rotationDegrees: Int = 0,
     modifier: Modifier = Modifier
 ) {
-    if (AccountManager.getActiveUser()?.features?.contains("custom_video_hero") != true) return
+    if (AccountManager.getActiveUser()?.let { it.isActivated || "custom_video_hero" in it.features } != true) return
     if (videoPath.isBlank() || !File(videoPath).exists()) {
         return
     }
