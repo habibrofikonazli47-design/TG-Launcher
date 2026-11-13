@@ -11,7 +11,7 @@ const defaults:Record<string,any>={
   renderer:{virglEnabled:true,gl4esEnabled:true,mesaEnabled:true,zinkEnabled:true,defaultRenderer:'auto',experimentalRenderers:false},
   recorder:{screenRecordingEnabled:true},
   ai:{assistantEnabled:true,crashAnalyzerEnabled:true,freeDailyQuota:5,premiumDailyQuota:-1,model:'default',maxTokens:2048,customApiKeyAllowed:true},
-  accounts:{offlineLoginEnabled:true,microsoftLoginEnabled:true,elybyLoginEnabled:true,registrationEnabled:true,otpEnabled:false,otpRequireEmailVerification:true,otpExpiryMinutes:5,otpCooldownSeconds:60,otpMaxAttempts:5,otpMaxPerHour:5},
+  accounts:{offlineLoginEnabled:true,microsoftLoginEnabled:true,elybyLoginEnabled:true,registrationEnabled:true,otpEnabled:false,otpRequireEmailVerification:false,otpExpiryMinutes:5,otpCooldownSeconds:60,otpMaxAttempts:5,otpMaxPerHour:5},
   social:{friendsEnabled:true,voiceEnabled:true,worldInvitesEnabled:false,livekitEnabled:false,uploadsEnabled:true,maximumUploadMb:20,livekitServerUrl:'',livekitApiKey:'',livekitApiKeyConfigured:false,livekitApiSecret:'',livekitApiSecretConfigured:false},
   updates:{releaseEnabled:false,autoUpdateCheck:true,stableChannel:true,betaChannel:false,forceUpdate:false,minimumSupportedVersion:'1.0.0',releaseNotes:''},
   security:{apiKeyRequired:true,rateLimitPerMinute:60,blockRootedDevices:false,sessionHours:8,allowUnknownClients:false},
@@ -25,7 +25,7 @@ export async function GET(req:NextRequest){
 export async function PUT(req:NextRequest){
  if(!verifySession(req.cookies.get(getCookieName())?.value)) return NextResponse.json({error:'Unauthorized'},{status:401});
  try{const body=await req.json();const category=String(body.category||'');const value=body.value;if(!Object.prototype.hasOwnProperty.call(defaults,category)||!value||typeof value!=='object'||Array.isArray(value))return NextResponse.json({error:'Kategori atau konfigurasi tidak valid.'},{status:400});
- const allowed=Object.keys(defaults[category]);const clean:any={};for(const key of allowed){if(key==='livekitApiSecretConfigured'||key==='livekitApiKeyConfigured')continue;if((key==='livekitApiSecret'||key==='livekitApiKey')&&category==='social')continue;if(Object.prototype.hasOwnProperty.call(value,key))clean[key]=value[key];}
+ const allowed=Object.keys(defaults[category]);const clean:any={};for(const key of allowed){if(key==='livekitApiSecretConfigured'||key==='livekitApiKeyConfigured')continue;if((key==='livekitApiSecret'||key==='livekitApiKey')&&category==='social')continue;if(Object.prototype.hasOwnProperty.call(value,key))clean[key]=value[key];}if(category==='accounts'){clean.otpEnabled=false;clean.otpRequireEmailVerification=false;}
  if(category==='general'){for(const key of ['premiumPurchaseUrl','premiumMonthlyPurchaseUrl','premiumYearlyPurchaseUrl','premiumLifetimePurchaseUrl']){const url=String(clean[key]??'').trim();if(url){try{const parsed=new URL(url);if(parsed.protocol!=='https:')throw new Error();}catch{return NextResponse.json({error:'Link pembelian harus berupa URL HTTPS yang valid ('+key+').'},{status:400});}}}}
  if(category==='appearance'){
   for(const key of ['backgroundImageUrl','announcementImageUrl','announcementLinkUrl']){
