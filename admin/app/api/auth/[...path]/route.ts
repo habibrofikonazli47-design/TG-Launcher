@@ -98,7 +98,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ path: 
       await ensureSchema();
       const email = String(body.email || '').trim().toLowerCase();
       const username = String(body.username || '').trim();
-      if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return NextResponse.json({ error: 'Alamat email tidak valid.' }, { status: 400 });
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: 'Alamat email tidak valid.' }, { status: 400 });
       const sql = database();
       const rows = await sql`SELECT value FROM app_settings WHERE key='accounts' LIMIT 1`;
       const cfg = rows[0]?.value || {};
@@ -125,7 +125,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ path: 
       await ensureSchema();
       const email = String(body.email || '').trim().toLowerCase();
       const code = String(body.code || '').trim();
-      if (!/^\\d{6}$/.test(code)) return NextResponse.json({ error:'Masukkan kode OTP 6 digit.' }, { status:400 });
+      if (!/^\d{6}$/.test(code)) return NextResponse.json({ error:'Masukkan kode OTP 6 digit.' }, { status:400 });
       const sql = database();
       const rows = await sql`SELECT code_hash,expires_at,attempts,verified_at FROM email_otp_verifications WHERE email=${email} LIMIT 1`;
       if (!rows.length || rows[0].verified_at || new Date(rows[0].expires_at).getTime() < Date.now()) return NextResponse.json({ error:'Kode OTP tidak tersedia atau sudah kedaluwarsa.' }, { status:400 });
