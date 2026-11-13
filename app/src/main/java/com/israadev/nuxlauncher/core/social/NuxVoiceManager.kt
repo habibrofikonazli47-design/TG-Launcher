@@ -212,7 +212,9 @@ object NuxVoiceManager {
             Log.w(TAG, "Voice rooms are disabled by TG Launcher administrator")
             return
         }
-        val canUseVoice = if (user.features.isNotEmpty()) "voice_rooms" in user.features else user.isActivated
+        // A server-verified active Premium subscription grants Premium features
+        // even when older plan records do not yet list the voice_rooms feature key.
+        val canUseVoice = user.isActivated || "voice_rooms" in user.features
         if (!canUseVoice) {
             Log.w(TAG, "Voice rooms are not included in this account plan")
             return
