@@ -183,7 +183,8 @@ object NuxSocialManager {
         val adminEnabled = RemoteLauncherConfig.isEnabled(RemoteLauncherConfig.config.value, "social", key, false)
         if (!adminEnabled) return false
         if (key.contains("voice", ignoreCase = true) || key.contains("room", ignoreCase = true)) {
-            return AccountManager.getActiveUser()?.features?.contains("voice_rooms") == true
+            val user = AccountManager.getActiveUser()
+            return user?.isActivated == true || user?.features?.contains("voice_rooms") == true
         }
         return true
     }
