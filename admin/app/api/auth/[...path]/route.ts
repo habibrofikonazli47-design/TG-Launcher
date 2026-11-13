@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createHash, randomInt, timingSafeEqual } from 'node:crypto';
 import { database, ensureSchema } from '@/lib/db';
 
 export const runtime = 'nodejs';
@@ -93,6 +94,51 @@ export async function POST(req: NextRequest, context: { params: Promise<{ path: 
   try {
     const body = await req.json().catch(() => ({}));
 
+    if (path === 'send-otp') {
+      await ensureSchema();
+      const email = String(body.email || '').trim().toLowerCase();
+      const username = String(body.username || '').trim();
+      if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return NextResponse.json({ error: 'Alamat email tidak valid.' }, { status: 400 });
+      const sql = database();
+      const rows = await sql`SELECT value FROM app_settings WHERE key='accounts' LIMIT 1`;
+      const cfg = rows[0]?.value || {};
+      if (cfg.otpEnabled !== true) return NextResponse.json({ error: 'Verifikasi OTP belum diaktifkan administrator.' }, { status: 403 });
+      const apiKey = process.env.RESEND_API_KEY;
+      const from = process.env.OTP_FROM_EMAIL;
+      if (!apiKey || !from) return NextResponse.json({ error: 'Layanan email belum dikonfigurasi administrator.' }, { status: 503 });
+      const existing = await sql`SELECT id,verified_at,sent_at FROM email_otp_verifications WHERE email=${email} LIMIT 1`;
+      if (existing.length && existing[0].verified_at) return NextResponse.json({ success: true, message: 'Email sudah diverifikasi. Silakan lanjutkan pendaftaran.' });
+      if (existing.length && Date.now() - new Date(existing[0].sent_at).getTime() < Math.max(30, Number(cfg.otpCooldownSeconds) || 60) * 1000) return NextResponse.json({ error: 'Tunggu sebelum meminta kode OTP berikutnya.' }, { status: 429 });
+      const counts = await sql`SELECT count(*)::int AS total FROM email_otp_verifications WHERE email=${email} AND sent_at > now() - interval '1 hour'`;
+      if (Number(counts[0]?.total || 0) >= Math.max(1, Number(cfg.otpMaxPerHour) || 5)) return NextResponse.json({ error: 'Batas pengiriman OTP per jam tercapai.' }, { status: 429 });
+      const code = String(randomInt(0, 1000000)).padStart(6, '0');
+      const expires = Math.max(1, Number(cfg.otpExpiryMinutes) || 5);
+      const hash = createHash('sha256').update(email + ':' + code + ':' + (process.env.OTP_HASH_SECRET || apiKey)).digest('hex');
+      await sql`INSERT INTO email_otp_verifications(email,username,code_hash,expires_at,sent_at,attempts,verified_at) VALUES(${email},${username},${hash},now() + (${expires} || ' minutes')::interval,now(),0,NULL) ON CONFLICT(email) DO UPDATE SET username=EXCLUDED.username,code_hash=EXCLUDED.code_hash,expires_at=EXCLUDED.expires_at,sent_at=now(),attempts=0,verified_at=NULL`;
+      const sent = await fetch('https://api.resend.com/emails', { method:'POST', headers:{Authorization:'Bearer '+apiKey,'Content-Type':'application/json'}, body:JSON.stringify({from,to:[email],subject:'Kode verifikasi TG Launcher',html:`<div style="font-family:Arial,sans-serif"><h2>Verifikasi email TG Launcher</h2><p>Kode OTP kamu:</p><div style="font-size:32px;font-weight:bold;letter-spacing:8px">${code}</div><p>Kode berlaku ${expires} menit. Jangan bagikan kode ini kepada siapa pun.</p></div>`}), cache:'no-store' });
+      if (!sent.ok) { await sql`DELETE FROM email_otp_verifications WHERE email=${email}`; return NextResponse.json({ error: 'Email OTP gagal dikirim. Periksa konfigurasi layanan email.' }, { status: 502 }); }
+      return NextResponse.json({ success:true, message:'Kode OTP telah dikirim ke email.' });
+    }
+
+    if (path === 'verify-otp') {
+      await ensureSchema();
+      const email = String(body.email || '').trim().toLowerCase();
+      const code = String(body.code || '').trim();
+      if (!/^\\d{6}$/.test(code)) return NextResponse.json({ error:'Masukkan kode OTP 6 digit.' }, { status:400 });
+      const sql = database();
+      const rows = await sql`SELECT code_hash,expires_at,attempts FROM email_otp_verifications WHERE email=${email} LIMIT 1`;
+      if (!rows.length || rows[0].verified_at || new Date(rows[0].expires_at).getTime() < Date.now()) return NextResponse.json({ error:'Kode OTP tidak tersedia atau sudah kedaluwarsa.' }, { status:400 });
+      const cfgRows = await sql`SELECT value FROM app_settings WHERE key='accounts' LIMIT 1`;
+      const maxAttempts = Math.max(1, Number(cfgRows[0]?.value?.otpMaxAttempts) || 5);
+      if (Number(rows[0].attempts) >= maxAttempts) { await sql`DELETE FROM email_otp_verifications WHERE email=${email}`; return NextResponse.json({ error:'Batas percobaan OTP tercapai. Minta kode baru.' }, { status:429 }); }
+      const actual = createHash('sha256').update(email + ':' + code + ':' + (process.env.OTP_HASH_SECRET || process.env.RESEND_API_KEY || 'unset')).digest('hex');
+      const expected = String(rows[0].code_hash);
+      const valid = actual.length === expected.length && timingSafeEqual(Buffer.from(actual),Buffer.from(expected));
+      if (!valid) { await sql`UPDATE email_otp_verifications SET attempts=attempts+1 WHERE email=${email}`; return NextResponse.json({ error:'Kode OTP salah.' }, { status:400 }); }
+      await sql`UPDATE email_otp_verifications SET verified_at=now() WHERE email=${email}`;
+      return NextResponse.json({ success:true, message:'Email berhasil diverifikasi. Silakan buat akun.' });
+    }
+
     if (path === 'android/login') {
       const auth = await firebasePost('accounts:signInWithPassword', {
         email: String(body.email || '').trim().toLowerCase(), password: String(body.password || ''), returnSecureToken: true,
@@ -109,12 +155,18 @@ export async function POST(req: NextRequest, context: { params: Promise<{ path: 
       if (policies.general?.allowRegistration === false || policies.accounts?.registrationEnabled === false) {
         return NextResponse.json({ error: 'Pendaftaran akun sedang dinonaktifkan oleh administrator.' }, { status: 403 });
       }
+      const accountSettings = policies.accounts || {};
+      if (accountSettings.otpEnabled === true && accountSettings.otpRequireEmailVerification !== false) {
+        const verified = await database()`SELECT email FROM email_otp_verifications WHERE email=${String(body.email || '').trim().toLowerCase()} AND verified_at > now() - interval '15 minutes' LIMIT 1`;
+        if (!verified.length) return NextResponse.json({ error:'Verifikasi email OTP wajib diselesaikan sebelum membuat akun.' }, { status:403 });
+      }
       const auth = await firebasePost('accounts:signUp', {
         email: String(body.email || '').trim().toLowerCase(), password: String(body.password || ''), returnSecureToken: true,
       });
       const displayName = String(body.username || auth.email.split('@')[0]).trim();
       await firebasePost('accounts:update', { idToken: auth.idToken, displayName, returnSecureToken: true });
       const profile = await ensureProfile(String(auth.localId), String(auth.email).toLowerCase(), displayName);
+      await database()`DELETE FROM email_otp_verifications WHERE email=${String(auth.email).toLowerCase()}`;
       return NextResponse.json(await userResponse(profile, { idToken: auth.idToken, refreshToken: auth.refreshToken, message: 'Registrasi berhasil.' }));
     }
 
