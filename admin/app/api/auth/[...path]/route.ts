@@ -106,7 +106,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ path: 
       const apiKey = process.env.RESEND_API_KEY;
       const from = process.env.OTP_FROM_EMAIL;
       if (!apiKey || !from) return NextResponse.json({ error: 'Layanan email belum dikonfigurasi administrator.' }, { status: 503 });
-      const existing = await sql`SELECT id,verified_at,sent_at FROM email_otp_verifications WHERE email=${email} LIMIT 1`;
+      const existing = await sql`SELECT email,verified_at,sent_at FROM email_otp_verifications WHERE email=${email} LIMIT 1`;
       if (existing.length && existing[0].verified_at) return NextResponse.json({ success: true, message: 'Email sudah diverifikasi. Silakan lanjutkan pendaftaran.' });
       if (existing.length && Date.now() - new Date(existing[0].sent_at).getTime() < Math.max(30, Number(cfg.otpCooldownSeconds) || 60) * 1000) return NextResponse.json({ error: 'Tunggu sebelum meminta kode OTP berikutnya.' }, { status: 429 });
       const counts = await sql`SELECT count(*)::int AS total FROM email_otp_send_log WHERE email=${email} AND sent_at > now() - interval '1 hour'`;
