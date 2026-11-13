@@ -13,6 +13,18 @@ import java.io.File
 object GameLauncher {
     private val gson = Gson()
 
+    private fun isLibraryAllowedOnAndroid(library: com.israadev.nuxlauncher.core.models.Library): Boolean {
+        val rules = library.rules ?: return true
+        var allowed = false
+        for (rule in rules) {
+            when (rule.action) {
+                "allow" -> if (rule.os == null || rule.os.name == "linux") allowed = true
+                "disallow" -> if (rule.os == null || rule.os.name == "linux") allowed = false
+            }
+        }
+        return allowed
+    }
+
     fun launch(context: Context, instance: Instance, account: UserAccount, privateWorldLocalPort: Int? = null) {
         val gameDir = InstanceManager.getInstanceGameDir(context, instance)
         val versionDir = File(InstanceManager.getVersionsDir(context), instance.mcVersion)
@@ -23,16 +35,23 @@ object GameLauncher {
         var mojangJavaMajor: Int? = null
         var versionDetail: VersionDetail? = null
 
-        if (versionJson.exists()) {
-            try {
-                val detail = gson.fromJson(versionJson.readText(), VersionDetail::class.java)
-                versionDetail = detail
-                detail.mainClass?.let { mainClass = it }
-                detail.assetIndex?.id?.let { assetIndexId = it }
-                mojangJavaMajor = detail.javaVersion?.majorVersion
-            } catch (e: Exception) {
-                e.printStackTrace()
+        if (!versionJson.isFile || versionJson.length() == 0L) {
+            android.widget.Toast.makeText(context, "Metadata Minecraft ${instance.mcVersion} belum tersedia. Unduh/perbaiki instance terlebih dahulu.", android.widget.Toast.LENGTH_LONG).show()
+            return
+        }
+        try {
+            val detail = gson.fromJson(versionJson.readText(), VersionDetail::class.java)
+                ?: throw IllegalStateException("Metadata versi kosong.")
+            if (detail.id != instance.mcVersion) {
+                throw IllegalStateException("Metadata versi tidak cocok: ${detail.id}.")
             }
+            versionDetail = detail
+            detail.mainClass?.let { mainClass = it }
+            detail.assetIndex?.id?.let { assetIndexId = it }
+            mojangJavaMajor = detail.javaVersion?.majorVersion
+        } catch (e: Exception) {
+            android.widget.Toast.makeText(context, "Metadata Minecraft rusak: ${e.message}. Silakan perbaiki/unduh ulang instance.", android.widget.Toast.LENGTH_LONG).show()
+            return
         }
 
         val isFabric = instance.loader.equals("fabric", ignoreCase = true)
@@ -83,6 +102,12 @@ object GameLauncher {
         // Build classpath: Android LWJGL jars first, Fabric libraries, Mojang non-LWJGL libraries, then client.jar
         val libDir = InstanceManager.getLibrariesDir(context)
         val classpathEntries = mutableListOf<String>()
+        val missingLibraries = mutableListOf<String>()
+
+        if (lwjglJars.isEmpty()) {
+            android.widget.Toast.makeText(context, "Komponen LWJGL Android belum lengkap untuk Minecraft ${instance.mcVersion}.", android.widget.Toast.LENGTH_LONG).show()
+            return
+        }
 
         // 1. Android LWJGL Jars
         lwjglJars.forEach { jar ->
@@ -108,8 +133,10 @@ object GameLauncher {
                 val relPath = com.israadev.nuxlauncher.core.fabric.FabricService.artifactToPath(lib.name)
                 if (relPath != null) {
                     val file = File(libDir, relPath)
-                    if (file.exists()) {
+                    if (file.isFile && file.length() > 0L) {
                         classpathEntries.add(file.absolutePath)
+                    } else {
+                        missingLibraries.add(lib.name)
                     }
                 }
             }
@@ -132,21 +159,35 @@ object GameLauncher {
             }
 
             val path = lib.downloads?.artifact?.path
-            if (path != null) {
+            if (path != null && isLibraryAllowedOnAndroid(lib)) {
                 val file = File(libDir, path)
-                if (file.exists()) {
+                if (file.isFile && file.length() > 0L) {
                     classpathEntries.add(file.absolutePath)
+                } else {
+                    missingLibraries.add(name)
                 }
             }
         }
 
-        // 4. Minecraft Client JAR
-        val clientJar = File(versionDir, "${instance.mcVersion}.jar")
-        if (clientJar.exists()) {
-            classpathEntries.add(clientJar.absolutePath)
+        if (missingLibraries.isNotEmpty()) {
+            val preview = missingLibraries.take(3).joinToString(", ")
+            android.widget.Toast.makeText(context, "Library Minecraft belum lengkap (${missingLibraries.size}): $preview. Jalankan perbaikan/unduh ulang instance.", android.widget.Toast.LENGTH_LONG).show()
+            return
         }
 
+        // 4. Minecraft Client JAR
+        val clientJar = File(versionDir, "${instance.mcVersion}.jar")
+        if (!clientJar.isFile || clientJar.length() == 0L) {
+            android.widget.Toast.makeText(context, "Minecraft client JAR belum lengkap untuk ${instance.mcVersion}. Unduh ulang instance.", android.widget.Toast.LENGTH_LONG).show()
+            return
+        }
+        classpathEntries.add(clientJar.absolutePath)
+
         val classpath = classpathEntries.distinct().joinToString(File.pathSeparator)
+        if (classpath.isBlank()) {
+            android.widget.Toast.makeText(context, "Classpath Minecraft kosong. Instance belum siap dijalankan.", android.widget.Toast.LENGTH_LONG).show()
+            return
+        }
         val assetsDir = InstanceManager.getAssetsDir(context)
 
         val userType = if (account.safeAccountType == "microsoft") "msa" else "mojang"
