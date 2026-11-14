@@ -954,6 +954,24 @@ class GameActivity : ComponentActivity(), SurfaceHolder.Callback {
                     Os.setenv("SDL_EGL_LIBRARY", eglPath, true)
                 }
 
+                // MobileGlues must use the Pojav renderer identifier and its GLES
+                // bridge variables. Set MG_DIR_PATH before the native library loads.
+                if (isMobileGlues) {
+                    val mobileGluesDir = File(filesDir, "MG")
+                    if (!mobileGluesDir.exists()) mobileGluesDir.mkdirs()
+                    MobileGluesConfigManager.ensureConfigReady(this@GameActivity)
+                    Os.setenv("POJAV_RENDERER", "opengles3_mobileglues", true)
+                    Os.setenv("POJAVEXEC_EGL", "libmobileglues.so", true)
+                    Os.setenv("LIBGL_ES", "3", true)
+                    Os.setenv("LIBGL_EGL", "libmobileglues.so", true)
+                    Os.setenv("LIBGL_GLES", "$nativeLibDir/libmobileglues.so", true)
+                    Os.setenv("MG_DIR_PATH", mobileGluesDir.absolutePath, true)
+                    Os.setenv("MG_COUNT_LAUNCH", "1", true)
+                    Os.setenv("SDL_EGL_LIBRARY", glLibPath, true)
+                    Os.setenv("SDL_OPENGL_LIBRARY", glLibPath, true)
+                    LoggerBridge.append("▷ [MobileGlues] GLES bridge configured; data=${mobileGluesDir.absolutePath}")
+                }
+
                 // Standar Zalith: Jika renderer adalah plugin atau MobileGlues atau GL4ES, JANGAN override Mesa/Zink desktop!
                 val skipMesaOverrides = isPlugin || isMobileGlues || targetRenderer.id == "krypton" || targetRenderer.id == "gl4es" || rendererId.startsWith("opengles")
                 if (!skipMesaOverrides) {
