@@ -719,8 +719,12 @@ class GameActivity : ComponentActivity(), SurfaceHolder.Callback {
             }
         }
 
-        // Physical keyboard key pressed -> automatically hide touch controls
-        if (event.action == KeyEvent.ACTION_DOWN) {
+        // Hide touch controls only for a real hardware keyboard.
+        // Soft-keyboard/IME events must not hide the on-screen controls while typing.
+        val isPhysicalKeyboardEvent =
+            event.device?.isVirtual == false &&
+            (event.source and InputDevice.SOURCE_KEYBOARD) == InputDevice.SOURCE_KEYBOARD
+        if (event.action == KeyEvent.ACTION_DOWN && isPhysicalKeyboardEvent) {
             isControlVisibleState.value = false
         }
 
