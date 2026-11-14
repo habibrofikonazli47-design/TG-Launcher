@@ -113,14 +113,10 @@ jobs:
             echo "Persistent signing secrets are not configured; this build will remain a CI artifact and will NOT be published as an APK update."
           fi
 
-      - name: Build debug APK
+      - name: Build debug and release APKs together
         run: |
           chmod +x ./gradlew
-          ./gradlew --no-daemon :app:assembleDebug
-
-      - name: Build release APK
-        run: |
-          ./gradlew --no-daemon clean assembleRelease -PTG_VERSION_CODE="$TG_VERSION_CODE" -PTG_VERSION_NAME="$TG_VERSION_NAME"
+          ./gradlew --no-daemon clean :app:assembleDebug :app:assembleRelease -PTG_VERSION_CODE="$TG_VERSION_CODE" -PTG_VERSION_NAME="$TG_VERSION_NAME"
 
       - name: Verify APK package, signature, and alignment
         shell: bash
