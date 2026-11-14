@@ -4,6 +4,13 @@ name: Build TG Launcher
 # Publish to the beta channel because the Admin Panel currently enables beta and disables stable.
 
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/build-tg-launcher.yml"
+      - "app/**"
+      - "*.gradle.kts"
+      - "gradle/**"
   push:
     branches: [main]
     paths:
@@ -106,9 +113,13 @@ jobs:
             echo "Persistent signing secrets are not configured; this build will remain a CI artifact and will NOT be published as an APK update."
           fi
 
-      - name: Build release APK
+      - name: Build debug APK
         run: |
           chmod +x ./gradlew
+          ./gradlew --no-daemon :app:assembleDebug
+
+      - name: Build release APK
+        run: |
           ./gradlew --no-daemon clean assembleRelease -PTG_VERSION_CODE="$TG_VERSION_CODE" -PTG_VERSION_NAME="$TG_VERSION_NAME"
 
       - name: Verify APK package, signature, and alignment
@@ -168,7 +179,23 @@ jobs:
           sha256sum "$APK"
           echo "APK validation passed."
 
+      - name: Verify MobileGlues native ABI packaging in debug and release APKs
+        shell: bash
+        run: |
+          set -euo pipefail
+          for APK in app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/release/app-release.apk; do
+            test -s "$APK"
+            unzip -l "$APK" | tee /tmp/tg-mobileglues-libs.txt
+            grep -q 'lib/arm64-v8a/libmobileglues.so' /tmp/tg-mobileglues-libs.txt
+            if grep -q 'lib/armeabi-v7a/libmobileglues.so' /tmp/tg-mobileglues-libs.txt; then
+              echo "Unexpected 32-bit MobileGlues binary found in $APK." >&2
+              exit 1
+            fi
+          done
+          echo "MobileGlues packaging verified in both APKs."
+
       - name: Publish direct APK download
+        if: github.event_name != 'pull_request'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: tg-launcher-${{ env.TG_VERSION_NAME }}
