@@ -1,4 +1,4 @@
-name: Verify MobileGlues Renderer
+name: Verify MobileGlues Renderer and Build Release APK
 
 on:
   pull_request:
@@ -39,17 +39,34 @@ jobs:
           chmod +x ./gradlew
           ./gradlew --no-daemon :app:assembleDebug
 
-      - name: Verify MobileGlues native ABI packaging
+      - name: Build Android release APK in the same run
+        run: ./gradlew --no-daemon :app:assembleRelease
+
+      - name: Verify MobileGlues native ABI packaging in both APKs
         shell: bash
         run: |
           set -euo pipefail
-          APK="$(find app/build/outputs/apk -type f -name '*.apk' | head -n 1)"
-          test -n "$APK"
-          test -s "$APK"
-          unzip -l "$APK" | tee /tmp/tg-apk-libs.txt
-          grep -q 'lib/arm64-v8a/libmobileglues.so' /tmp/tg-apk-libs.txt
-          if grep -q 'lib/armeabi-v7a/libmobileglues.so' /tmp/tg-apk-libs.txt; then
-            echo "Unexpected 32-bit MobileGlues binary found." >&2
-            exit 1
-          fi
-          echo "MobileGlues ABI packaging verified: arm64-v8a only."
+          DEBUG_APK="app/build/outputs/apk/debug/app-debug.apk"
+          RELEASE_APK="app/build/outputs/apk/release/app-release.apk"
+          for APK in "$DEBUG_APK" "$RELEASE_APK"; do
+            test -s "$APK"
+            echo "Checking $APK"
+            unzip -l "$APK" | tee /tmp/tg-apk-libs.txt
+            grep -q 'lib/arm64-v8a/libmobileglues.so' /tmp/tg-apk-libs.txt
+            if grep -q 'lib/armeabi-v7a/libmobileglues.so' /tmp/tg-apk-libs.txt; then
+              echo "Unexpected 32-bit MobileGlues binary found in $APK." >&2
+              exit 1
+            fi
+          done
+          echo "MobileGlues ABI packaging verified in debug and release APKs: arm64-v8a only."
+
+      - name: Upload debug and release APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: TG-Launcher-MobileGlues-debug-and-release
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            app/build/outputs/apk/release/app-release.apk
+            app/build/outputs/apk/release/output-metadata.json
+          if-no-files-found: error
+          retention-days: 30
