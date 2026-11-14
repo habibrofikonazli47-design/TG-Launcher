@@ -4,6 +4,13 @@ name: Build TG Launcher
 # Publish to the beta channel because the Admin Panel currently enables beta and disables stable.
 
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/build-tg-launcher.yml"
+      - "app/**"
+      - "*.gradle.kts"
+      - "gradle/**"
   push:
     branches: [main]
     paths:
@@ -106,10 +113,10 @@ jobs:
             echo "Persistent signing secrets are not configured; this build will remain a CI artifact and will NOT be published as an APK update."
           fi
 
-      - name: Build release APK
+      - name: Build debug and release APKs together
         run: |
           chmod +x ./gradlew
-          ./gradlew --no-daemon clean assembleRelease -PTG_VERSION_CODE="$TG_VERSION_CODE" -PTG_VERSION_NAME="$TG_VERSION_NAME"
+          ./gradlew --no-daemon clean :app:assembleDebug :app:assembleRelease -PTG_VERSION_CODE="$TG_VERSION_CODE" -PTG_VERSION_NAME="$TG_VERSION_NAME"
 
       - name: Verify APK package, signature, and alignment
         shell: bash
@@ -168,10 +175,46 @@ jobs:
           sha256sum "$APK"
           echo "APK validation passed."
 
-      - name: Publish direct APK download
+      - name: Verify MobileGlues native ABI packaging in debug and release APKs
+        shell: bash
+        run: |
+          set -euo pipefail
+          for APK in app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/release/app-release.apk; do
+            test -s "$APK"
+            unzip -l "$APK" | tee /tmp/tg-mobileglues-libs.txt
+            grep -q 'lib/arm64-v8a/libmobileglues.so' /tmp/tg-mobileglues-libs.txt
+            if grep -q 'lib/armeabi-v7a/libmobileglues.so' /tmp/tg-mobileglues-libs.txt; then
+              echo "Unexpected 32-bit MobileGlues binary found in $APK." >&2
+              exit 1
+            fi
+          done
+          echo "MobileGlues packaging verified in both APKs."
+
+      - name: Publish direct APK download (PR preview)
+        if: github.event_name == 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: tg-launcher-preview-pr${{ github.event.pull_request.number }}-run${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          name: TG Launcher Preview PR ${{ github.event.pull_request.number }} Run ${{ github.run_number }}
+          draft: false
+          prerelease: true
+          make_latest: false
+          body: |
+            Automated preview build from an unmerged pull request.
+            This is a test build and is not part of the stable TG Launcher release.
+            Install over an existing TG Launcher only when the signing certificate matches.
+            Android versionCode: ${{ env.TG_VERSION_CODE }}
+          files: |
+            app/build/outputs/apk/release/TG-Launcher-v1.1.6-tg${{ env.TG_BUILD_NUMBER }}.apk
+            app/build/outputs/apk/release/output-metadata.json
+
+      - name: Publish direct APK download (TG beta release)
+        if: github.event_name != 'pull_request'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: tg-launcher-${{ env.TG_VERSION_NAME }}
+          target_commitish: ${{ github.sha }}
           name: TG Launcher ${{ env.TG_VERSION_NAME }}
           draft: false
           prerelease: true
