@@ -192,6 +192,12 @@ object NuxRendererRegistry {
         get() {
             val config = RemoteLauncherConfig.config.value
             val enabledBase = baseRenderers.filter { renderer ->
+                // MobileGlues native binary is currently packaged for arm64-v8a only.
+                // Do not offer the bundled renderer to a 32-bit app process; external
+                // renderer plugins remain discoverable through the plugin list below.
+                if (renderer.id == "mobileglues" && !android.os.Process.is64Bit()) {
+                    return@filter false
+                }
                 when (renderer.id) {
                     "gl4es" -> RemoteLauncherConfig.isEnabled(config, "renderer", "gl4esEnabled")
                     "virgl" -> RemoteLauncherConfig.isEnabled(config, "renderer", "virglEnabled")
