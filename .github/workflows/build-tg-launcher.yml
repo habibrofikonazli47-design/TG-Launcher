@@ -190,20 +190,37 @@ jobs:
           done
           echo "MobileGlues packaging verified in both APKs."
 
-      - name: Publish direct APK download
+      - name: Publish direct APK download (PR preview)
+        if: github.event_name == 'pull_request'
         uses: softprops/action-gh-release@v2
         with:
-          # PR builds get a clearly labelled preview release so the APK can be
-          # downloaded directly. Main/workflow-dispatch builds keep the normal
-          # monotonic TG Launcher beta release tag.
-          tag_name: ${{ github.event_name == 'pull_request' && format('tg-launcher-preview-pr{0}-run{1}', github.event.pull_request.number, github.run_number) || format('tg-launcher-{0}', env.TG_VERSION_NAME) }}
+          tag_name: tg-launcher-preview-pr${{ github.event.pull_request.number }}-run${{ github.run_number }}
           target_commitish: ${{ github.sha }}
-          name: ${{ github.event_name == 'pull_request' && format('TG Launcher Preview (PR #{0}, run {1})', github.event.pull_request.number, github.run_number) || format('TG Launcher {0}', env.TG_VERSION_NAME) }}
+          name: TG Launcher Preview PR ${{ github.event.pull_request.number }} Run ${{ github.run_number }}
           draft: false
           prerelease: true
           make_latest: false
           body: |
-            ${{ github.event_name == 'pull_request' && 'Automated preview build from an unmerged pull request. This is a test build and is not part of the stable TG Launcher release.' || 'Automated TG Launcher beta-channel APK build.' }}
+            Automated preview build from an unmerged pull request.
+            This is a test build and is not part of the stable TG Launcher release.
+            Install over an existing TG Launcher only when the signing certificate matches.
+            Android versionCode: ${{ env.TG_VERSION_CODE }}
+          files: |
+            app/build/outputs/apk/release/TG-Launcher-v1.1.6-tg${{ env.TG_BUILD_NUMBER }}.apk
+            app/build/outputs/apk/release/output-metadata.json
+
+      - name: Publish direct APK download (TG beta release)
+        if: github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: tg-launcher-${{ env.TG_VERSION_NAME }}
+          target_commitish: ${{ github.sha }}
+          name: TG Launcher ${{ env.TG_VERSION_NAME }}
+          draft: false
+          prerelease: true
+          make_latest: false
+          body: |
+            Automated TG Launcher beta-channel APK build.
             This APK is signed with the persistent TG Launcher release key when repository signing secrets are configured.
             Install over an existing TG Launcher only when the signing certificate matches.
             Android versionCode: ${{ env.TG_VERSION_CODE }}
