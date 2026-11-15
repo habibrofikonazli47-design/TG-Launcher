@@ -33,6 +33,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.israadev.nuxlauncher.core.account.AccountManager
+import com.israadev.nuxlauncher.core.device.RefreshRateManager
 import com.israadev.nuxlauncher.core.auth.AuthService
 import com.israadev.nuxlauncher.core.instance.InstanceManager
 import com.israadev.nuxlauncher.core.network.RemoteLauncherConfig
