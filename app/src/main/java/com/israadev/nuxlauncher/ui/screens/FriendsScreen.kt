@@ -164,7 +164,7 @@ fun FriendsScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                             contentDescription = tr("common.back"),
-                            tint = NuxColors.ForestGreen,
+                            tint = Color(0xFF278BFF),
                             modifier = Modifier.size(12.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
@@ -195,13 +195,13 @@ fun FriendsScreen(
                     Box(
                         modifier = Modifier.height(26.dp)
                             .clip(RoundedCornerShape(6.dp))
-                            .background(NuxColors.ForestGreen.copy(alpha = 0.15f), RoundedCornerShape(6.dp))
-                            .border(1.dp, NuxColors.ForestGreen.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
+                            .background(Color(0xFF278BFF).copy(alpha = 0.15f), RoundedCornerShape(6.dp))
+                            .border(1.dp, Color(0xFF278BFF).copy(alpha = 0.4f), RoundedCornerShape(6.dp))
                             .clickable { worldInviteCode = ""; showWorldInviteDialog = true }
                             .padding(horizontal = 8.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("PRIVATE WORLD", color = NuxColors.MintGreen, fontWeight = FontWeight.Bold, fontSize = 9.sp)
+                        Text("PRIVATE WORLD", color = Color(0xFF50D7FF), fontWeight = FontWeight.Bold, fontSize = 9.sp)
                     }
                     Box(
                         modifier = Modifier.height(26.dp)
@@ -227,7 +227,7 @@ fun FriendsScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.PersonAdd, contentDescription = null, tint = NuxColors.ForestGreen, modifier = Modifier.size(12.dp))
+                        Icon(Icons.Default.PersonAdd, contentDescription = null, tint = Color(0xFF278BFF), modifier = Modifier.size(12.dp))
                         Spacer(modifier = Modifier.width(5.dp))
                         Text("+ FIND FRIENDS", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 9.5.sp)
                     }
@@ -238,8 +238,8 @@ fun FriendsScreen(
                     modifier = Modifier
                         .height(26.dp)
                         .clip(RoundedCornerShape(6.dp))
-                        .background(NuxColors.ForestGreen.copy(alpha = 0.15f), RoundedCornerShape(6.dp))
-                        .border(1.dp, NuxColors.ForestGreen.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
+                        .background(Color(0xFF278BFF).copy(alpha = 0.15f), RoundedCornerShape(6.dp))
+                        .border(1.dp, Color(0xFF278BFF).copy(alpha = 0.4f), RoundedCornerShape(6.dp))
                         .clickable {
                             if (launcherUser?.features?.contains("voice_rooms") != true) {
                                 premiumInitialPrompt = "Real-time voice rooms (LiveKit WebRTC) are exclusive to TG Premium. Upgrade your account to create and join voice rooms!"
@@ -252,9 +252,9 @@ fun FriendsScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Mic, contentDescription = null, tint = NuxColors.MintGreen, modifier = Modifier.size(12.dp))
+                        Icon(Icons.Default.Mic, contentDescription = null, tint = Color(0xFF50D7FF), modifier = Modifier.size(12.dp))
                         Spacer(modifier = Modifier.width(5.dp))
-                        Text("+ CREATE ROOM", color = NuxColors.MintGreen, fontWeight = FontWeight.Bold, fontSize = 9.5.sp)
+                        Text("+ CREATE ROOM", color = Color(0xFF50D7FF), fontWeight = FontWeight.Bold, fontSize = 9.5.sp)
                     }
                 }
             }
@@ -291,7 +291,7 @@ fun FriendsScreen(
                             title = "CHAT",
                             count = voiceMessages.size,
                             isSelected = selectedTab == "room_chat",
-                            badgeColor = NuxColors.ForestGreen,
+                            badgeColor = Color(0xFF278BFF),
                             onClick = { selectedTab = "room_chat" },
                             modifier = Modifier.weight(1.1f)
                         )
@@ -469,7 +469,7 @@ fun FriendsScreen(
                                                     text = "INCOMING REQUESTS (${pendingReceived.size})",
                                                     fontSize = 10.sp,
                                                     fontWeight = FontWeight.Bold,
-                                                    color = NuxColors.ForestGreen,
+                                                    color = Color(0xFF278BFF),
                                                     modifier = Modifier.padding(vertical = 2.dp, horizontal = 4.dp)
                                                 )
                                             }
@@ -767,7 +767,7 @@ private fun PrivateWorldInviteDialog(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (inviteCode.isNotBlank()) {
                     Text("Bagikan kode ini kepada teman yang kamu pilih. Kode hanya berlaku 30 menit dan terikat ke akun teman tersebut.")
-                    Text(inviteCode, color = NuxColors.MintGreen, fontSize = 24.sp, fontWeight = FontWeight.Black)
+                    Text(inviteCode, color = Color(0xFF50D7FF), fontSize = 24.sp, fontWeight = FontWeight.Black)
                     Text("Host harus membuka dunia melalui Open to LAN. Teman menjalankan Minecraft dengan versi yang sama untuk bergabung.")
                 } else {
                     Text("Pilih teman TG yang sudah menerima permintaan pertemanan.")
@@ -847,9 +847,9 @@ private fun PillTab(
     modifier: Modifier = Modifier,
     badgeColor: Color? = null
 ) {
-    val bg = if (isSelected) NuxColors.ForestGreen else NuxColors.SurfaceInput
+    val bg = if (isSelected) Color(0xFF278BFF) else NuxColors.SurfaceInput
     val textColor = if (isSelected) Color.White else NuxColors.GrayNeutral
-    val border = if (isSelected) NuxColors.ForestGreen else NuxColors.CardBorder
+    val border = if (isSelected) Color(0xFF278BFF) else NuxColors.CardBorder
 
     Box(
         modifier = modifier
@@ -877,7 +877,7 @@ private fun PillTab(
                     modifier = Modifier
                         .clip(CircleShape)
                         .background(badgeColor ?: if (isSelected) Color(0xFF064E3B) else NuxColors.SurfaceElevated)
-                        .border(0.8.dp, if (isSelected) NuxColors.MintGreen.copy(alpha = 0.4f) else NuxColors.CardBorder, CircleShape)
+                        .border(0.8.dp, if (isSelected) Color(0xFF50D7FF).copy(alpha = 0.4f) else NuxColors.CardBorder, CircleShape)
                         .padding(horizontal = 4.dp, vertical = 1.dp)
                 ) {
                     Text(
@@ -962,8 +962,8 @@ private fun FriendItem(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    val bg = if (isSelected) NuxColors.ForestGreen.copy(alpha = 0.15f) else NuxColors.SurfaceInput
-    val border = if (isSelected) NuxColors.ForestGreen.copy(alpha = 0.5f) else NuxColors.CardBorder
+    val bg = if (isSelected) Color(0xFF278BFF).copy(alpha = 0.15f) else NuxColors.SurfaceInput
+    val border = if (isSelected) Color(0xFF278BFF).copy(alpha = 0.5f) else NuxColors.CardBorder
 
     Row(
         modifier = Modifier
@@ -1023,7 +1023,7 @@ private fun FriendItem(
 
             val statusColor = when {
                 friend.isInGame -> Color(0xFF06B6D4) // Cyan
-                friend.isOnline -> NuxColors.MintGreen
+                friend.isOnline -> Color(0xFF50D7FF)
                 else -> NuxColors.GrayNeutral
             }
 
@@ -1064,8 +1064,8 @@ private fun VoiceRoomItem(
     isJoined: Boolean,
     onJoin: () -> Unit
 ) {
-    val bg = if (isJoined) NuxColors.ForestGreen.copy(alpha = 0.15f) else NuxColors.SurfaceInput
-    val border = if (isJoined) NuxColors.ForestGreen.copy(alpha = 0.5f) else NuxColors.CardBorder
+    val bg = if (isJoined) Color(0xFF278BFF).copy(alpha = 0.15f) else NuxColors.SurfaceInput
+    val border = if (isJoined) Color(0xFF278BFF).copy(alpha = 0.5f) else NuxColors.CardBorder
 
     Row(
         modifier = Modifier
@@ -1080,14 +1080,14 @@ private fun VoiceRoomItem(
             modifier = Modifier
                 .size(32.dp)
                 .clip(RoundedCornerShape(6.dp))
-                .background(if (isJoined) NuxColors.ForestGreen else NuxColors.ForestGreen.copy(alpha = 0.12f))
-                .border(1.dp, if (isJoined) NuxColors.MintGreen.copy(alpha = 0.5f) else NuxColors.CardBorder, RoundedCornerShape(6.dp)),
+                .background(if (isJoined) Color(0xFF278BFF) else Color(0xFF278BFF).copy(alpha = 0.12f))
+                .border(1.dp, if (isJoined) Color(0xFF50D7FF).copy(alpha = 0.5f) else NuxColors.CardBorder, RoundedCornerShape(6.dp)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Default.RecordVoiceOver,
                 contentDescription = null,
-                tint = if (isJoined) Color.White else NuxColors.MintGreen,
+                tint = if (isJoined) Color.White else Color(0xFF50D7FF),
                 modifier = Modifier.size(16.dp)
             )
         }
@@ -1125,15 +1125,15 @@ private fun VoiceRoomItem(
         Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(6.dp))
-                .background(if (isJoined) NuxColors.ForestGreen else NuxColors.ForestGreen.copy(alpha = 0.15f))
-                .border(1.dp, if (isJoined) NuxColors.ForestGreen else NuxColors.ForestGreen.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
+                .background(if (isJoined) Color(0xFF278BFF) else Color(0xFF278BFF).copy(alpha = 0.15f))
+                .border(1.dp, if (isJoined) Color(0xFF278BFF) else Color(0xFF278BFF).copy(alpha = 0.4f), RoundedCornerShape(6.dp))
                 .clickable { onJoin() }
                 .padding(horizontal = 8.dp, vertical = 4.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = if (isJoined) "ACTIVE" else "JOIN",
-                color = if (isJoined) Color.White else NuxColors.MintGreen,
+                color = if (isJoined) Color.White else Color(0xFF50D7FF),
                 fontSize = 9.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -1174,7 +1174,7 @@ private fun RequestReceivedItem(
         Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(6.dp))
-                .background(NuxColors.ForestGreen)
+                .background(Color(0xFF278BFF))
                 .border(1.dp, NuxColors.CardBorder, RoundedCornerShape(6.dp))
                 .clickable { onAccept() }
                 .padding(4.dp)
@@ -1306,7 +1306,7 @@ private fun DirectChatView(
                     }
                     val headerStatusColor = when {
                         friend.isInGame -> Color(0xFF06B6D4)
-                        friend.isOnline -> NuxColors.MintGreen
+                        friend.isOnline -> Color(0xFF50D7FF)
                         else -> NuxColors.GrayNeutral
                     }
 
@@ -1324,16 +1324,16 @@ private fun DirectChatView(
                     modifier = Modifier
                         .height(26.dp)
                         .clip(RoundedCornerShape(6.dp))
-                        .background(NuxColors.ForestGreen.copy(alpha = 0.15f), RoundedCornerShape(6.dp))
-                        .border(1.dp, NuxColors.ForestGreen.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
+                        .background(Color(0xFF278BFF).copy(alpha = 0.15f), RoundedCornerShape(6.dp))
+                        .border(1.dp, Color(0xFF278BFF).copy(alpha = 0.4f), RoundedCornerShape(6.dp))
                         .clickable { onStartVoiceWithFriend() }
                         .padding(horizontal = 8.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Mic, contentDescription = null, tint = NuxColors.MintGreen, modifier = Modifier.size(12.dp))
+                        Icon(Icons.Default.Mic, contentDescription = null, tint = Color(0xFF50D7FF), modifier = Modifier.size(12.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Voice", color = NuxColors.MintGreen, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
+                        Text("Voice", color = Color(0xFF50D7FF), fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
                     }
                 }
 
@@ -1399,7 +1399,7 @@ private fun DirectChatView(
                         text = "✍️ ${friend.username} is typing...",
                         fontSize = 9.5.sp,
                         fontWeight = FontWeight.Medium,
-                        color = NuxColors.MintGreen
+                        color = Color(0xFF50D7FF)
                     )
                 }
             }
@@ -1417,7 +1417,7 @@ private fun DirectChatView(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Reply, contentDescription = null, tint = NuxColors.MintGreen, modifier = Modifier.size(13.dp))
+                    Icon(Icons.Default.Reply, contentDescription = null, tint = Color(0xFF50D7FF), modifier = Modifier.size(13.dp))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(text = "Replying to: ${replyingTo.text.take(60)}", fontSize = 9.5.sp, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
@@ -1437,12 +1437,12 @@ private fun DirectChatView(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(NuxColors.ForestGreen.copy(alpha = 0.15f))
+                    .background(Color(0xFF278BFF).copy(alpha = 0.15f))
                     .padding(horizontal = 8.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("📷 Photo ready to send", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = NuxColors.MintGreen)
+                Text("📷 Photo ready to send", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF50D7FF))
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "Delete",
@@ -1513,8 +1513,8 @@ private fun DirectChatView(
                 modifier = Modifier
                     .size(32.dp)
                     .clip(RoundedCornerShape(6.dp))
-                    .background(if (inputMessage.isNotBlank() || selectedImageUri != null) NuxColors.ForestGreen else NuxColors.SurfaceInput, RoundedCornerShape(6.dp))
-                    .border(1.dp, if (inputMessage.isNotBlank() || selectedImageUri != null) NuxColors.ForestGreen else NuxColors.CardBorder, RoundedCornerShape(6.dp))
+                    .background(if (inputMessage.isNotBlank() || selectedImageUri != null) Color(0xFF278BFF) else NuxColors.SurfaceInput, RoundedCornerShape(6.dp))
+                    .border(1.dp, if (inputMessage.isNotBlank() || selectedImageUri != null) Color(0xFF278BFF) else NuxColors.CardBorder, RoundedCornerShape(6.dp))
                     .clickable(enabled = !isSending && (inputMessage.isNotBlank() || selectedImageUri != null)) {
                         val textToSend = inputMessage.trim()
                         val uriToSend = selectedImageUri
@@ -1574,8 +1574,8 @@ private fun ChatBubble(
     onReply: () -> Unit
 ) {
     val align = if (isMine) Alignment.End else Alignment.Start
-    val bg = if (isMine) NuxColors.ForestGreen.copy(alpha = 0.22f) else NuxColors.SurfaceElevated
-    val border = if (isMine) NuxColors.ForestGreen.copy(alpha = 0.45f) else NuxColors.CardBorder
+    val bg = if (isMine) Color(0xFF278BFF).copy(alpha = 0.22f) else NuxColors.SurfaceElevated
+    val border = if (isMine) Color(0xFF278BFF).copy(alpha = 0.45f) else NuxColors.CardBorder
     val timeStr = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(message.timestamp))
 
     Column(
@@ -1625,7 +1625,7 @@ private fun ChatBubble(
                                 text = message.replyTo.senderName.ifBlank { "User" },
                                 fontSize = 8.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = NuxColors.MintGreen
+                                color = Color(0xFF50D7FF)
                             )
                             Text(
                                 text = message.replyTo.text,
@@ -1715,7 +1715,7 @@ private fun VoiceRoomChatPanel(
                     modifier = Modifier
                         .size(7.dp)
                         .clip(CircleShape)
-                        .background(NuxColors.MintGreen)
+                        .background(Color(0xFF50D7FF))
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
@@ -1730,11 +1730,11 @@ private fun VoiceRoomChatPanel(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(4.dp))
-                    .background(NuxColors.ForestGreen.copy(alpha = 0.15f))
-                    .border(1.dp, NuxColors.ForestGreen.copy(alpha = 0.4f), RoundedCornerShape(4.dp))
+                    .background(Color(0xFF278BFF).copy(alpha = 0.15f))
+                    .border(1.dp, Color(0xFF278BFF).copy(alpha = 0.4f), RoundedCornerShape(4.dp))
                     .padding(horizontal = 5.dp, vertical = 1.dp)
             ) {
-                Text("LIVE", fontSize = 7.5.sp, fontWeight = FontWeight.Bold, color = NuxColors.MintGreen)
+                Text("LIVE", fontSize = 7.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFF50D7FF))
             }
         }
 
@@ -1781,7 +1781,7 @@ private fun VoiceRoomChatPanel(
                                     text = senderDisplayName,
                                     fontSize = 8.5.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = NuxColors.MintGreen,
+                                    color = Color(0xFF50D7FF),
                                     modifier = Modifier.padding(start = 4.dp, bottom = 1.dp)
                                 )
                             }
@@ -1795,8 +1795,8 @@ private fun VoiceRoomChatPanel(
                                             bottomEnd = if (isMine) 2.dp else 6.dp
                                         )
                                     )
-                                    .background(if (isMine) NuxColors.ForestGreen.copy(alpha = 0.22f) else NuxColors.SurfaceElevated)
-                                    .border(1.dp, if (isMine) NuxColors.ForestGreen.copy(alpha = 0.45f) else NuxColors.CardBorder, RoundedCornerShape(6.dp))
+                                    .background(if (isMine) Color(0xFF278BFF).copy(alpha = 0.22f) else NuxColors.SurfaceElevated)
+                                    .border(1.dp, if (isMine) Color(0xFF278BFF).copy(alpha = 0.45f) else NuxColors.CardBorder, RoundedCornerShape(6.dp))
                                     .padding(horizontal = 7.dp, vertical = 4.dp)
                             ) {
                                 Text(
@@ -1847,7 +1847,7 @@ private fun VoiceRoomChatPanel(
             Icon(
                 imageVector = Icons.Default.Send,
                 contentDescription = "Send",
-                tint = if (textInput.isNotBlank()) NuxColors.ForestGreen else NuxColors.GrayNeutral,
+                tint = if (textInput.isNotBlank()) Color(0xFF278BFF) else NuxColors.GrayNeutral,
                 modifier = Modifier
                     .size(15.dp)
                     .clickable {
@@ -1889,14 +1889,14 @@ private fun VoiceRoomView(
                     modifier = Modifier
                         .size(28.dp)
                         .clip(RoundedCornerShape(6.dp))
-                        .background(NuxColors.ForestGreen.copy(alpha = 0.15f))
-                        .border(1.dp, NuxColors.ForestGreen.copy(alpha = 0.4f), RoundedCornerShape(6.dp)),
+                        .background(Color(0xFF278BFF).copy(alpha = 0.15f))
+                        .border(1.dp, Color(0xFF278BFF).copy(alpha = 0.4f), RoundedCornerShape(6.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         Icons.Default.RecordVoiceOver,
                         contentDescription = null,
-                        tint = NuxColors.MintGreen,
+                        tint = Color(0xFF50D7FF),
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -1913,11 +1913,11 @@ private fun VoiceRoomView(
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(4.dp))
-                                .background(NuxColors.ForestGreen.copy(alpha = 0.15f))
-                                .border(1.dp, NuxColors.ForestGreen.copy(alpha = 0.4f), RoundedCornerShape(4.dp))
+                                .background(Color(0xFF278BFF).copy(alpha = 0.15f))
+                                .border(1.dp, Color(0xFF278BFF).copy(alpha = 0.4f), RoundedCornerShape(4.dp))
                                 .padding(horizontal = 5.dp, vertical = 1.dp)
                         ) {
-                            Text("LIVEKIT SFU", fontSize = 7.5.sp, fontWeight = FontWeight.Bold, color = NuxColors.MintGreen)
+                            Text("LIVEKIT SFU", fontSize = 7.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFF50D7FF))
                         }
                     }
                     Text(
@@ -1985,8 +1985,8 @@ private fun VoiceRoomView(
                 modifier = Modifier
                     .height(30.dp)
                     .clip(RoundedCornerShape(6.dp))
-                    .background(if (isMuted) Color(0xFFEF4444).copy(alpha = 0.2f) else NuxColors.ForestGreen.copy(alpha = 0.2f), RoundedCornerShape(6.dp))
-                    .border(1.dp, if (isMuted) Color(0xFFEF4444).copy(alpha = 0.6f) else NuxColors.ForestGreen.copy(alpha = 0.6f), RoundedCornerShape(6.dp))
+                    .background(if (isMuted) Color(0xFFEF4444).copy(alpha = 0.2f) else Color(0xFF278BFF).copy(alpha = 0.2f), RoundedCornerShape(6.dp))
+                    .border(1.dp, if (isMuted) Color(0xFFEF4444).copy(alpha = 0.6f) else Color(0xFF278BFF).copy(alpha = 0.6f), RoundedCornerShape(6.dp))
                     .clickable { NuxVoiceManager.toggleMute() }
                     .padding(horizontal = 16.dp),
                 contentAlignment = Alignment.Center
@@ -1995,7 +1995,7 @@ private fun VoiceRoomView(
                     Icon(
                         imageVector = if (isMuted) Icons.Default.MicOff else Icons.Default.Mic,
                         contentDescription = null,
-                        tint = if (isMuted) Color(0xFFFCA5A5) else NuxColors.MintGreen,
+                        tint = if (isMuted) Color(0xFFFCA5A5) else Color(0xFF50D7FF),
                         modifier = Modifier.size(14.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
@@ -2030,10 +2030,10 @@ private fun ParticipantBadge(
         modifier = Modifier
             .width(76.dp)
             .clip(RoundedCornerShape(8.dp))
-            .background(if (isSpeaking) NuxColors.ForestGreen.copy(alpha = 0.2f) else NuxColors.SurfaceElevated)
+            .background(if (isSpeaking) Color(0xFF278BFF).copy(alpha = 0.2f) else NuxColors.SurfaceElevated)
             .border(
                 width = 1.dp,
-                color = if (isSpeaking) NuxColors.MintGreen else NuxColors.CardBorder,
+                color = if (isSpeaking) Color(0xFF50D7FF) else NuxColors.CardBorder,
                 shape = RoundedCornerShape(8.dp)
             )
             .padding(vertical = 6.dp, horizontal = 4.dp),
@@ -2044,7 +2044,7 @@ private fun ParticipantBadge(
             modifier = Modifier
                 .size(34.dp)
                 .clip(CircleShape)
-                .border(1.5.dp, if (isSpeaking) NuxColors.MintGreen else NuxColors.CardBorder, CircleShape),
+                .border(1.5.dp, if (isSpeaking) Color(0xFF50D7FF) else NuxColors.CardBorder, CircleShape),
             contentAlignment = Alignment.Center
         ) {
             NuxUserAvatar(
@@ -2082,7 +2082,7 @@ private fun ParticipantBadge(
         if (isSpeaking) {
             Text(
                 text = "Talk",
-                color = NuxColors.MintGreen,
+                color = Color(0xFF50D7FF),
                 fontSize = 8.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -2120,14 +2120,14 @@ private fun EmptySocialHubView(
             modifier = Modifier
                 .size(46.dp)
                 .clip(RoundedCornerShape(10.dp))
-                .background(NuxColors.ForestGreen.copy(alpha = 0.15f))
-                .border(1.dp, NuxColors.ForestGreen.copy(alpha = 0.4f), RoundedCornerShape(10.dp)),
+                .background(Color(0xFF278BFF).copy(alpha = 0.15f))
+                .border(1.dp, Color(0xFF278BFF).copy(alpha = 0.4f), RoundedCornerShape(10.dp)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Default.Group,
                 contentDescription = null,
-                tint = NuxColors.MintGreen,
+                tint = Color(0xFF50D7FF),
                 modifier = Modifier.size(24.dp)
             )
         }
@@ -2173,7 +2173,7 @@ private fun EmptySocialHubView(
                     .border(1.dp, NuxColors.CardBorder, RoundedCornerShape(6.dp))
                     .padding(horizontal = 10.dp, vertical = 5.dp)
             ) {
-                Text("🎙️ $roomsCount Active Voice Rooms", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = NuxColors.MintGreen)
+                Text("🎙️ $roomsCount Active Voice Rooms", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF50D7FF))
             }
         }
 
@@ -2192,7 +2192,7 @@ private fun EmptySocialHubView(
                 contentAlignment = Alignment.Center
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.PersonAdd, contentDescription = null, tint = NuxColors.ForestGreen, modifier = Modifier.size(13.dp))
+                    Icon(Icons.Default.PersonAdd, contentDescription = null, tint = Color(0xFF278BFF), modifier = Modifier.size(13.dp))
                     Spacer(modifier = Modifier.width(5.dp))
                     Text("FIND NEW FRIENDS", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 9.5.sp)
                 }
@@ -2202,16 +2202,16 @@ private fun EmptySocialHubView(
                 modifier = Modifier
                     .height(30.dp)
                     .clip(RoundedCornerShape(6.dp))
-                    .background(NuxColors.ForestGreen.copy(alpha = 0.15f))
-                    .border(1.dp, NuxColors.ForestGreen.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
+                    .background(Color(0xFF278BFF).copy(alpha = 0.15f))
+                    .border(1.dp, Color(0xFF278BFF).copy(alpha = 0.4f), RoundedCornerShape(6.dp))
                     .clickable { onOpenCreateRoom() }
                     .padding(horizontal = 12.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Mic, contentDescription = null, tint = NuxColors.MintGreen, modifier = Modifier.size(13.dp))
+                    Icon(Icons.Default.Mic, contentDescription = null, tint = Color(0xFF50D7FF), modifier = Modifier.size(13.dp))
                     Spacer(modifier = Modifier.width(5.dp))
-                    Text("CREATE VOICE ROOM", color = NuxColors.MintGreen, fontWeight = FontWeight.Bold, fontSize = 9.5.sp)
+                    Text("CREATE VOICE ROOM", color = Color(0xFF50D7FF), fontWeight = FontWeight.Bold, fontSize = 9.5.sp)
                 }
             }
         }
@@ -2234,7 +2234,7 @@ private fun EmptyIndicator(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Icon(imageVector = icon, contentDescription = null, tint = NuxColors.ForestGreen.copy(alpha = 0.6f), modifier = Modifier.size(26.dp))
+        Icon(imageVector = icon, contentDescription = null, tint = Color(0xFF278BFF).copy(alpha = 0.6f), modifier = Modifier.size(26.dp))
         Spacer(modifier = Modifier.height(5.dp))
         Text(text = title, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = Color.White)
         Spacer(modifier = Modifier.height(2.dp))
@@ -2322,7 +2322,7 @@ private fun AddFriendDialog(
                         modifier = Modifier.align(Alignment.Center),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp), color = NuxColors.ForestGreen, strokeWidth = 2.dp)
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color(0xFF278BFF), strokeWidth = 2.dp)
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             text = "Searching \"$query\"...",
@@ -2335,7 +2335,7 @@ private fun AddFriendDialog(
                         modifier = Modifier.align(Alignment.Center),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp), color = NuxColors.ForestGreen, strokeWidth = 2.dp)
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color(0xFF278BFF), strokeWidth = 2.dp)
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             text = "Loading online recommendations...",
@@ -2364,7 +2364,7 @@ private fun AddFriendDialog(
                                     .clickable { onRefreshRecommendations() }
                                     .padding(horizontal = 10.dp, vertical = 4.dp)
                             ) {
-                                Text("Search Again", fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = NuxColors.MintGreen)
+                                Text("Search Again", fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFF50D7FF))
                             }
                         }
                     }
@@ -2391,7 +2391,7 @@ private fun AddFriendDialog(
                                         text = "ONLINE RECOMMENDATIONS (${recommendations.size})",
                                         fontSize = 9.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = NuxColors.MintGreen
+                                        color = Color(0xFF50D7FF)
                                     )
                                 }
                                 Row(
@@ -2404,7 +2404,7 @@ private fun AddFriendDialog(
                                     Icon(
                                         imageVector = Icons.Default.Refresh,
                                         contentDescription = "Shuffle",
-                                        tint = NuxColors.MintGreen,
+                                        tint = Color(0xFF50D7FF),
                                         modifier = Modifier.size(11.dp)
                                     )
                                     Spacer(modifier = Modifier.width(3.dp))
@@ -2412,7 +2412,7 @@ private fun AddFriendDialog(
                                         text = "Shuffle",
                                         fontSize = 8.5.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = NuxColors.MintGreen
+                                        color = Color(0xFF50D7FF)
                                     )
                                 }
                             }
@@ -2492,8 +2492,8 @@ private fun AddFriendDialog(
                                         Box(
                                             modifier = Modifier
                                                 .clip(RoundedCornerShape(6.dp))
-                                                .background(NuxColors.ForestGreen.copy(alpha = 0.15f))
-                                                .border(1.dp, NuxColors.ForestGreen.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
+                                                .background(Color(0xFF278BFF).copy(alpha = 0.15f))
+                                                .border(1.dp, Color(0xFF278BFF).copy(alpha = 0.4f), RoundedCornerShape(6.dp))
                                                 .clickable {
                                                     if (friendEntry != null) {
                                                         onOpenChat(friendEntry)
@@ -2502,7 +2502,7 @@ private fun AddFriendDialog(
                                                 }
                                                 .padding(horizontal = 7.dp, vertical = 3.dp)
                                         ) {
-                                            Text("✓ Friends", color = NuxColors.MintGreen, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                            Text("✓ Friends", color = Color(0xFF50D7FF), fontSize = 9.sp, fontWeight = FontWeight.Bold)
                                         }
                                         Box(
                                             modifier = Modifier
@@ -2533,7 +2533,7 @@ private fun AddFriendDialog(
                                     Box(
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(6.dp))
-                                            .background(NuxColors.ForestGreen)
+                                            .background(Color(0xFF278BFF))
                                             .border(1.dp, NuxColors.CardBorder, RoundedCornerShape(6.dp))
                                             .clickable { onAcceptRequest(user.uid) }
                                             .padding(horizontal = 8.dp, vertical = 3.dp)
@@ -2555,7 +2555,7 @@ private fun AddFriendDialog(
                                     Box(
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(6.dp))
-                                            .background(NuxColors.ForestGreen)
+                                            .background(Color(0xFF278BFF))
                                             .border(1.dp, NuxColors.CardBorder, RoundedCornerShape(6.dp))
                                             .clickable {
                                                 sentRequestUids = sentRequestUids + user.uid
@@ -2694,7 +2694,7 @@ private fun CreateVoiceRoomDialog(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text("PARTICIPANT CAPACITY:", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = NuxColors.GrayNeutral)
-                            Text("$maxUsers Players", fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = NuxColors.MintGreen)
+                            Text("$maxUsers Players", fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFF50D7FF))
                         }
                         Slider(
                             value = maxUsers.toFloat(),
@@ -2702,8 +2702,8 @@ private fun CreateVoiceRoomDialog(
                             valueRange = 2f..10f,
                             steps = 7,
                             colors = SliderDefaults.colors(
-                                thumbColor = NuxColors.ForestGreen,
-                                activeTrackColor = NuxColors.ForestGreen,
+                                thumbColor = Color(0xFF278BFF),
+                                activeTrackColor = Color(0xFF278BFF),
                                 inactiveTrackColor = NuxColors.SurfaceInput
                             )
                         )
@@ -2734,7 +2734,7 @@ private fun CreateVoiceRoomDialog(
                                 .weight(1.3f)
                                 .height(32.dp)
                                 .clip(RoundedCornerShape(6.dp))
-                                .background(NuxColors.ForestGreen, RoundedCornerShape(6.dp))
+                                .background(Color(0xFF278BFF), RoundedCornerShape(6.dp))
                                 .border(1.dp, NuxColors.CardBorder, RoundedCornerShape(6.dp))
                                 .clickable {
                                     if (roomName.isNotBlank()) {
@@ -2831,7 +2831,7 @@ private fun JoinPasswordDialog(
                         .weight(1f)
                         .height(32.dp)
                         .clip(RoundedCornerShape(6.dp))
-                        .background(NuxColors.ForestGreen, RoundedCornerShape(6.dp))
+                        .background(Color(0xFF278BFF), RoundedCornerShape(6.dp))
                         .border(1.dp, NuxColors.CardBorder, RoundedCornerShape(6.dp))
                         .clickable { onJoin(passInput) },
                     contentAlignment = Alignment.Center
