@@ -54,7 +54,7 @@ fun FloatingVoiceBar(
     var offsetX by remember { mutableFloatStateOf(0f) }
     var offsetY by remember { mutableFloatStateOf(0f) }
 
-    // Pulsing green wave animation when speaking
+    // Pulsing TG-blue wave animation when speaking
     val infiniteTransition = rememberInfiniteTransition(label = "voice_pulse")
     val pulseScale by infiniteTransition.animateFloat(
         initialValue = 1f,

@@ -210,7 +210,7 @@ fun GameLoadingOverlay(
                             .height(4.dp)
                             .clip(RoundedCornerShape(2.dp)),
                         color = NuxColors.ForestGreen,
-                        trackColor = Color(0xFF1E2A27)
+                        trackColor = Color(0xFF29415D)
                     )
 
                     Spacer(modifier = Modifier.height(10.dp))

@@ -277,7 +277,7 @@ fun NuxEditInstanceDialog(
                                 runtimeOptions.forEach { (key, label) ->
                                     val isSelected = selectedJavaRuntime == key
                                     val pillBg by animateColorAsState(
-                                        targetValue = if (isSelected) Color(0xFF10281F) else Color(0xFF0C0E14),
+                                        targetValue = if (isSelected) Color(0xFF10243A) else Color(0xFF0C0E14),
                                         animationSpec = tween(150),
                                         label = "runtimeBg"
                                     )
@@ -500,7 +500,7 @@ fun NuxEditInstanceDialog(
                             )
                         }
 
-                        // SIMPAN PERUBAHAN BUTTON (Vibrant Emerald Gradient + Crisp White Text)
+                        // SIMPAN PERUBAHAN BUTTON (TG Blue Gradient + Crisp White Text)
                         NuxButton(
                             onClick = {
                                 val trimmed = editName.trim()

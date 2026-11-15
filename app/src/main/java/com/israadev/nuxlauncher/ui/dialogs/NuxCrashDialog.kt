@@ -412,7 +412,7 @@ fun NuxCrashDialog(
                                         .clip(RoundedCornerShape(10.dp))
                                         .background(
                                             if (uploadSuccessUrl != null) Brush.horizontalGradient(
-                                                listOf(Color(0xFF059669), Color(0xFF10B981))
+                                                listOf(Color(0xFF1457A6), Color(0xFF278BFF))
                                             ) else Brush.horizontalGradient(
                                                 listOf(Color(0xFFBE123C), Color(0xFFE11D48))
                                             )
@@ -606,7 +606,7 @@ fun NuxCrashDialog(
                                 ) {
                                     Box(modifier = Modifier.size(7.dp).background(Color(0xFFEF4444), CircleShape))
                                     Box(modifier = Modifier.size(7.dp).background(Color(0xFFF59E0B), CircleShape))
-                                    Box(modifier = Modifier.size(7.dp).background(Color(0xFF10B981), CircleShape))
+                                    Box(modifier = Modifier.size(7.dp).background(Color(0xFF278BFF), CircleShape))
                                     Spacer(modifier = Modifier.width(4.dp))
 
                                     Text(
@@ -621,7 +621,7 @@ fun NuxCrashDialog(
                                     val (badgeText, badgeBg, badgeColor) = when (aiState) {
                                         is com.israadev.nuxlauncher.core.crash.AIStreamState.Idle -> Triple("STANDBY", Color(0x2294A3B8), Color(0xFF94A3B8))
                                         is com.israadev.nuxlauncher.core.crash.AIStreamState.Connecting -> Triple("CONNECTING...", Color(0x33F59E0B), Color(0xFFFBBF24))
-                                        is com.israadev.nuxlauncher.core.crash.AIStreamState.Streaming -> Triple("LIVE STREAMING", Color(0x3310B981), Color(0xFF34D399))
+                                        is com.israadev.nuxlauncher.core.crash.AIStreamState.Streaming -> Triple("LIVE STREAMING", Color(0x3310B981), Color(0xFF50D7FF))
                                         is com.israadev.nuxlauncher.core.crash.AIStreamState.Completed -> Triple("SELESAI", Color(0x2610B981), Color(0xFF4ADE80))
                                         is com.israadev.nuxlauncher.core.crash.AIStreamState.Error -> Triple("ERROR", Color(0x33EF4444), Color(0xFFF87171))
                                         is com.israadev.nuxlauncher.core.crash.AIStreamState.QuotaExceeded -> Triple("LIMIT HABIS", Color(0x33F43F5E), Color(0xFFF43F5E))
@@ -645,7 +645,7 @@ fun NuxCrashDialog(
                                     val quotaText = if (remainingQuota < 0) "UNLIMITED" else "$remainingQuota/5"
                                     val quotaColor = when {
                                         remainingQuota < 0 -> Color(0xFF38BDF8)
-                                        remainingQuota > 1 -> Color(0xFF10B981)
+                                        remainingQuota > 1 -> Color(0xFF278BFF)
                                         remainingQuota == 1 -> Color(0xFFFBBF24)
                                         else -> Color(0xFFF43F5E)
                                     }
@@ -797,7 +797,7 @@ fun NuxCrashDialog(
                                                 Spacer(modifier = Modifier.height(10.dp))
                                                 NuxButton(
                                                     onClick = { runAiAnalysis() },
-                                                    backgroundColor = if (remainingQuota == 0) Color(0xFFF43F5E) else Color(0xFF10B981),
+                                                    backgroundColor = if (remainingQuota == 0) Color(0xFFF43F5E) else Color(0xFF278BFF),
                                                     contentColor = if (remainingQuota == 0) Color.White else Color.Black,
                                                     cornerRadius = 6.dp,
                                                     modifier = Modifier.height(30.dp)
@@ -895,7 +895,7 @@ fun NuxCrashDialog(
                                                         text = "Analysis Complete ✓",
                                                         fontSize = 8.sp,
                                                         fontWeight = FontWeight.Bold,
-                                                        color = Color(0xFF10B981)
+                                                        color = Color(0xFF278BFF)
                                                     )
                                                 }
                                             }

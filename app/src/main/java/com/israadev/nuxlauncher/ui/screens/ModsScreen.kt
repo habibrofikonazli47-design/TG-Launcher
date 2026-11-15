@@ -474,7 +474,7 @@ fun ModsScreen(
                         Icon(
                             imageVector = Icons.Outlined.ExtensionOff,
                             contentDescription = null,
-                            tint = NuxColors.ForestGreen,
+                            tint = Color(0xFF278BFF),
                             modifier = Modifier.size(36.dp)
                         )
                         Spacer(modifier = Modifier.height(8.dp))
@@ -494,7 +494,7 @@ fun ModsScreen(
                         Spacer(modifier = Modifier.height(12.dp))
                         NuxButton(
                             onClick = { onNavigateBack() },
-                            backgroundColor = NuxColors.ForestGreen,
+                            backgroundColor = Color(0xFF278BFF),
                             cornerRadius = 6.dp
                         ) {
                             Text(tr("mods.btn_back_dashboard"), fontWeight = FontWeight.Bold, fontSize = 10.sp, color = Color.White)
@@ -537,7 +537,7 @@ fun ModsScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                             contentDescription = tr("common.back"),
-                            tint = NuxColors.ForestGreen,
+                            tint = Color(0xFF278BFF),
                             modifier = Modifier.size(12.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
@@ -567,10 +567,10 @@ fun ModsScreen(
                         modifier = Modifier
                             .fillMaxHeight()
                             .clip(RoundedCornerShape(4.dp))
-                            .background(if (isInstalled) NuxColors.ForestGreen.copy(alpha = 0.2f) else Color.Transparent)
+                            .background(if (isInstalled) Color(0xFF278BFF).copy(alpha = 0.2f) else Color.Transparent)
                             .border(
                                 1.dp,
-                                if (isInstalled) NuxColors.ForestGreen.copy(alpha = 0.45f) else Color.Transparent,
+                                if (isInstalled) Color(0xFF278BFF).copy(alpha = 0.45f) else Color.Transparent,
                                 RoundedCornerShape(4.dp)
                             )
                             .clickable { mainMode = "installed" }
@@ -579,7 +579,7 @@ fun ModsScreen(
                     ) {
                         Text(
                             text = tr("mods.installed_count", installedItems.size),
-                            color = if (isInstalled) NuxColors.MintGreen else NuxColors.GrayNeutral,
+                            color = if (isInstalled) Color(0xFF50D7FF) else NuxColors.GrayNeutral,
                             fontWeight = if (isInstalled) FontWeight.Black else FontWeight.SemiBold,
                             fontSize = 9.5.sp
                         )
@@ -591,10 +591,10 @@ fun ModsScreen(
                         modifier = Modifier
                             .fillMaxHeight()
                             .clip(RoundedCornerShape(4.dp))
-                            .background(if (isBrowse) NuxColors.ForestGreen.copy(alpha = 0.2f) else Color.Transparent)
+                            .background(if (isBrowse) Color(0xFF278BFF).copy(alpha = 0.2f) else Color.Transparent)
                             .border(
                                 1.dp,
-                                if (isBrowse) NuxColors.ForestGreen.copy(alpha = 0.45f) else Color.Transparent,
+                                if (isBrowse) Color(0xFF278BFF).copy(alpha = 0.45f) else Color.Transparent,
                                 RoundedCornerShape(4.dp)
                             )
                             .clickable { mainMode = "browse" }
@@ -603,7 +603,7 @@ fun ModsScreen(
                     ) {
                         Text(
                             text = tr("mods.browse_modrinth"),
-                            color = if (isBrowse) NuxColors.MintGreen else NuxColors.GrayNeutral,
+                            color = if (isBrowse) Color(0xFF50D7FF) else NuxColors.GrayNeutral,
                             fontWeight = if (isBrowse) FontWeight.Black else FontWeight.SemiBold,
                             fontSize = 9.5.sp
                         )
@@ -627,7 +627,7 @@ fun ModsScreen(
                     Icon(
                         imageVector = Icons.Outlined.Inventory2,
                         contentDescription = null,
-                        tint = NuxColors.ForestGreen,
+                        tint = Color(0xFF278BFF),
                         modifier = Modifier.size(12.dp)
                     )
                     Spacer(modifier = Modifier.width(5.dp))
@@ -704,12 +704,12 @@ fun ModsScreen(
                             .height(25.dp)
                             .clip(RoundedCornerShape(5.dp))
                             .background(
-                                if (isSelected) NuxColors.ForestGreen.copy(alpha = 0.18f) else NuxColors.SurfaceElevated.copy(alpha = 0.7f),
+                                if (isSelected) Color(0xFF278BFF).copy(alpha = 0.18f) else NuxColors.SurfaceElevated.copy(alpha = 0.7f),
                                 RoundedCornerShape(5.dp)
                             )
                             .border(
                                 width = 1.dp,
-                                color = if (isSelected) NuxColors.ForestGreen.copy(alpha = 0.5f) else NuxColors.CardBorder,
+                                color = if (isSelected) Color(0xFF278BFF).copy(alpha = 0.5f) else NuxColors.CardBorder,
                                 shape = RoundedCornerShape(5.dp)
                             )
                             .clickable {
@@ -721,7 +721,7 @@ fun ModsScreen(
                     ) {
                         Text(
                             text = typeLabel,
-                            color = if (isSelected) NuxColors.MintGreen else NuxColors.GrayNeutral,
+                            color = if (isSelected) Color(0xFF50D7FF) else NuxColors.GrayNeutral,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                             fontSize = 9.5.sp
                         )
@@ -761,7 +761,7 @@ fun ModsScreen(
                                 Icon(
                                     imageVector = Icons.Outlined.Public,
                                     contentDescription = null,
-                                    tint = NuxColors.ForestGreen,
+                                    tint = Color(0xFF278BFF),
                                     modifier = Modifier.size(12.dp)
                                 )
                                 Spacer(modifier = Modifier.width(3.dp))
@@ -814,12 +814,12 @@ fun ModsScreen(
                             .height(25.dp)
                             .clip(RoundedCornerShape(5.dp))
                             .background(
-                                if (filterByGameVersion) NuxColors.ForestGreen.copy(alpha = 0.15f) else NuxColors.SurfaceElevated,
+                                if (filterByGameVersion) Color(0xFF278BFF).copy(alpha = 0.15f) else NuxColors.SurfaceElevated,
                                 RoundedCornerShape(5.dp)
                             )
                             .border(
                                 1.dp,
-                                if (filterByGameVersion) NuxColors.ForestGreen.copy(alpha = 0.4f) else NuxColors.CardBorder,
+                                if (filterByGameVersion) Color(0xFF278BFF).copy(alpha = 0.4f) else NuxColors.CardBorder,
                                 RoundedCornerShape(5.dp)
                             )
                             .clickable {
@@ -834,13 +834,13 @@ fun ModsScreen(
                             Icon(
                                 imageVector = if (filterByGameVersion) Icons.Outlined.Check else Icons.Outlined.Close,
                                 contentDescription = null,
-                                tint = if (filterByGameVersion) NuxColors.ForestGreen else NuxColors.GrayNeutral,
+                                tint = if (filterByGameVersion) Color(0xFF278BFF) else NuxColors.GrayNeutral,
                                 modifier = Modifier.size(10.dp)
                             )
                             Spacer(modifier = Modifier.width(3.dp))
                             Text(
                                 text = if (filterByGameVersion) currentInst.mcVersion else tr("mods.all_versions"),
-                                color = if (filterByGameVersion) NuxColors.MintGreen else NuxColors.GrayNeutral,
+                                color = if (filterByGameVersion) Color(0xFF50D7FF) else NuxColors.GrayNeutral,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 9.sp
                             )
@@ -870,7 +870,7 @@ fun ModsScreen(
                                 Icon(
                                     imageVector = Icons.Outlined.Public,
                                     contentDescription = null,
-                                    tint = NuxColors.ForestGreen,
+                                    tint = Color(0xFF278BFF),
                                     modifier = Modifier.size(12.dp)
                                 )
                                 Spacer(modifier = Modifier.width(3.dp))
@@ -923,8 +923,8 @@ fun ModsScreen(
                         modifier = Modifier
                             .height(25.dp)
                             .clip(RoundedCornerShape(5.dp))
-                            .background(NuxColors.ForestGreen.copy(alpha = 0.12f), RoundedCornerShape(5.dp))
-                            .border(1.dp, NuxColors.ForestGreen.copy(alpha = 0.35f), RoundedCornerShape(5.dp))
+                            .background(Color(0xFF278BFF).copy(alpha = 0.12f), RoundedCornerShape(5.dp))
+                            .border(1.dp, Color(0xFF278BFF).copy(alpha = 0.35f), RoundedCornerShape(5.dp))
                             .clickable {
                                 if (selectedInstance == null) {
                                     Toast.makeText(context, trStr("dashboard.select_instance"), Toast.LENGTH_SHORT).show()
@@ -940,13 +940,13 @@ fun ModsScreen(
                             Icon(
                                 imageVector = Icons.Outlined.FileUpload,
                                 contentDescription = "Import",
-                                tint = NuxColors.ForestGreen,
+                                tint = Color(0xFF278BFF),
                                 modifier = Modifier.size(12.dp)
                             )
                             Spacer(modifier = Modifier.width(3.dp))
                             Text(
                                 text = tr("mods.import_btn"),
-                                color = NuxColors.ForestGreen,
+                                color = Color(0xFF278BFF),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 9.sp
                             )
@@ -976,12 +976,12 @@ fun ModsScreen(
                             .height(22.dp)
                             .clip(RoundedCornerShape(4.dp))
                             .background(
-                                if (isSelected) NuxColors.ForestGreen.copy(alpha = 0.2f) else Color(0x08FFFFFF),
+                                if (isSelected) Color(0xFF278BFF).copy(alpha = 0.2f) else Color(0x08FFFFFF),
                                 RoundedCornerShape(4.dp)
                             )
                             .border(
                                 1.dp,
-                                if (isSelected) NuxColors.ForestGreen.copy(alpha = 0.5f) else NuxColors.CardBorder.copy(alpha = 0.4f),
+                                if (isSelected) Color(0xFF278BFF).copy(alpha = 0.5f) else NuxColors.CardBorder.copy(alpha = 0.4f),
                                 RoundedCornerShape(4.dp)
                             )
                             .clickable {
@@ -994,7 +994,7 @@ fun ModsScreen(
                     ) {
                         Text(
                             text = cat.label,
-                            color = if (isSelected) NuxColors.MintGreen else NuxColors.GrayNeutral,
+                            color = if (isSelected) Color(0xFF50D7FF) else NuxColors.GrayNeutral,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                             fontSize = 8.5.sp
                         )
@@ -1017,7 +1017,7 @@ fun ModsScreen(
 
             if (isInstalledLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = NuxColors.ForestGreen, modifier = Modifier.size(24.dp))
+                    CircularProgressIndicator(color = Color(0xFF278BFF), modifier = Modifier.size(24.dp))
                 }
             } else if (filteredInstalled.isEmpty()) {
                 Box(
@@ -1046,7 +1046,7 @@ fun ModsScreen(
                         Spacer(modifier = Modifier.height(10.dp))
                         NuxButton(
                             onClick = { mainMode = "browse" },
-                            backgroundColor = NuxColors.ForestGreen,
+                            backgroundColor = Color(0xFF278BFF),
                             cornerRadius = 6.dp
                         ) {
                             Text(tr("mods.browse_modrinth"), fontWeight = FontWeight.Bold, fontSize = 10.sp, color = Color.White)
@@ -1084,7 +1084,7 @@ fun ModsScreen(
                                             .size(32.dp)
                                             .clip(RoundedCornerShape(6.dp))
                                             .background(
-                                                if (item.isEnabled) NuxColors.ForestGreen.copy(alpha = 0.15f) else Color(0x0DFFFFFF),
+                                                if (item.isEnabled) Color(0xFF278BFF).copy(alpha = 0.15f) else Color(0x0DFFFFFF),
                                                 RoundedCornerShape(6.dp)
                                             )
                                             .border(1.dp, NuxColors.CardBorder, RoundedCornerShape(6.dp)),
@@ -1093,7 +1093,7 @@ fun ModsScreen(
                                         Text(
                                             text = item.name.take(2).uppercase(),
                                             fontWeight = FontWeight.Black,
-                                            color = if (item.isEnabled) NuxColors.MintGreen else NuxColors.GrayNeutral,
+                                            color = if (item.isEnabled) Color(0xFF50D7FF) else NuxColors.GrayNeutral,
                                             fontSize = 11.sp
                                         )
                                     }
@@ -1149,7 +1149,7 @@ fun ModsScreen(
                                         modifier = Modifier.scale(0.75f),
                                         colors = SwitchDefaults.colors(
                                             checkedThumbColor = Color.White,
-                                            checkedTrackColor = NuxColors.ForestGreen,
+                                            checkedTrackColor = Color(0xFF278BFF),
                                             uncheckedThumbColor = NuxColors.GrayNeutral,
                                             uncheckedTrackColor = Color(0x26FFFFFF)
                                         )
@@ -1186,7 +1186,7 @@ fun ModsScreen(
             if (isSearching) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator(color = NuxColors.ForestGreen, modifier = Modifier.size(24.dp))
+                        CircularProgressIndicator(color = Color(0xFF278BFF), modifier = Modifier.size(24.dp))
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(tr("common.loading"), color = NuxColors.GrayNeutral, fontSize = 11.sp)
                     }
@@ -1220,7 +1220,7 @@ fun ModsScreen(
                         Spacer(modifier = Modifier.height(10.dp))
                         NuxButton(
                             onClick = { performSearch(currentPage) },
-                            backgroundColor = NuxColors.ForestGreen,
+                            backgroundColor = Color(0xFF278BFF),
                             cornerRadius = 6.dp
                         ) {
                             Text(tr("common.retry"), fontWeight = FontWeight.Bold, fontSize = 10.sp, color = Color.White)
@@ -1261,7 +1261,7 @@ fun ModsScreen(
                                     currentPage = 1
                                     performSearch(1)
                                 },
-                                backgroundColor = NuxColors.ForestGreen,
+                                backgroundColor = Color(0xFF278BFF),
                                 cornerRadius = 6.dp
                             ) {
                                 Text(tr("mods.btn_search_all_versions"), fontWeight = FontWeight.Bold, fontSize = 10.sp, color = Color.White)
@@ -1351,11 +1351,11 @@ fun ModsScreen(
                                             Spacer(modifier = Modifier.width(5.dp))
                                             Box(
                                                 modifier = Modifier
-                                                    .background(NuxColors.ForestGreen.copy(alpha = 0.15f), RoundedCornerShape(3.dp))
-                                                    .border(1.dp, NuxColors.ForestGreen.copy(alpha = 0.35f), RoundedCornerShape(3.dp))
+                                                    .background(Color(0xFF278BFF).copy(alpha = 0.15f), RoundedCornerShape(3.dp))
+                                                    .border(1.dp, Color(0xFF278BFF).copy(alpha = 0.35f), RoundedCornerShape(3.dp))
                                                     .padding(horizontal = 4.dp, vertical = 1.dp)
                                             ) {
-                                                Text(tr("mods.pack_badge"), fontSize = 8.sp, fontWeight = FontWeight.Bold, color = NuxColors.MintGreen)
+                                                Text(tr("mods.pack_badge"), fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color(0xFF50D7FF))
                                             }
                                         }
                                     }
@@ -1414,7 +1414,7 @@ fun ModsScreen(
                                 if (isDownloading) {
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                         CircularProgressIndicator(
-                                            color = NuxColors.ForestGreen,
+                                            color = Color(0xFF278BFF),
                                             modifier = Modifier.size(14.dp),
                                             strokeWidth = 2.dp
                                         )
@@ -1423,7 +1423,7 @@ fun ModsScreen(
                                             text = downloadStatus.ifBlank { "Download..." },
                                             fontSize = 8.5.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = NuxColors.ForestGreen
+                                            color = Color(0xFF278BFF)
                                         )
                                     }
                                 } else if (isInstalled) {
@@ -1431,8 +1431,8 @@ fun ModsScreen(
                                         modifier = Modifier
                                             .height(26.dp)
                                             .clip(RoundedCornerShape(5.dp))
-                                            .background(NuxColors.ForestGreen.copy(alpha = 0.12f), RoundedCornerShape(5.dp))
-                                            .border(1.dp, NuxColors.ForestGreen.copy(alpha = 0.35f), RoundedCornerShape(5.dp))
+                                            .background(Color(0xFF278BFF).copy(alpha = 0.12f), RoundedCornerShape(5.dp))
+                                            .border(1.dp, Color(0xFF278BFF).copy(alpha = 0.35f), RoundedCornerShape(5.dp))
                                             .padding(horizontal = 8.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
@@ -1440,13 +1440,13 @@ fun ModsScreen(
                                             Icon(
                                                 imageVector = Icons.Outlined.Check,
                                                 contentDescription = null,
-                                                tint = NuxColors.ForestGreen,
+                                                tint = Color(0xFF278BFF),
                                                 modifier = Modifier.size(11.dp)
                                             )
                                             Spacer(modifier = Modifier.width(3.dp))
                                             Text(
                                                 text = tr("mods.installed_badge"),
-                                                color = NuxColors.ForestGreen,
+                                                color = Color(0xFF278BFF),
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 9.sp
                                             )
@@ -1458,8 +1458,8 @@ fun ModsScreen(
                                         modifier = Modifier
                                             .height(26.dp)
                                             .clip(RoundedCornerShape(5.dp))
-                                            .background(NuxColors.ForestGreen, RoundedCornerShape(5.dp))
-                                            .border(1.dp, NuxColors.MintGreen.copy(alpha = 0.4f), RoundedCornerShape(5.dp))
+                                            .background(Color(0xFF278BFF), RoundedCornerShape(5.dp))
+                                            .border(1.dp, Color(0xFF50D7FF).copy(alpha = 0.4f), RoundedCornerShape(5.dp))
                                             .clickable {
                                                 scope.launch {
                                                     downloadingProjectIds = downloadingProjectIds + (hit.projectId to "Finding version...")
@@ -1659,13 +1659,13 @@ fun ModsScreen(
                     modifier = Modifier
                         .size(46.dp)
                         .clip(CircleShape)
-                        .background(NuxColors.ForestGreen.copy(alpha = 0.15f))
-                        .border(1.dp, NuxColors.ForestGreen.copy(alpha = 0.4f), CircleShape),
+                        .background(Color(0xFF278BFF).copy(alpha = 0.15f))
+                        .border(1.dp, Color(0xFF278BFF).copy(alpha = 0.4f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        color = NuxColors.ForestGreen,
+                        color = Color(0xFF278BFF),
                         strokeWidth = 2.5.dp
                     )
                 }
@@ -1684,7 +1684,7 @@ fun ModsScreen(
                     Text(
                         text = modpackImportName,
                         fontSize = 11.sp,
-                        color = NuxColors.ForestGreen,
+                        color = Color(0xFF278BFF),
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -1713,7 +1713,7 @@ fun ModsScreen(
                             .fillMaxWidth()
                             .height(6.dp)
                             .clip(RoundedCornerShape(3.dp)),
-                        color = NuxColors.ForestGreen,
+                        color = Color(0xFF278BFF),
                         trackColor = NuxColors.SurfaceElevated
                     )
                     Spacer(modifier = Modifier.height(4.dp))
@@ -1728,7 +1728,7 @@ fun ModsScreen(
                             .fillMaxWidth()
                             .height(6.dp)
                             .clip(RoundedCornerShape(3.dp)),
-                        color = NuxColors.ForestGreen,
+                        color = Color(0xFF278BFF),
                         trackColor = NuxColors.SurfaceElevated
                     )
                 }
@@ -1825,7 +1825,7 @@ fun ModsScreen(
                                             .border(
                                                 1.dp,
                                                 when (hit.projectType) {
-                                                    "mod" -> NuxColors.ForestGreen.copy(alpha = 0.5f)
+                                                    "mod" -> Color(0xFF278BFF).copy(alpha = 0.5f)
                                                     "modpack" -> Color(0xFF8B5CF6).copy(alpha = 0.5f)
                                                     "resourcepack" -> Color(0xFF38BDF8).copy(alpha = 0.5f)
                                                     else -> Color(0xFFF59E0B).copy(alpha = 0.5f)
@@ -1839,7 +1839,7 @@ fun ModsScreen(
                                             fontSize = 8.5.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = when (hit.projectType) {
-                                                "mod" -> NuxColors.MintGreen
+                                                "mod" -> Color(0xFF50D7FF)
                                                 "modpack" -> Color(0xFFA78BFA)
                                                 "resourcepack" -> Color(0xFF7DD3FC)
                                                 else -> Color(0xFFFCD34D)
@@ -1926,7 +1926,7 @@ fun ModsScreen(
                                     Icon(
                                         imageVector = Icons.Outlined.Description,
                                         contentDescription = null,
-                                        tint = if (isTabOverview) NuxColors.MintGreen else Color(0xFF71717A),
+                                        tint = if (isTabOverview) Color(0xFF50D7FF) else Color(0xFF71717A),
                                         modifier = Modifier.size(13.dp)
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
@@ -1958,7 +1958,7 @@ fun ModsScreen(
                                     Icon(
                                         imageVector = Icons.Outlined.Layers,
                                         contentDescription = null,
-                                        tint = if (isTabVersions) NuxColors.MintGreen else Color(0xFF71717A),
+                                        tint = if (isTabVersions) Color(0xFF50D7FF) else Color(0xFF71717A),
                                         modifier = Modifier.size(13.dp)
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
@@ -1997,7 +1997,7 @@ fun ModsScreen(
                                         .height(140.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    CircularProgressIndicator(color = NuxColors.ForestGreen, modifier = Modifier.size(26.dp))
+                                    CircularProgressIndicator(color = Color(0xFF278BFF), modifier = Modifier.size(26.dp))
                                 }
                             } else if (detailTab == "overview") {
                                 // TAB 1: OVERVIEW & GALLERY
@@ -2118,7 +2118,7 @@ fun ModsScreen(
                                                     )
                                                     .border(
                                                         width = 1.dp,
-                                                        color = if (isPicked) NuxColors.ForestGreen else Color(0x14FFFFFF),
+                                                        color = if (isPicked) Color(0xFF278BFF) else Color(0x14FFFFFF),
                                                         shape = RoundedCornerShape(8.dp)
                                                     )
                                                     .clickable { selectedVersion = ver }
@@ -2137,8 +2137,8 @@ fun ModsScreen(
                                                             modifier = Modifier
                                                                 .size(14.dp)
                                                                 .clip(CircleShape)
-                                                                .background(if (isPicked) NuxColors.ForestGreen else Color.Transparent)
-                                                                .border(1.5.dp, if (isPicked) NuxColors.MintGreen else Color(0xFF71717A), CircleShape)
+                                                                .background(if (isPicked) Color(0xFF278BFF) else Color.Transparent)
+                                                                .border(1.5.dp, if (isPicked) Color(0xFF50D7FF) else Color(0xFF71717A), CircleShape)
                                                         )
                                                         Spacer(modifier = Modifier.width(9.dp))
                                                         Column {
@@ -2175,7 +2175,7 @@ fun ModsScreen(
                                                             fontSize = 8.5.sp,
                                                             fontWeight = FontWeight.Bold,
                                                             color = when (ver.versionType) {
-                                                                "release" -> NuxColors.MintGreen
+                                                                "release" -> Color(0xFF50D7FF)
                                                                 "beta" -> Color(0xFFFBBF24)
                                                                 else -> Color(0xFFFDA4AF)
                                                             }
@@ -2200,7 +2200,7 @@ fun ModsScreen(
                                     Icon(
                                         imageVector = Icons.Outlined.AutoFixHigh,
                                         contentDescription = null,
-                                        tint = NuxColors.ForestGreen,
+                                        tint = Color(0xFF278BFF),
                                         modifier = Modifier.size(14.dp)
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
@@ -2225,13 +2225,13 @@ fun ModsScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            CircularProgressIndicator(color = NuxColors.ForestGreen, modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                            CircularProgressIndicator(color = Color(0xFF278BFF), modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = detailProgressText.ifBlank { "Downloading and installing..." },
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 10.5.sp,
-                                color = NuxColors.MintGreen
+                                color = Color(0xFF50D7FF)
                             )
                         }
                     } else {
@@ -2256,20 +2256,20 @@ fun ModsScreen(
                                         .height(38.dp)
                                         .clip(RoundedCornerShape(10.dp))
                                         .background(Color(0xFF10B981).copy(alpha = 0.15f))
-                                        .border(1.dp, NuxColors.ForestGreen.copy(alpha = 0.5f), RoundedCornerShape(10.dp)),
+                                        .border(1.dp, Color(0xFF278BFF).copy(alpha = 0.5f), RoundedCornerShape(10.dp)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Icon(
                                             imageVector = Icons.Outlined.Check,
                                             contentDescription = null,
-                                            tint = NuxColors.MintGreen,
+                                            tint = Color(0xFF50D7FF),
                                             modifier = Modifier.size(14.dp)
                                         )
                                         Spacer(modifier = Modifier.width(6.dp))
                                         Text(
                                             text = tr("mods.already_installed"),
-                                            color = NuxColors.MintGreen,
+                                            color = Color(0xFF50D7FF),
                                             fontWeight = FontWeight.Black,
                                             fontSize = 11.sp
                                         )
@@ -2453,7 +2453,7 @@ private fun CompactSearchBar(
                     fontSize = 9.5.sp,
                     fontWeight = FontWeight.Normal
                 ),
-                cursorBrush = SolidColor(NuxColors.ForestGreen),
+                cursorBrush = SolidColor(Color(0xFF278BFF)),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
