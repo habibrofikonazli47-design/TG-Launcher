@@ -32,10 +32,14 @@ import com.israadev.nuxlauncher.R
 import com.israadev.nuxlauncher.core.auth.AuthUser
 import com.israadev.nuxlauncher.core.models.UserAccount
 import com.israadev.nuxlauncher.core.social.NuxSocialManager
-import com.israadev.nuxlauncher.ui.theme.NuxColors
 import com.israadev.nuxlauncher.ui.theme.resp
-
 import com.israadev.nuxlauncher.core.lang.tr
+
+private val TGSidebarBackground = Color(0xFF080E1A)
+private val TGSidebarSurface = Color(0xFF101B2D)
+private val TGSidebarBlue = Color(0xFF278BFF)
+private val TGSidebarCyan = Color(0xFF50D7FF)
+private val TGSidebarMuted = Color(0xFF8998AD)
 
 data class NuxNavItem(
     val id: String,
@@ -53,7 +57,8 @@ val NUX_NAV_ITEMS = listOf(
 )
 
 /**
- * TG Launcher navigation sidebar with right-side radius and flush left side.
+ * TG Launcher navigation rail. This is a presentation-only replacement:
+ * navigation IDs, feature gates, unread indicators and callbacks stay unchanged.
  */
 @Composable
 fun NuxSidebar(
@@ -69,127 +74,136 @@ fun NuxSidebar(
     val sidebarShape = RoundedCornerShape(
         topStart = 0.dp,
         bottomStart = 0.dp,
-        topEnd = (24.dp).resp(),
-        bottomEnd = (24.dp).resp()
+        topEnd = (20.dp).resp(),
+        bottomEnd = (20.dp).resp()
     )
 
     Column(
         modifier = modifier
             .fillMaxHeight()
             .clip(sidebarShape)
-            .background(Color(0xFF101216), sidebarShape)
-            .padding(top = (10.dp).resp(), bottom = (10.dp).resp(), start = (6.dp).resp(), end = (6.dp).resp()),
+            .background(
+                Brush.verticalGradient(
+                    listOf(Color(0xFF0D1728), TGSidebarBackground, Color(0xFF070B13))
+                ),
+                sidebarShape
+            )
+            .border(
+                width = 1.dp,
+                color = Color(0x22278BFF),
+                shape = sidebarShape
+            )
+            .padding(top = (12.dp).resp(), bottom = (12.dp).resp(), start = (6.dp).resp(), end = (6.dp).resp()),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        // TG Launcher brand icon
-        val logoShape = RoundedCornerShape((10.dp).resp())
+        // TG brand mark
+        val logoShape = RoundedCornerShape((11.dp).resp())
         Box(
             modifier = Modifier
-                .size((36.dp).resp())
+                .size((38.dp).resp())
+                .shadow((8.dp).resp(), logoShape, ambientColor = TGSidebarBlue.copy(alpha = 0.24f), spotColor = TGSidebarBlue.copy(alpha = 0.32f))
                 .clip(logoShape)
-                .background(Color(0xFF181A20))
-                .border(1.dp, Color(0x26FFFFFF), logoShape)
+                .background(
+                    Brush diagonalGradient(
+                        listOf(Color(0xFF173B67), Color(0xFF10233E), Color(0xFF0B1423))
+                    )
+                )
+                .border(1.dp, Color(0x6650D7FF), logoShape)
                 .clickable { onTabSelected("home") },
             contentAlignment = Alignment.Center
         ) {
             Image(
                 painter = painterResource(id = R.drawable.tg_launcher_icon),
                 contentDescription = "TG Launcher Logo",
-                modifier = Modifier.size((24.dp).resp())
+                modifier = Modifier.size((26.dp).resp())
             )
         }
 
-        Spacer(modifier = Modifier.height((6.dp).resp()))
+        Spacer(modifier = Modifier.height((8.dp).resp()))
 
-        // CENTER: NAV ITEMS (Icon + Label)
         val friendsList by NuxSocialManager.friends.collectAsState()
         val totalSocialUnread = remember(friendsList) {
             friendsList.sumOf { it.unreadCount } + friendsList.count { it.isPendingReceived }
         }
+
         Column(
             modifier = Modifier
                 .weight(1f)
                 .verticalScroll(scrollState),
-            verticalArrangement = Arrangement.spacedBy((8.dp).resp()),
+            verticalArrangement = Arrangement.spacedBy((9.dp).resp()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             NUX_NAV_ITEMS.filter { it.id in enabledTabs }.forEach { item ->
                 val isSelected = activeTab == item.id
-                val pillShape = RoundedCornerShape((14.dp).resp())
+                val itemShape = RoundedCornerShape((12.dp).resp())
 
                 Column(
                     modifier = Modifier
-                        .clip(RoundedCornerShape((10.dp).resp()))
+                        .fillMaxWidth()
+                        .clip(itemShape)
                         .clickable { onTabSelected(item.id) }
-                        .padding(horizontal = (2.dp).resp(), vertical = (2.dp).resp()),
+                        .padding(vertical = (3.dp).resp()),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(width = (44.dp).resp(), height = (26.dp).resp())
-                            .shadow(
-                                elevation = if (isSelected) (9.dp).resp() else 0.dp,
-                                shape = pillShape,
-                                ambientColor = NuxColors.NeonBlue.copy(alpha = 0.42f),
-                                spotColor = NuxColors.NeonBlue.copy(alpha = 0.58f)
-                            )
-                            .clip(pillShape)
+                            .width((46.dp).resp())
+                            .height((34.dp).resp())
+                            .clip(itemShape)
                             .background(
-                                brush = if (isSelected) {
-                                    Brush.horizontalGradient(
-                                        listOf(
-                                            NuxColors.NeonBlue.copy(alpha = 0.96f),
-                                            NuxColors.IceBlue.copy(alpha = 0.82f)
-                                        )
-                                    )
-                                } else {
-                                    Brush.verticalGradient(
-                                        listOf(Color.White.copy(alpha = 0.035f), Color.Transparent)
-                                    )
-                                },
-                                shape = pillShape
+                                if (isSelected) Brush.horizontalGradient(
+                                    listOf(Color(0xFF1C5FA5), Color(0xFF12365E), Color(0xFF10233D))
+                                ) else Brush.verticalGradient(
+                                    listOf(Color.White.copy(alpha = 0.035f), Color.Transparent)
+                                )
                             )
                             .border(
-                                width = if (isSelected) 1.dp else 0.5.dp,
-                                brush = if (isSelected) {
-                                    Brush.verticalGradient(
-                                        listOf(Color.White.copy(alpha = 0.78f), NuxColors.NeonBlue.copy(alpha = 0.45f))
-                                    )
-                                } else {
-                                    Brush.verticalGradient(
-                                        listOf(Color.White.copy(alpha = 0.10f), Color.Transparent)
-                                    )
-                                },
-                                shape = pillShape
+                                width = 1.dp,
+                                brush = if (isSelected) Brush.horizontalGradient(
+                                    listOf(Color(0xAA50D7FF), Color(0x55278BFF))
+                                ) else Brush.verticalGradient(
+                                    listOf(Color(0x1FFFFFFF), Color.Transparent)
+                                ),
+                                shape = itemShape
                             ),
                         contentAlignment = Alignment.Center
                     ) {
+                        if (isSelected) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.CenterStart)
+                                    .width((3.dp).resp())
+                                    .fillMaxHeight(0.58f)
+                                    .clip(RoundedCornerShape(topEnd = 4.dp, bottomEnd = 4.dp))
+                                    .background(TGSidebarCyan)
+                            )
+                        }
                         Icon(
                             imageVector = item.icon,
                             contentDescription = tr(item.labelKey),
-                            tint = if (isSelected) Color(0xFF06111D) else Color(0xFFA1A1AA),
-                            modifier = Modifier.size((17.dp).resp())
+                            tint = if (isSelected) TGSidebarCyan else TGSidebarMuted,
+                            modifier = Modifier.size((18.dp).resp())
                         )
 
                         if (item.id == "friends" && totalSocialUnread > 0) {
                             Box(
                                 modifier = Modifier
                                     .align(Alignment.TopEnd)
-                                    .padding(end = (5.dp).resp(), top = (3.dp).resp())
+                                    .padding(end = (5.dp).resp(), top = (4.dp).resp())
                                     .size((7.dp).resp())
                                     .clip(CircleShape)
-                                    .background(Color(0xFFEF4444))
+                                    .background(Color(0xFFFF5577))
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height((3.dp).resp()))
+                    Spacer(modifier = Modifier.height((4.dp).resp()))
 
                     Text(
                         text = tr(item.labelKey),
-                        color = if (isSelected) NuxColors.IceBlue else Color(0xFFA1A1AA),
-                        fontWeight = if (isSelected) FontWeight.Black else FontWeight.Medium,
+                        color = if (isSelected) Color(0xFFEAF6FF) else TGSidebarMuted,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                         fontSize = (8.5.sp).resp(),
                         maxLines = 1
                     )
@@ -197,24 +211,26 @@ fun NuxSidebar(
             }
         }
 
-        Spacer(modifier = Modifier.height((6.dp).resp()))
+        Spacer(modifier = Modifier.height((8.dp).resp()))
 
-        // BOTTOM: INFO (i) ICON
         Box(
             modifier = Modifier
-                .size((28.dp).resp())
+                .size((30.dp).resp())
                 .clip(CircleShape)
-                .background(Color(0xFF181A20))
-                .border(1.dp, Color(0x33FFFFFF), CircleShape)
+                .background(TGSidebarSurface)
+                .border(1.dp, Color(0x334FCBFF), CircleShape)
                 .clickable { onOpenAbout() },
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Outlined.Info,
                 contentDescription = "About & License",
-                tint = Color(0xFFA1A1AA),
-                modifier = Modifier.size((15.dp).resp())
+                tint = TGSidebarMuted,
+                modifier = Modifier.size((16.dp).resp())
             )
         }
     }
 }
+
+private fun Brush.Companion.diagonalGradient(colors: List<Color>): Brush =
+    Brush.linearGradient(colors)
