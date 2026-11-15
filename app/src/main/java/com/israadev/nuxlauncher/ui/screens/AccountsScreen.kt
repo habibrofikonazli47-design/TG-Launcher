@@ -436,12 +436,12 @@ fun AccountsScreen(
                                         .fillMaxWidth()
                                         .clip(itemShape)
                                         .background(
-                                            if (isCurrent) Color(0xFF10B981).copy(alpha = 0.22f) else Color(0x73141822),
+                                            if (isCurrent) Color(0xFF278BFF).copy(alpha = 0.22f) else Color(0x73141822),
                                             itemShape
                                         )
                                         .border(
                                             width = 1.dp,
-                                            color = if (isCurrent) Color(0xFF10B981).copy(alpha = 0.55f) else Color(0x26FFFFFF),
+                                            color = if (isCurrent) Color(0xFF278BFF).copy(alpha = 0.55f) else Color(0x26FFFFFF),
                                             shape = itemShape
                                         )
                                         .clickable {
