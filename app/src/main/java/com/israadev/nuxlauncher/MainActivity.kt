@@ -51,6 +51,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        RefreshRateManager.apply(this)
         hideSystemBars()
         checkAndRequestStoragePermissions()
 
@@ -172,6 +173,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        RefreshRateManager.apply(this)
         syncAccountEntitlements()
         lifecycleScope.launch { RemoteLauncherConfig.refresh() }
         hideSystemBars()
