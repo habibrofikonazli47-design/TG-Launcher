@@ -264,7 +264,7 @@ fun DashboardScreen() {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(NuxColors.ForestGreen)
+                .background(Color(0xFF070B14))
         ) {
             Row(
                 modifier = Modifier.fillMaxSize(),

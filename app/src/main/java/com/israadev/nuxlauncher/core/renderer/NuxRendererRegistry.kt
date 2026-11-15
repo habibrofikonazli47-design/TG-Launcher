@@ -43,7 +43,7 @@ object NuxRendererRegistry {
         badge = "FCL Compatibility Layer",
         summary = "MobileGlues OpenGL 4.0 graphics library for Minecraft 1.17 – 1.21+. High compatibility across mobile GPUs including Mali.",
         compatibility = "Minecraft 1.17 – 1.21.1",
-        rendererId = "mobileglues",
+        rendererId = "opengles3_mobileglues",
         libraryName = "libmobileglues.so",
         eglName = "libmobileglues.so",
         isMaliRecommended = true,
@@ -192,6 +192,12 @@ object NuxRendererRegistry {
         get() {
             val config = RemoteLauncherConfig.config.value
             val enabledBase = baseRenderers.filter { renderer ->
+                // MobileGlues native binary is currently packaged for arm64-v8a only.
+                // Do not offer the bundled renderer to a 32-bit app process; external
+                // renderer plugins remain discoverable through the plugin list below.
+                if (renderer.id == "mobileglues" && !android.os.Process.is64Bit()) {
+                    return@filter false
+                }
                 when (renderer.id) {
                     "gl4es" -> RemoteLauncherConfig.isEnabled(config, "renderer", "gl4esEnabled")
                     "virgl" -> RemoteLauncherConfig.isEnabled(config, "renderer", "virglEnabled")
