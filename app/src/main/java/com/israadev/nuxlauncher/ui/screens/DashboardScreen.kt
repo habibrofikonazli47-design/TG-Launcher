@@ -523,7 +523,7 @@ fun DashboardScreen() {
                                                                 Icon(
                                                                     imageVector = Icons.Default.Check,
                                                                     contentDescription = "Selected",
-                                                                    tint = NuxColors.ForestGreen,
+                                                                    tint = Color(0xFF278BFF),
                                                                     modifier = Modifier.size((16.dp).resp())
                                                                 )
                                                             }
@@ -543,7 +543,7 @@ fun DashboardScreen() {
                                             text = {
                                                 Text(
                                                     text = tr("dashboard.manage_accounts"),
-                                                    color = NuxColors.ForestGreen,
+                                                    color = Color(0xFF278BFF),
                                                     fontWeight = FontWeight.Bold,
                                                     fontSize = (12.sp).resp()
                                                 )
@@ -721,7 +721,7 @@ fun DashboardScreen() {
                                     Box(
                                         modifier = Modifier
                                             .size((44.dp).resp())
-                                            .background(NuxColors.ForestGreen, numBoxShape)
+                                            .background(Color(0xFF278BFF), numBoxShape)
                                             .clip(numBoxShape),
                                         contentAlignment = Alignment.Center
                                     ) {
@@ -783,7 +783,7 @@ fun DashboardScreen() {
                                                     // Loader tag using TG electric blue
                                                     Box(
                                                         modifier = Modifier
-                                                            .background(NuxColors.ForestGreen, RoundedCornerShape((8.dp).resp()))
+                                                            .background(Color(0xFF278BFF), RoundedCornerShape((8.dp).resp()))
                                                             .padding(horizontal = (7.dp).resp(), vertical = (2.dp).resp())
                                                     ) {
                                                         Text(
@@ -876,7 +876,7 @@ fun DashboardScreen() {
                                                                 Column(modifier = Modifier.weight(1f)) {
                                                                     Text(
                                                                         text = inst.name,
-                                                                        color = if (isSelected) NuxColors.MintGreen else Color.White,
+                                                                        color = if (isSelected) Color(0xFF50D7FF) else Color.White,
                                                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                                                         fontSize = (12.sp).resp(),
                                                                         maxLines = 1
@@ -895,7 +895,7 @@ fun DashboardScreen() {
                                                                         Icon(
                                                                             imageVector = Icons.Default.Check,
                                                                             contentDescription = tr("common.selected"),
-                                                                            tint = NuxColors.ForestGreen,
+                                                                            tint = Color(0xFF278BFF),
                                                                             modifier = Modifier.size((16.dp).resp())
                                                                         )
                                                                     }
@@ -939,12 +939,12 @@ fun DashboardScreen() {
                                                         Icon(
                                                             imageVector = Icons.Default.Add,
                                                             contentDescription = tr("common.add"),
-                                                            tint = NuxColors.ForestGreen,
+                                                            tint = Color(0xFF278BFF),
                                                             modifier = Modifier.size((18.dp).resp())
                                                         )
                                                         Text(
                                                             text = tr("dashboard.add_new_instance"),
-                                                            color = NuxColors.ForestGreen,
+                                                            color = Color(0xFF278BFF),
                                                             fontWeight = FontWeight.Bold,
                                                             fontSize = (12.5.sp).resp()
                                                         )
@@ -966,7 +966,7 @@ fun DashboardScreen() {
                                     Row(
                                         modifier = Modifier
                                             .clip(playBtnShape)
-                                            .background(NuxColors.ForestGreen, playBtnShape)
+                                            .background(Color(0xFF278BFF), playBtnShape)
                                             .clickable {
                                                 if (inst == null) {
                                                     handleRequestCreateInstance()
