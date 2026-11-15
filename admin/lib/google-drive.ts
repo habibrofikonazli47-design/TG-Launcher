@@ -100,11 +100,12 @@ export async function ensureDriveFolder(name: string, parentId?: string) {
   return (await findFolder(name, parentId)) || createFolder(name, parentId);
 }
 
+async function rootFolder() {
+  return ensureDriveFolder(ROOT_FOLDER_NAME);
+}
+
 export async function initializeDriveStorage() {
-  const root = process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID?.trim()
-    ? await driveRequest<DriveFile>('/files/' + encodeURIComponent(requiredEnv('GOOGLE_DRIVE_ROOT_FOLDER_ID')) + '?fields=id,name,mimeType')
-    : await ensureDriveFolder(ROOT_FOLDER_NAME);
-  if (root.mimeType !== 'application/vnd.google-apps.folder') throw new Error('GOOGLE_DRIVE_ROOT_FOLDER_ID bukan folder Google Drive.');
+  const root = await rootFolder();
   const folders: Record<string, string> = {};
   for (const name of COLLECTIONS) {
     const folder = await ensureDriveFolder(name, root.id);
@@ -150,10 +151,9 @@ async function collectionFolder(collection: string) {
   if (!COLLECTIONS.includes(collection as (typeof COLLECTIONS)[number])) {
     throw new Error('Koleksi Drive tidak dikenal: ' + collection);
   }
-  const initialized = await initializeDriveStorage();
-  const id = initialized.folders[collection];
-  if (!id) throw new Error('Folder koleksi tidak ditemukan.');
-  return id;
+  const root = await rootFolder();
+  const folder = await ensureDriveFolder(collection, root.id);
+  return folder.id;
 }
 
 export async function listDriveRecords<T>(collection: string): Promise<T[]> {
@@ -183,7 +183,7 @@ export async function getDriveRecord<T>(collection: string, id: string): Promise
   const parentId = await collectionFolder(collection);
   const name = recordFileName(id);
   const query = new URLSearchParams({
-    q: "'" + parentId + "' in parents and name='" + name + "' and trashed=false',
+    q: "'" + parentId + "' in parents and name='" + name + "' and trashed=false",
     pageSize: '2',
     fields: 'files(id,name)',
     spaces: 'drive',
