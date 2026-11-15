@@ -260,7 +260,7 @@ fun DashboardScreen() {
             modifier = Modifier.fillMaxSize()
         )
     } else {
-        // Outer Container: TG Launcher Cyber-Emerald Green space
+        // TG Launcher dark-navy shell with electric-blue identity
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -289,10 +289,10 @@ fun DashboardScreen() {
                         .fillMaxHeight()
                 )
 
-                // Space between sidebar and main card (Nux green gap)
+                // Consistent spacing between navigation rail and content
                 Spacer(modifier = Modifier.width((8.dp).resp()))
 
-                // --- 2. MAIN CARD (SURROUNDED BY GREEN ON TOP, END, BOTTOM) ---
+                // --- 2. MAIN CONTENT CARD ---
                 val mainCardShape = RoundedCornerShape((24.dp).resp())
                 Box(
                     modifier = Modifier
@@ -460,7 +460,7 @@ fun DashboardScreen() {
                                             Box(
                                                 modifier = Modifier
                                                     .size((22.dp).resp())
-                                                    .background(NuxColors.ForestGreen, CircleShape),
+                                                    .background(Color(0xFF278BFF), CircleShape),
                                                 contentAlignment = Alignment.Center
                                             ) {
                                                 Text(
@@ -515,7 +515,7 @@ fun DashboardScreen() {
                                                         ) {
                                                             Text(
                                                                 text = acc.username,
-                                                                color = if (isSelected) NuxColors.MintGreen else Color.White,
+                                                                color = if (isSelected) Color(0xFF50D7FF) else Color.White,
                                                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                                                 fontSize = (12.sp).resp()
                                                             )
@@ -711,7 +711,7 @@ fun DashboardScreen() {
                                         .padding(horizontal = (12.dp).resp(), vertical = (8.dp).resp()),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    // Instance Index Box "1" (In Nux Green, rounded square matching Image 3)
+                                    // Instance index badge using TG electric blue
                                     val instanceIndex = if (selectedInstance != null) {
                                         (instances.indexOfFirst { it.id == selectedInstance!!.id }.takeIf { it >= 0 } ?: 0) + 1
                                     } else {
@@ -780,7 +780,7 @@ fun DashboardScreen() {
                                             ) {
                                                 if (selectedInstance != null) {
                                                     val inst = selectedInstance!!
-                                                    // Loader tag (in NUX green! Was yellow in screenshot)
+                                                    // Loader tag using TG electric blue
                                                     Box(
                                                         modifier = Modifier
                                                             .background(NuxColors.ForestGreen, RoundedCornerShape((8.dp).resp()))
@@ -958,7 +958,7 @@ fun DashboardScreen() {
                                         }
                                     }
 
-                                    // Big PLAY Button (In Nux Green! Was yellow in screenshot)
+                                    // Primary PLAY action using TG electric blue
                                     val inst = selectedInstance
                                     val isFullyDownloaded = inst != null && inst.isDownloaded && InstanceManager.isInstanceDownloaded(context, inst)
                                     val playBtnShape = RoundedCornerShape((24.dp).resp())
