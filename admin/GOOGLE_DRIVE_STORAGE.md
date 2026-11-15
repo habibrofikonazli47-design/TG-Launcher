@@ -17,7 +17,6 @@ Set these only in the Vercel project `tg-launcher-admin` (Production and Preview
 - `GOOGLE_DRIVE_CLIENT_ID`
 - `GOOGLE_DRIVE_CLIENT_SECRET`
 - `GOOGLE_DRIVE_REFRESH_TOKEN` (obtained once from the authenticated `/api/admin/storage/drive/connect` flow; the callback displays it only to the logged-in admin)
-- Optional: `GOOGLE_DRIVE_ROOT_FOLDER_ID` if an existing folder should be used instead of creating `TG Launcher`.
 
 Never put these credentials in the Android APK, browser JavaScript, Git, or chat.
 
@@ -56,3 +55,10 @@ The adapter stores JSON records as separate files in each collection folder. The
 ## Important consistency limits
 
 Google Drive is file storage, not a transactional database. It does not provide PostgreSQL transactions, uniqueness constraints, or relational joins. This adapter is a migration foundation, not permission to switch production traffic yet. Before cutover, write paths need conflict-safe handling and the application needs bounded caching/retry behavior. High-contention data such as OTP verification, sessions, rate limits, and license activation may need a small transactional service even if bulk records and backups live in Drive.
+
+## Services that are not replaced by Drive
+
+- Firebase Authentication remains the identity provider for email/password sign-in. Passwords and Firebase refresh tokens must not be exported into Drive JSON files.
+- Supabase remains the Social & Voice service backend for realtime messaging, presence, voice signaling, and related Edge Functions. Google Drive cannot replace realtime subscriptions or transactional coordination. Social data can be backed up separately, but the live service must not be switched to Drive as part of this migration.
+- Neon is the current primary application database for profiles, plans, licenses, app settings, announcements, AI usage, and audit logs. These are the records targeted for a controlled Drive migration.
+- Admin credentials and signing/encryption secrets remain in Vercel environment variables.
