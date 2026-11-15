@@ -1178,7 +1178,7 @@ fun SettingsScreen(
                                     )
                                     Text(
                                         text = "GPU terdeteksi: ${detectedGpu?.renderer}. Mode ini mengaktifkan optimasi opsi Minecraft dan Android Sustained Performance. Renderer tidak dipaksa berubah agar tetap kompatibel.",
-                                        color = NuxColors.TextPrimary,
+                                        color = Color.White.copy(alpha = 0.88f),
                                         fontSize = 10.sp
                                     )
                                     Text(
