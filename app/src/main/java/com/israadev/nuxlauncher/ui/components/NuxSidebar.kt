@@ -231,6 +231,3 @@ fun NuxSidebar(
         }
     }
 }
-
-private fun Brush.Companion.diagonalGradient(colors: List<Color>): Brush =
-    Brush.linearGradient(colors)
