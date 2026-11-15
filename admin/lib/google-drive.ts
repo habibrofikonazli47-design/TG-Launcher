@@ -221,10 +221,15 @@ export async function upsertDriveRecord(collection: string, id: string, value: u
     }, true);
     return { id, fileId: existing.id, updated: true };
   }
-  const metadata = await driveRequest<DriveFile>('/files?uploadType=multipart&fields=id,name,mimeType', {
+  const metadata = await driveRequest<DriveFile>('/files?fields=id,name,mimeType', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, mimeType: 'application/json', parents: [parentId] }) + '\n' + payload,
+    body: JSON.stringify({ name, mimeType: 'application/json', parents: [parentId] }),
+  });
+  await driveRequest<DriveFile>('/files/' + encodeURIComponent(metadata.id) + '?uploadType=media', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: payload,
   }, true);
   return { id, fileId: metadata.id, updated: false };
 }
