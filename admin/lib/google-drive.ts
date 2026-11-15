@@ -128,16 +128,10 @@ export async function getDriveStorageStatus() {
       requiredEnvironment: ['GOOGLE_DRIVE_CLIENT_ID', 'GOOGLE_DRIVE_CLIENT_SECRET', 'GOOGLE_DRIVE_REFRESH_TOKEN'],
     };
   }
-  const token = await accessToken();
-  const about = await driveRequest<{ user?: { displayName?: string; emailAddress?: string }; storageQuota?: { limit?: string; usage?: string } }>(
-    '/about?fields=user(displayName,emailAddress),storageQuota(limit,usage)',
-  );
+  await accessToken();
   return {
     configured: true,
-    connected: Boolean(token),
-    account: about.user?.emailAddress || '',
-    displayName: about.user?.displayName || '',
-    storageQuota: about.storageQuota || {},
+    connected: true,
     rootFolderName: ROOT_FOLDER_NAME,
   };
 }
