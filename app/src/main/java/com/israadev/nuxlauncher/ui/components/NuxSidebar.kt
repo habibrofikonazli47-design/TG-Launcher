@@ -105,7 +105,7 @@ fun NuxSidebar(
                 .shadow((8.dp).resp(), logoShape, ambientColor = TGSidebarBlue.copy(alpha = 0.24f), spotColor = TGSidebarBlue.copy(alpha = 0.32f))
                 .clip(logoShape)
                 .background(
-                    Brush diagonalGradient(
+                    Brush.linearGradient(
                         listOf(Color(0xFF173B67), Color(0xFF10233E), Color(0xFF0B1423))
                     )
                 )
