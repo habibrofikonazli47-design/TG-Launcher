@@ -205,7 +205,7 @@ export async function upsertDriveRecord(collection: string, id: string, value: u
   const parentId = await collectionFolder(collection);
   const name = recordFileName(id);
   const query = new URLSearchParams({
-    q: "'" + parentId + "' in parents and name='" + name + "' and trashed=false',
+    q: "'" + parentId + "' in parents and name='" + name + "' and trashed=false",
     pageSize: '2',
     fields: 'files(id,name)',
     spaces: 'drive',
