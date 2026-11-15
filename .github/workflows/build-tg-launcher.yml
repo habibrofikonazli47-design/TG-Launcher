@@ -12,7 +12,7 @@ on:
       - "*.gradle.kts"
       - "gradle/**"
   push:
-    branches: [main]
+    branches: [main, feature/mali-g57-performance-mode]
     paths:
       - ".github/workflows/build-tg-launcher.yml"
       - "app/**"
