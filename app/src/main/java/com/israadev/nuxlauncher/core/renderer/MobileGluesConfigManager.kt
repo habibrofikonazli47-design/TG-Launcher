@@ -3,7 +3,6 @@ package com.israadev.nuxlauncher.core.renderer
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.os.Environment
 import android.util.Log
 import org.json.JSONObject
 import java.io.File
@@ -30,18 +29,19 @@ object MobileGluesConfigManager {
     private const val MG_DIR = "MG"
     private const val CONFIG_FILE = "config.json"
 
-    private fun getConfigFile(): File {
-        val sdcard = Environment.getExternalStorageDirectory()
-        val dir = File(sdcard, MG_DIR)
+    private fun getConfigFile(context: Context): File {
+        // Keep MobileGlues configuration in the same app-private directory passed
+        // through MG_DIR_PATH before the native renderer is loaded.
+        val dir = File(context.filesDir, MG_DIR)
         if (!dir.exists()) {
             dir.mkdirs()
         }
         return File(dir, CONFIG_FILE)
     }
 
-    fun loadConfig(): MobileGluesConfig {
+    fun loadConfig(context: Context): MobileGluesConfig {
         val config = MobileGluesConfig()
-        val file = getConfigFile()
+        val file = getConfigFile(context)
         if (!file.exists() || !file.canRead()) {
             return config
         }
@@ -104,9 +104,9 @@ object MobileGluesConfigManager {
         return config
     }
 
-    fun saveConfig(config: MobileGluesConfig): Boolean {
+    fun saveConfig(context: Context, config: MobileGluesConfig): Boolean {
         return try {
-            val file = getConfigFile()
+            val file = getConfigFile(context)
             val obj = JSONObject()
 
             obj.put("enableANGLE", if (config.enableANGLE) 1 else 0)
@@ -160,12 +160,12 @@ object MobileGluesConfigManager {
         }
     }
 
-    fun ensureConfigReady() {
+    fun ensureConfigReady(context: Context) {
         try {
-            val file = getConfigFile()
+            val file = getConfigFile(context)
             if (!file.exists()) {
                 val defaultCfg = MobileGluesConfig()
-                saveConfig(defaultCfg)
+                saveConfig(context, defaultCfg)
             }
         } catch (e: Exception) {
             Log.w(TAG, "Failed to ensure MobileGlues config ready", e)

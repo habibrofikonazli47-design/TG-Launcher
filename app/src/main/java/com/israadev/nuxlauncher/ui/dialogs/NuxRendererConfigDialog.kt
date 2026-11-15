@@ -44,7 +44,7 @@ fun NuxRendererConfigDialog(
             renderer.id.contains("mobileglue", ignoreCase = true) ||
             renderer.displayName.contains("MobileGlues", ignoreCase = true)
 
-    var config by remember { mutableStateOf(MobileGluesConfigManager.loadConfig()) }
+    var config by remember { mutableStateOf(MobileGluesConfigManager.loadConfig(context)) }
     var enableAngle by remember(config) { mutableStateOf(config.enableANGLE) }
     var enableNoError by remember(config) { mutableStateOf(config.enableNoError) }
     var angleDepthFix by remember(config) { mutableStateOf(config.angleDepthClearFixMode) }
@@ -236,7 +236,7 @@ fun NuxRendererConfigDialog(
                                 .padding(10.dp)
                         ) {
                             Text(
-                                text = "Configuration file stored at: /sdcard/MG/config.json. Read automatically when Minecraft launches.",
+                                text = "Configuration is stored in the app-private MobileGlues folder and loaded when Minecraft launches.",
                                 fontSize = 8.5.sp,
                                 color = NuxColors.GrayNeutral,
                                 lineHeight = 12.sp
@@ -257,11 +257,11 @@ fun NuxRendererConfigDialog(
                                 enableExtDirectStateAccess = enableComputeDsa,
                                 fsr1Setting = if (enableFsr) 1 else 0
                             )
-                            val success = MobileGluesConfigManager.saveConfig(updated)
+                            val success = MobileGluesConfigManager.saveConfig(context, updated)
                             if (success) {
                                 Toast.makeText(context, "MobileGlues configuration saved successfully!", Toast.LENGTH_SHORT).show()
                             } else {
-                                Toast.makeText(context, "Failed to write /sdcard/MG/config.json", Toast.LENGTH_LONG).show()
+                                Toast.makeText(context, "Failed to save MobileGlues configuration", Toast.LENGTH_LONG).show()
                             }
                             onDismiss()
                         },

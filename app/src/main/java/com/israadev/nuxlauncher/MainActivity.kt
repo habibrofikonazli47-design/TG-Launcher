@@ -75,6 +75,8 @@ class MainActivity : ComponentActivity() {
             val launcherUser by AccountManager.launcherUser.collectAsState()
             val remoteConfig by RemoteLauncherConfig.config.collectAsState()
             var mandatoryUpdate by remember { mutableStateOf<AndroidUpdateInfo?>(null) }
+            var isDownloadingMandatoryUpdate by remember { mutableStateOf(false) }
+            var mandatoryUpdateError by remember { mutableStateOf<String?>(null) }
 
             // Ambil konfigurasi fitur dan kebijakan TG Launcher dari admin panel.
             LaunchedEffect(Unit) {
@@ -132,10 +134,31 @@ class MainActivity : ComponentActivity() {
                                             (if (update.fileSize > 0) "Ukuran APK: ${android.text.format.Formatter.formatShortFileSize(this@MainActivity, update.fileSize)}\n" else "") +
                                             "\n${update.changelog}\n\nSilakan unduh dan pasang versi terbaru untuk melanjutkan."
                                         )
+                                        mandatoryUpdateError?.let { error ->
+                                            Text(
+                                                text = "Gagal: $error",
+                                                color = androidx.compose.ui.graphics.Color(0xFFD32F2F)
+                                            )
+                                        }
                                     },
                                     confirmButton = {
-                                        Button(onClick = { lifecycleScope.launch { UpdateManager.downloadAndInstall(this@MainActivity, update).onFailure { error -> android.widget.Toast.makeText(this@MainActivity, error.message ?: "Gagal mengunduh pembaruan.", android.widget.Toast.LENGTH_LONG).show() } } }) {
-                                            Text("Unduh & Pasang")
+                                        Button(
+                                            enabled = !isDownloadingMandatoryUpdate,
+                                            onClick = {
+                                                if (!isDownloadingMandatoryUpdate) {
+                                                    isDownloadingMandatoryUpdate = true
+                                                    mandatoryUpdateError = null
+                                                    lifecycleScope.launch {
+                                                        val result = UpdateManager.downloadAndInstall(this@MainActivity, update)
+                                                        isDownloadingMandatoryUpdate = false
+                                                        result.onFailure { error ->
+                                                            mandatoryUpdateError = error.message ?: "Gagal mengunduh pembaruan."
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        ) {
+                                            Text(if (isDownloadingMandatoryUpdate) "Mengunduh & Memasang..." else "Unduh & Pasang")
                                         }
                                     }
                                 )
