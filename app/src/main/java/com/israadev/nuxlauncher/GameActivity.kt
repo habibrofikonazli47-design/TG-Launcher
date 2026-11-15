@@ -457,6 +457,7 @@ class GameActivity : ComponentActivity(), SurfaceHolder.Callback {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        com.israadev.nuxlauncher.core.device.RefreshRateManager.apply(this)
         PhysicalMouseChecker.initChecker(this)
         SettingsManager.init(this)
         com.israadev.nuxlauncher.core.lang.NuxLanguageManager.init(this)
