@@ -190,7 +190,7 @@ fun NuxButton(
 }
 
 /**
- * Cyber Emerald Badge / Pill Indicator
+ * TG Neon Badge / Pill Indicator
  */
 @Composable
 fun NuxBadge(
