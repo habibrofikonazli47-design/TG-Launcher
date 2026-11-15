@@ -210,7 +210,7 @@ jobs:
             app/build/outputs/apk/release/output-metadata.json
 
       - name: Publish direct APK download (TG beta release)
-        if: github.event_name != 'pull_request'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: tg-launcher-${{ env.TG_VERSION_NAME }}
