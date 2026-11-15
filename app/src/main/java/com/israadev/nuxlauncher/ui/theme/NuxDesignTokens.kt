@@ -41,7 +41,7 @@ object NuxColors {
     val TextMuted = GrayNeutral
     val SuccessGreen = ForestGreen
     val SkyBlue = Color(0xFF38BDF8)
-    val NeonBlue = Color(0xFF168BFF)
+    val NeonBlue = Color(0xFF278BFF)
     val IceBlue = Color(0xFF45D6FF)
     val PremiumGold = Color(0xFFFFB020)
 }
