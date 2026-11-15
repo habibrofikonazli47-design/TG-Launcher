@@ -6,16 +6,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 /**
- * NUX Dark Obsidian Cyber-Glass Color Palette
+ * TG Launcher Dark Obsidian Cyber-Glass Color Palette
  * Direct match with Windows launcher and Keystore
  */
 object NuxColors {
-    // Primary Cyber Emerald Palette
-    val ForestGreen = Color(0xFF168BFF) // TG electric blue primary
-    val MintGreen = Color(0xFF45D6FF)   // Ice-blue neon accent
-    val SageGreen = Color(0xFF0756B8)   // Deep electric blue
+    // TG Electric Blue and Cyan Palette
+    val ForestGreen = Color(0xFF278BFF) // TG electric blue primary
+    val MintGreen = Color(0xFF50D7FF)   // Ice-blue neon accent
+    val SageGreen = Color(0xFF1457A6)   // Deep electric blue
     val SoftLime = Color(0xFF10243D)    // Deep blue tint container
-    val LightGreen = Color(0x26168BFF)  // Blue glow container
+    val LightGreen = Color(0x26278BFF)  // Blue glow container
 
     // Dark Obsidian Neutrals (Frosted Glass Translucent)
     val Background = Color(0xFF09090B)  // Deep Obsidian background (#09090b)
@@ -41,7 +41,7 @@ object NuxColors {
     val TextMuted = GrayNeutral
     val SuccessGreen = ForestGreen
     val SkyBlue = Color(0xFF38BDF8)
-    val NeonBlue = Color(0xFF168BFF)
+    val NeonBlue = Color(0xFF278BFF)
     val IceBlue = Color(0xFF45D6FF)
     val PremiumGold = Color(0xFFFFB020)
 }

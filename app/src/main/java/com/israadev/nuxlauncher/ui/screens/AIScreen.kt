@@ -250,16 +250,16 @@ fun AIScreen(
                             .clip(CircleShape)
                             .background(
                                 Brush.radialGradient(
-                                    listOf(Color(0x3310B981), Color(0x11059669))
+                                    listOf(Color(0x33278BFF), Color(0x1150D7FF))
                                 )
                             )
-                            .border(1.dp, Color(0x4D10B981), CircleShape),
+                            .border(1.dp, Color(0x4D278BFF), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Psychology,
                             contentDescription = null,
-                            tint = Color(0xFF34D399),
+                            tint = Color(0xFF50D7FF),
                             modifier = Modifier.size(17.dp)
                         )
                     }
@@ -321,7 +321,7 @@ fun AIScreen(
                     val quotaText = if (isUnlimited) tr("ai.quota_unlimited") else tr("ai.quota_badge", remainingQuota)
                     val quotaColor = when {
                         isUnlimited -> Color(0xFF38BDF8)
-                        remainingQuota > 1 -> Color(0xFF10B981)
+                        remainingQuota > 1 -> Color(0xFF278BFF)
                         remainingQuota == 1 -> Color(0xFFFBBF24)
                         else -> Color(0xFFF43F5E)
                     }
@@ -491,14 +491,14 @@ fun AIScreen(
                             modifier = Modifier
                                 .size(48.dp)
                                 .clip(CircleShape)
-                                .background(Color(0x1F10B981))
-                                .border(1.dp, Color(0x4D10B981), CircleShape),
+                                .background(Color(0x1F278BFF))
+                                .border(1.dp, Color(0x4D278BFF), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.AutoFixHigh,
                                 contentDescription = null,
-                                tint = Color(0xFF10B981),
+                                tint = Color(0xFF278BFF),
                                 modifier = Modifier.size(24.dp)
                             )
                         }
@@ -544,11 +544,11 @@ fun AIScreen(
                                         modifier = Modifier
                                             .size(26.dp)
                                             .clip(CircleShape)
-                                            .background(Color(0xFF10B981).copy(alpha = 0.15f))
-                                            .border(1.dp, Color(0xFF10B981).copy(alpha = 0.5f), CircleShape),
+                                            .background(Color(0xFF278BFF).copy(alpha = 0.15f))
+                                            .border(1.dp, Color(0xFF278BFF).copy(alpha = 0.5f), CircleShape),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text("AI", fontSize = 8.sp, fontWeight = FontWeight.Black, color = Color(0xFF34D399))
+                                        Text("AI", fontSize = 8.sp, fontWeight = FontWeight.Black, color = Color(0xFF50D7FF))
                                     }
                                     Spacer(modifier = Modifier.width(6.dp))
                                 }
@@ -563,7 +563,7 @@ fun AIScreen(
                                         )
                                         .border(
                                             1.dp,
-                                            if (isUser) Color(0x4038BDF8) else Color(0x2E10B981),
+                                            if (isUser) Color(0x4038BDF8) else Color(0x2E278BFF),
                                             RoundedCornerShape(10.dp)
                                         )
                                         .padding(8.dp)
@@ -579,7 +579,7 @@ fun AIScreen(
                                                     text = tr("ai.agent_name"),
                                                     fontWeight = FontWeight.Black,
                                                     fontSize = 7.5.sp,
-                                                    color = Color(0xFF34D399),
+                                                    color = Color(0xFF50D7FF),
                                                     letterSpacing = 0.5.sp
                                                 )
 
@@ -682,7 +682,7 @@ fun AIScreen(
                             fontSize = 8.5.sp,
                             fontWeight = FontWeight.Medium
                         ),
-                        cursorBrush = SolidColor(Color(0xFF10B981)),
+                        cursorBrush = SolidColor(Color(0xFF278BFF)),
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
@@ -699,7 +699,7 @@ fun AIScreen(
                             if (!aiEnabled || isBusy || currentInputText.isBlank()) {
                                 Brush.horizontalGradient(listOf(Color(0xFF1E293B), Color(0xFF1E293B)))
                             } else {
-                                Brush.horizontalGradient(listOf(Color(0xFF059669), Color(0xFF10B981)))
+                                Brush.horizontalGradient(listOf(Color(0xFF50D7FF), Color(0xFF278BFF)))
                             }
                         )
                         .clickable(enabled = aiEnabled && !isBusy && currentInputText.isNotBlank()) {

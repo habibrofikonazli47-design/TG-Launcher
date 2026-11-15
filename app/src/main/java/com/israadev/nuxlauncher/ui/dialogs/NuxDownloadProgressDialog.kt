@@ -73,7 +73,7 @@ fun NuxDownloadProgressDialog(
                             modifier = Modifier
                                 .size(32.dp)
                                 .clip(CircleShape)
-                                .background(Color(0xFF10B981).copy(alpha = 0.15f))
+                                .background(Color(0xFF278BFF).copy(alpha = 0.15f))
                                 .border(1.dp, NuxColors.ForestGreen.copy(alpha = 0.5f), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
@@ -107,7 +107,7 @@ fun NuxDownloadProgressDialog(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFF10B981).copy(alpha = 0.18f))
+                            .background(Color(0xFF278BFF).copy(alpha = 0.18f))
                             .border(1.dp, NuxColors.ForestGreen.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
                             .padding(horizontal = 10.dp, vertical = 4.dp)
                     ) {
@@ -180,9 +180,9 @@ fun NuxDownloadProgressDialog(
                             .background(
                                 Brush.horizontalGradient(
                                     colors = listOf(
-                                        Color(0xFF059669),
-                                        Color(0xFF10B981),
-                                        Color(0xFF34D399),
+                                        Color(0xFF1457A6),
+                                        Color(0xFF278BFF),
+                                        Color(0xFF50D7FF),
                                         Color(0xFF38BDF8)
                                     )
                                 )

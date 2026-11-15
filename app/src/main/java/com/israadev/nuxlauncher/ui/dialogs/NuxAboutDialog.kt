@@ -281,7 +281,7 @@ fun NuxAboutDialog(
                             .clip(RoundedCornerShape(7.dp))
                             .background(
                                 if (isSelected) Brush.horizontalGradient(
-                                    listOf(Color(0xFF059669), Color(0xFF10B981))
+                                    listOf(Color(0xFF1457A6), Color(0xFF278BFF))
                                 ) else Brush.horizontalGradient(
                                     listOf(Color.Transparent, Color.Transparent)
                                 )
