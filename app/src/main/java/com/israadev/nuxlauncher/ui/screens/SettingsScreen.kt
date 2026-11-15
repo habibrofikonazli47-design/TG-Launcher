@@ -1182,20 +1182,30 @@ fun SettingsScreen(
                                         fontSize = 10.sp
                                     )
                                     Text(
-                                        text = "AKTIFKAN MODE PERFORMA",
+                                        text = if (sustainedPerf) "MODE PERFORMA AKTIF · NONAKTIFKAN" else "AKTIFKAN MODE PERFORMA",
                                         color = Color.White,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 11.sp,
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(6.dp))
-                                            .background(Color(0xFF1677D2))
+                                            .background(
+                                                if (sustainedPerf) Color(0xFF46515F) else Color(0xFF1677D2)
+                                            )
                                             .clickable {
-                                                autoOptimizeMC = true
-                                                sustainedPerf = true
+                                                if (sustainedPerf) {
+                                                    sustainedPerf = false
+                                                } else {
+                                                    autoOptimizeMC = true
+                                                    sustainedPerf = true
+                                                }
                                                 commitSettings()
                                                 Toast.makeText(
                                                     context,
-                                                    "Mali-G57 Performance Mode diaktifkan.",
+                                                    if (sustainedPerf) {
+                                                        "Mali-G57 Performance Mode diaktifkan."
+                                                    } else {
+                                                        "Sustained Performance dinonaktifkan. Optimasi Minecraft tetap mengikuti pengaturan otomatis."
+                                                    },
                                                     Toast.LENGTH_LONG
                                                 ).show()
                                             }
