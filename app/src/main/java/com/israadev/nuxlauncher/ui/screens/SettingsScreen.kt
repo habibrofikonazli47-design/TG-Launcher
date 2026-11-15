@@ -49,6 +49,8 @@ import com.israadev.nuxlauncher.core.account.AccountManager
 import com.israadev.nuxlauncher.core.auth.AuthService
 import com.israadev.nuxlauncher.core.crash.AICrashAnalyzer
 import com.israadev.nuxlauncher.core.models.LauncherSettings
+import com.israadev.nuxlauncher.core.device.GpuInfo
+import com.israadev.nuxlauncher.core.device.GpuPerformanceProfile
 import com.israadev.nuxlauncher.core.network.RemoteLauncherConfig
 import com.israadev.nuxlauncher.core.renderer.NuxRendererRegistry
 import com.israadev.nuxlauncher.core.renderer.NuxRendererPluginManager
@@ -62,7 +64,9 @@ import com.israadev.nuxlauncher.ui.dialogs.NuxAboutDialog
 import com.israadev.nuxlauncher.ui.dialogs.NuxPremiumDialog
 import com.israadev.nuxlauncher.ui.theme.NuxColors
 import com.israadev.nuxlauncher.ui.theme.NuxSizes
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 
 @Composable
@@ -203,6 +207,13 @@ fun SettingsScreen(
         minOf((totalRamMb * 0.85f).toInt().coerceAtLeast(1024), adminMaxMemoryMb.coerceAtLeast(512))
     }
     val cpuCores = remember { SettingsManager.getCpuCoreCount() }
+    var detectedGpu by remember { mutableStateOf<GpuInfo?>(null) }
+
+    LaunchedEffect(Unit) {
+        detectedGpu = withContext(Dispatchers.IO) {
+            GpuPerformanceProfile.detect()
+        }
+    }
 
     fun isRendererAllowed(rendererId: String): Boolean {
         val id = rendererId.lowercase()
@@ -1146,6 +1157,54 @@ fun SettingsScreen(
                             .verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
+                        // GPU-specific optimization is opt-in and does not force a renderer.
+                        if (detectedGpu?.isMaliG57 == true) {
+                            NuxCard(
+                                modifier = Modifier.fillMaxWidth(),
+                                backgroundColor = Color(0xFF10243A),
+                                borderColor = Color(0xFF278BFF).copy(alpha = 0.55f),
+                                borderWidth = 1.dp,
+                                cornerRadius = 8.dp
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(10.dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Text(
+                                        text = "MALI-G57 PERFORMANCE MODE",
+                                        color = Color(0xFF50D7FF),
+                                        fontWeight = FontWeight.Black,
+                                        fontSize = 12.sp
+                                    )
+                                    Text(
+                                        text = "GPU terdeteksi: ${detectedGpu?.renderer}. Mode ini mengaktifkan optimasi opsi Minecraft dan Android Sustained Performance. Renderer tidak dipaksa berubah agar tetap kompatibel.",
+                                        color = NuxColors.TextPrimary,
+                                        fontSize = 10.sp
+                                    )
+                                    Text(
+                                        text = "AKTIFKAN MODE PERFORMA",
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 11.sp,
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(Color(0xFF1677D2))
+                                            .clickable {
+                                                autoOptimizeMC = true
+                                                sustainedPerf = true
+                                                commitSettings()
+                                                Toast.makeText(
+                                                    context,
+                                                    "Mali-G57 Performance Mode diaktifkan.",
+                                                    Toast.LENGTH_LONG
+                                                ).show()
+                                            }
+                                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                                    )
+                                }
+                            }
+                        }
+
                         // Section 1: Java Memory (RAM)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
