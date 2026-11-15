@@ -730,7 +730,7 @@ fun CustomGuiEditorScreen(
                                         buttonsList = buttonsList.map { if (it.id == selectedButton.id) it.copy(name = newName) else it }
                                     },
                                     textStyle = TextStyle(color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold),
-                                    cursorBrush = SolidColor(Color(0xFF4CAF50)),
+                                    cursorBrush = SolidColor(Color(0xFF50D7FF)),
                                     singleLine = true,
                                     modifier = Modifier.fillMaxWidth()
                                 )
@@ -776,8 +776,8 @@ fun CustomGuiEditorScreen(
                                 },
                                 valueRange = 80f..220f,
                                 colors = SliderDefaults.colors(
-                                    thumbColor = Color(0xFF4CAF50),
-                                    activeTrackColor = Color(0xFF4CAF50),
+                                    thumbColor = Color(0xFF50D7FF),
+                                    activeTrackColor = Color(0xFF50D7FF),
                                     inactiveTrackColor = Color(0xFF29415D)
                                 )
                             )
@@ -794,8 +794,8 @@ fun CustomGuiEditorScreen(
                                 },
                                 valueRange = 0.15f..1.0f,
                                 colors = SliderDefaults.colors(
-                                    thumbColor = Color(0xFF4CAF50),
-                                    activeTrackColor = Color(0xFF4CAF50),
+                                    thumbColor = Color(0xFF50D7FF),
+                                    activeTrackColor = Color(0xFF50D7FF),
                                     inactiveTrackColor = Color(0xFF29415D)
                                 )
                             )
@@ -873,8 +873,8 @@ fun CustomGuiEditorScreen(
                                 },
                                 valueRange = 24f..160f,
                                 colors = SliderDefaults.colors(
-                                    thumbColor = Color(0xFF4CAF50),
-                                    activeTrackColor = Color(0xFF4CAF50),
+                                    thumbColor = Color(0xFF50D7FF),
+                                    activeTrackColor = Color(0xFF50D7FF),
                                     inactiveTrackColor = Color(0xFF29415D)
                                 )
                             )
@@ -891,8 +891,8 @@ fun CustomGuiEditorScreen(
                                 },
                                 valueRange = 24f..160f,
                                 colors = SliderDefaults.colors(
-                                    thumbColor = Color(0xFF4CAF50),
-                                    activeTrackColor = Color(0xFF4CAF50),
+                                    thumbColor = Color(0xFF50D7FF),
+                                    activeTrackColor = Color(0xFF50D7FF),
                                     inactiveTrackColor = Color(0xFF29415D)
                                 )
                             )
@@ -909,8 +909,8 @@ fun CustomGuiEditorScreen(
                                 },
                                 valueRange = 0.15f..1.0f,
                                 colors = SliderDefaults.colors(
-                                    thumbColor = Color(0xFF4CAF50),
-                                    activeTrackColor = Color(0xFF4CAF50),
+                                    thumbColor = Color(0xFF50D7FF),
+                                    activeTrackColor = Color(0xFF50D7FF),
                                     inactiveTrackColor = Color(0xFF29415D)
                                 )
                             )
@@ -927,8 +927,8 @@ fun CustomGuiEditorScreen(
                                 },
                                 valueRange = 0f..28f,
                                 colors = SliderDefaults.colors(
-                                    thumbColor = Color(0xFF4CAF50),
-                                    activeTrackColor = Color(0xFF4CAF50),
+                                    thumbColor = Color(0xFF50D7FF),
+                                    activeTrackColor = Color(0xFF50D7FF),
                                     inactiveTrackColor = Color(0xFF29415D)
                                 )
                             )
@@ -1296,8 +1296,8 @@ fun CustomGuiEditorScreen(
                                                 },
                                                 valueRange = 40f..500f,
                                                 colors = SliderDefaults.colors(
-                                                    thumbColor = Color(0xFF4CAF50),
-                                                    activeTrackColor = Color(0xFF4CAF50),
+                                                    thumbColor = Color(0xFF50D7FF),
+                                                    activeTrackColor = Color(0xFF50D7FF),
                                                     inactiveTrackColor = Color(0xFF29415D)
                                                 )
                                             )
