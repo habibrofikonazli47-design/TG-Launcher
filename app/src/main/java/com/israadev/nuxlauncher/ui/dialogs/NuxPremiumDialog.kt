@@ -59,7 +59,7 @@ private val PREMIUM_FEATURES = listOf(
     PremiumFeatureItem(Icons.Outlined.Mic, "Voice Rooms Real-Time", "Join and create low-latency multiplayer voice rooms (LiveKit WebRTC)."),
     PremiumFeatureItem(Icons.Outlined.AllInclusive, "Unlimited Game Instances", "Create unlimited Minecraft instances and modpacks (Free users limited to 3)."),
     PremiumFeatureItem(Icons.Outlined.VideoLibrary, "Custom Video Hero Banner", "Set custom MP4 videos as animated backgrounds on the launcher dashboard."),
-    PremiumFeatureItem(Icons.Outlined.WorkspacePremium, "Exclusive Premium Profile Badge", "Cyber Golden / Emerald Premium badge in profile, header, and multiplayer chat."),
+    PremiumFeatureItem(Icons.Outlined.WorkspacePremium, "Exclusive Premium Profile Badge", "Cyber Golden / Electric Blue Premium badge in profile, header, and multiplayer chat."),
     PremiumFeatureItem(Icons.Outlined.Science, "Snapshot & Beta Versions Access", "Freely download and play latest Snapshot builds, Old Beta, and Old Alpha."),
     PremiumFeatureItem(Icons.Outlined.People, "Multi-Account Switcher", "Save and switch unlimited accounts (Free users limited to 2)."),
     PremiumFeatureItem(Icons.Outlined.Speed, "Turbo Multi-Thread Downloader", "Accelerate asset and library downloads with 48 parallel worker threads.")
@@ -148,7 +148,7 @@ fun NuxPremiumDialog(
 
     val themeAccentColor = when {
         isLifetime -> Color(0xFFF59E0B) // Cyber Gold / Amber
-        isYearly -> Color(0xFF278BFF)   // Emerald Green
+        isYearly -> Color(0xFF278BFF)   // TG electric blue
         isMonthly -> Color(0xFF0EA5E9)  // Electric Cyan
         else -> Color(0xFFF59E0B)
     }
