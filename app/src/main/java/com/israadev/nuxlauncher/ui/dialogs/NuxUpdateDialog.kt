@@ -95,11 +95,11 @@ fun NuxUpdateDialog(
                                     .size(28.dp)
                                     .clip(RoundedCornerShape(7.dp))
                                     .background(
-                                        if (updateInfo.isUpdateAvailable) NuxColors.LightGreen else Color(0x2210B981)
+                                        if (updateInfo.isUpdateAvailable) NuxColors.LightGreen else Color(0x22278BFF)
                                     )
                                     .border(
                                         1.dp,
-                                        if (updateInfo.isUpdateAvailable) NuxColors.ForestGreen else Color(0x4410B981),
+                                        if (updateInfo.isUpdateAvailable) NuxColors.ForestGreen else Color(0x44278BFF),
                                         RoundedCornerShape(7.dp)
                                     ),
                                 contentAlignment = Alignment.Center
@@ -186,8 +186,8 @@ fun NuxUpdateDialog(
                                     Box(
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(3.dp))
-                                            .background(if (updateInfo.isUpdateAvailable) NuxColors.ForestGreen.copy(alpha = 0.2f) else Color(0x3310B981))
-                                            .border(1.dp, if (updateInfo.isUpdateAvailable) NuxColors.ForestGreen else Color(0x5510B981), RoundedCornerShape(3.dp))
+                                            .background(if (updateInfo.isUpdateAvailable) NuxColors.ForestGreen.copy(alpha = 0.2f) else Color(0x33278BFF))
+                                            .border(1.dp, if (updateInfo.isUpdateAvailable) NuxColors.ForestGreen else Color(0x55278BFF), RoundedCornerShape(3.dp))
                                             .padding(horizontal = 4.dp, vertical = 1.dp)
                                     ) {
                                         Text(

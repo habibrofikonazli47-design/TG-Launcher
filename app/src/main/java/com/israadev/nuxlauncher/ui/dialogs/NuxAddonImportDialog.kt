@@ -394,7 +394,7 @@ fun NuxAddonImportDialog(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(progressShape)
-                                    .background(Color(0xFF101C19), progressShape)
+                                    .background(Color(0xFF101B2B), progressShape)
                                     .border(1.dp, NuxColors.ForestGreen.copy(alpha = 0.3f), progressShape)
                                     .padding(12.dp)
                             ) {
@@ -430,7 +430,7 @@ fun NuxAddonImportDialog(
                                                 .height(6.dp)
                                                 .clip(RoundedCornerShape(3.dp)),
                                             color = NuxColors.ForestGreen,
-                                            trackColor = Color(0xFF1E2A27)
+                                            trackColor = Color(0xFF29415D)
                                         )
                                     } else {
                                         LinearProgressIndicator(
@@ -439,7 +439,7 @@ fun NuxAddonImportDialog(
                                                 .height(6.dp)
                                                 .clip(RoundedCornerShape(3.dp)),
                                             color = NuxColors.ForestGreen,
-                                            trackColor = Color(0xFF1E2A27)
+                                            trackColor = Color(0xFF29415D)
                                         )
                                     }
                                 }

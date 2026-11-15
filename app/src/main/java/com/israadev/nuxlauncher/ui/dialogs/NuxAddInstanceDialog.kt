@@ -51,7 +51,7 @@ enum class VersionCategory(
     val badgeBg: Color,
     val badgeText: Color
 ) {
-    RELEASE("Release", Color(0xFF10B981).copy(alpha = 0.15f), Color(0xFF10B981)),
+    RELEASE("Release", Color(0xFF278BFF).copy(alpha = 0.15f), Color(0xFF278BFF)),
     SNAPSHOT("Snapshot / Beta", Color(0xFF8B5CF6).copy(alpha = 0.15f), Color(0xFFA78BFA)),
     OLD_BETA("Old Beta", Color(0xFFF59E0B).copy(alpha = 0.15f), Color(0xFFFBBF24)),
     OLD_ALPHA("Old Alpha", Color(0xFFEC4899).copy(alpha = 0.15f), Color(0xFFF472B6)),
@@ -315,7 +315,7 @@ fun NuxAddInstanceDialog(
                                         listOf("vanilla" to "Vanilla", "fabric" to "Fabric").filter { (type, _) -> type == "vanilla" || RemoteLauncherConfig.isEnabled(remoteConfig, "mods", "fabricEnabled") }.forEach { (type, label) ->
                                             val isSelected = selectedLoader == type
                                             val btnBg by animateColorAsState(
-                                                targetValue = if (isSelected) Color(0xFF10B981).copy(alpha = 0.16f) else Color(0xFF0D0F15),
+                                                targetValue = if (isSelected) Color(0xFF278BFF).copy(alpha = 0.16f) else Color(0xFF0D0F15),
                                                 animationSpec = tween(200)
                                             )
                                             val btnBorder by animateColorAsState(
@@ -462,7 +462,7 @@ fun NuxAddInstanceDialog(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clip(innerBezelShape)
-                                        .background(Color(0xFF0F221B))
+                                        .background(Color(0xFF101B2B))
                                         .border(1.dp, NuxColors.ForestGreen.copy(alpha = 0.4f), innerBezelShape)
                                         .padding(horizontal = 8.dp, vertical = 5.dp),
                                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -490,12 +490,12 @@ fun NuxAddInstanceDialog(
                                             .clip(RoundedCornerShape(5.dp))
                                             .background(
                                                 if (selectedLoader == "fabric") Color(0xFF8B5CF6).copy(alpha = 0.2f)
-                                                else Color(0xFF10B981).copy(alpha = 0.2f)
+                                                else Color(0xFF278BFF).copy(alpha = 0.2f)
                                             )
                                             .border(
                                                 1.dp,
                                                 if (selectedLoader == "fabric") Color(0xFF8B5CF6).copy(alpha = 0.5f)
-                                                else Color(0xFF10B981).copy(alpha = 0.5f),
+                                                else Color(0xFF278BFF).copy(alpha = 0.5f),
                                                 RoundedCornerShape(5.dp)
                                             )
                                             .padding(horizontal = 7.dp, vertical = 3.dp)
@@ -520,7 +520,7 @@ fun NuxAddInstanceDialog(
                                     .clip(RoundedCornerShape(10.dp))
                                     .background(
                                         if (canCreate) Brush.horizontalGradient(
-                                            listOf(Color(0xFF059669), Color(0xFF10B981))
+                                            listOf(Color(0xFF1457A6), Color(0xFF278BFF))
                                         ) else Brush.horizontalGradient(
                                             listOf(Color(0xFF27272A), Color(0xFF18181B))
                                         )
@@ -780,7 +780,7 @@ fun NuxAddInstanceDialog(
 
                                             // Determine Badge Color & Label based on item type
                                             val (badgeText, badgeBg, badgeTextColor) = when {
-                                                item.type == "release" -> Triple("RELEASE", Color(0xFF10B981).copy(alpha = 0.15f), Color(0xFF10B981))
+                                                item.type == "release" -> Triple("RELEASE", Color(0xFF278BFF).copy(alpha = 0.15f), Color(0xFF278BFF))
                                                 item.type == "snapshot" -> Triple("SNAPSHOT", Color(0xFF8B5CF6).copy(alpha = 0.15f), Color(0xFFA78BFA))
                                                 item.type == "old_beta" || item.id.startsWith("b") -> Triple("BETA", Color(0xFFF59E0B).copy(alpha = 0.15f), Color(0xFFFBBF24))
                                                 item.type == "old_alpha" || item.id.startsWith("a") -> Triple("ALPHA", Color(0xFFEC4899).copy(alpha = 0.15f), Color(0xFFF472B6))
@@ -792,7 +792,7 @@ fun NuxAddInstanceDialog(
                                                     .fillMaxWidth()
                                                     .clip(itemShape)
                                                     .background(
-                                                        if (isSelected) Color(0xFF10B981).copy(alpha = 0.14f)
+                                                        if (isSelected) Color(0xFF278BFF).copy(alpha = 0.14f)
                                                         else Color(0xFF141721),
                                                         itemShape
                                                     )

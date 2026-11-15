@@ -49,6 +49,8 @@ import com.israadev.nuxlauncher.core.account.AccountManager
 import com.israadev.nuxlauncher.core.auth.AuthService
 import com.israadev.nuxlauncher.core.crash.AICrashAnalyzer
 import com.israadev.nuxlauncher.core.models.LauncherSettings
+import com.israadev.nuxlauncher.core.device.GpuInfo
+import com.israadev.nuxlauncher.core.device.GpuPerformanceProfile
 import com.israadev.nuxlauncher.core.network.RemoteLauncherConfig
 import com.israadev.nuxlauncher.core.renderer.NuxRendererRegistry
 import com.israadev.nuxlauncher.core.renderer.NuxRendererPluginManager
@@ -62,7 +64,9 @@ import com.israadev.nuxlauncher.ui.dialogs.NuxAboutDialog
 import com.israadev.nuxlauncher.ui.dialogs.NuxPremiumDialog
 import com.israadev.nuxlauncher.ui.theme.NuxColors
 import com.israadev.nuxlauncher.ui.theme.NuxSizes
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 
 @Composable
@@ -203,6 +207,13 @@ fun SettingsScreen(
         minOf((totalRamMb * 0.85f).toInt().coerceAtLeast(1024), adminMaxMemoryMb.coerceAtLeast(512))
     }
     val cpuCores = remember { SettingsManager.getCpuCoreCount() }
+    var detectedGpu by remember { mutableStateOf<GpuInfo?>(null) }
+
+    LaunchedEffect(Unit) {
+        detectedGpu = withContext(Dispatchers.IO) {
+            GpuPerformanceProfile.detect()
+        }
+    }
 
     fun isRendererAllowed(rendererId: String): Boolean {
         val id = rendererId.lowercase()
@@ -299,7 +310,7 @@ fun SettingsScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                             contentDescription = "Back",
-                            tint = NuxColors.ForestGreen,
+                            tint = Color(0xFF278BFF),
                             modifier = Modifier.size(12.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
@@ -338,7 +349,7 @@ fun SettingsScreen(
                             .fillMaxHeight()
                             .clip(RoundedCornerShape(4.dp))
                             .background(
-                                if (isProfileTab) NuxColors.ForestGreen else Color.Transparent
+                                if (isProfileTab) Color(0xFF278BFF) else Color.Transparent
                             )
                             .clickable { activeSettingsTab = "profile" }
                             .padding(horizontal = 8.dp),
@@ -367,7 +378,7 @@ fun SettingsScreen(
                             .fillMaxHeight()
                             .clip(RoundedCornerShape(4.dp))
                             .background(
-                                if (isGameTab) NuxColors.ForestGreen else Color.Transparent
+                                if (isGameTab) Color(0xFF278BFF) else Color.Transparent
                             )
                             .clickable { activeSettingsTab = "game" }
                             .padding(horizontal = 8.dp),
@@ -397,7 +408,7 @@ fun SettingsScreen(
                             .fillMaxHeight()
                             .clip(RoundedCornerShape(4.dp))
                             .background(
-                                if (isAiTab) NuxColors.ForestGreen else Color.Transparent
+                                if (isAiTab) Color(0xFF278BFF) else Color.Transparent
                             )
                             .clickable { activeSettingsTab = "ai" }
                             .padding(horizontal = 8.dp),
@@ -434,7 +445,7 @@ fun SettingsScreen(
                             .height(26.dp)
                             .clip(RoundedCornerShape(6.dp))
                             .background(NuxColors.SurfaceElevated, RoundedCornerShape(6.dp))
-                            .border(1.dp, NuxColors.MintGreen.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+                            .border(1.dp, Color(0xFF50D7FF).copy(alpha = 0.5f), RoundedCornerShape(6.dp))
                             .clickable { isTopLangMenuExpanded = true }
                             .padding(horizontal = 8.dp),
                         contentAlignment = Alignment.Center
@@ -446,7 +457,7 @@ fun SettingsScreen(
                             Text(text = activeLanguage.flag, fontSize = 12.sp)
                             Text(
                                 text = activeLanguage.name,
-                                color = NuxColors.MintGreen,
+                                color = Color(0xFF50D7FF),
                                 fontSize = 9.5.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -484,7 +495,7 @@ fun SettingsScreen(
                                             Column {
                                                 Text(
                                                     text = lang.name,
-                                                    color = if (isSelected) NuxColors.MintGreen else Color.White,
+                                                    color = if (isSelected) Color(0xFF50D7FF) else Color.White,
                                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                                     fontSize = 11.sp
                                                 )
@@ -501,7 +512,7 @@ fun SettingsScreen(
                                             Icon(
                                                 imageVector = Icons.Default.Check,
                                                 contentDescription = "Selected",
-                                                tint = NuxColors.ForestGreen,
+                                                tint = Color(0xFF278BFF),
                                                 modifier = Modifier.size(15.dp)
                                             )
                                         }
@@ -527,7 +538,7 @@ fun SettingsScreen(
                 ) {
                     Text(
                         text = "${totalRamMb / 1024} GB RAM",
-                        color = NuxColors.MintGreen,
+                        color = Color(0xFF50D7FF),
                         fontSize = 9.5.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -583,7 +594,7 @@ fun SettingsScreen(
                             Icon(
                                 imageVector = Icons.Outlined.AccountCircle,
                                 contentDescription = null,
-                                tint = NuxColors.ForestGreen,
+                                tint = Color(0xFF278BFF),
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
@@ -642,7 +653,7 @@ fun SettingsScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(34.dp),
-                                    backgroundColor = NuxColors.ForestGreen,
+                                    backgroundColor = Color(0xFF278BFF),
                                     contentColor = Color.White,
                                     cornerRadius = 6.dp,
                                     enabled = !isUploadingAvatar
@@ -812,7 +823,7 @@ fun SettingsScreen(
                                             Icon(
                                                 imageVector = Icons.Outlined.Language,
                                                 contentDescription = null,
-                                                tint = NuxColors.ForestGreen,
+                                                tint = Color(0xFF278BFF),
                                                 modifier = Modifier.size(14.dp)
                                             )
                                             Text(
@@ -837,7 +848,7 @@ fun SettingsScreen(
                                             modifier = Modifier
                                                 .clip(RoundedCornerShape(6.dp))
                                                 .background(NuxColors.SurfaceInput, RoundedCornerShape(6.dp))
-                                                .border(1.dp, NuxColors.MintGreen.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+                                                .border(1.dp, Color(0xFF50D7FF).copy(alpha = 0.5f), RoundedCornerShape(6.dp))
                                                 .clickable { isCardLangMenuExpanded = true }
                                                 .padding(horizontal = 8.dp, vertical = 5.dp),
                                             contentAlignment = Alignment.Center
@@ -849,7 +860,7 @@ fun SettingsScreen(
                                                 Text(text = activeLanguage.flag, fontSize = 12.sp)
                                                 Text(
                                                     text = activeLanguage.name,
-                                                    color = NuxColors.MintGreen,
+                                                    color = Color(0xFF50D7FF),
                                                     fontWeight = FontWeight.Bold,
                                                     fontSize = 9.5.sp
                                                 )
@@ -887,7 +898,7 @@ fun SettingsScreen(
                                                                 Column {
                                                                     Text(
                                                                         text = lang.name,
-                                                                        color = if (isSelected) NuxColors.MintGreen else Color.White,
+                                                                        color = if (isSelected) Color(0xFF50D7FF) else Color.White,
                                                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                                                         fontSize = 11.sp
                                                                     )
@@ -904,7 +915,7 @@ fun SettingsScreen(
                                                                 Icon(
                                                                     imageVector = Icons.Default.Check,
                                                                     contentDescription = "Selected",
-                                                                    tint = NuxColors.ForestGreen,
+                                                                    tint = Color(0xFF278BFF),
                                                                     modifier = Modifier.size(15.dp)
                                                                 )
                                                             }
@@ -940,7 +951,7 @@ fun SettingsScreen(
                                     Icon(
                                         imageVector = Icons.Outlined.Info,
                                         contentDescription = null,
-                                        tint = NuxColors.ForestGreen,
+                                        tint = Color(0xFF278BFF),
                                         modifier = Modifier.size(13.dp)
                                     )
                                     Text(
@@ -977,7 +988,7 @@ fun SettingsScreen(
                             Icon(
                                 imageVector = Icons.Outlined.Badge,
                                 contentDescription = null,
-                                tint = NuxColors.ForestGreen,
+                                tint = Color(0xFF278BFF),
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
@@ -1045,7 +1056,7 @@ fun SettingsScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(34.dp),
-                                backgroundColor = NuxColors.ForestGreen,
+                                backgroundColor = Color(0xFF278BFF),
                                 contentColor = Color.White,
                                 cornerRadius = 6.dp,
                                 enabled = !isSavingUsername
@@ -1146,12 +1157,70 @@ fun SettingsScreen(
                             .verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
+                        // GPU-specific optimization is opt-in and does not force a renderer.
+                        if (detectedGpu?.isMaliG57 == true) {
+                            NuxCard(
+                                modifier = Modifier.fillMaxWidth(),
+                                backgroundColor = Color(0xFF10243A),
+                                borderColor = Color(0xFF278BFF).copy(alpha = 0.55f),
+                                borderWidth = 1.dp,
+                                cornerRadius = 8.dp
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(10.dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Text(
+                                        text = "MALI-G57 PERFORMANCE MODE",
+                                        color = Color(0xFF50D7FF),
+                                        fontWeight = FontWeight.Black,
+                                        fontSize = 12.sp
+                                    )
+                                    Text(
+                                        text = "GPU terdeteksi: ${detectedGpu?.renderer}. Mode ini mengaktifkan optimasi opsi Minecraft dan Android Sustained Performance. Renderer tidak dipaksa berubah agar tetap kompatibel.",
+                                        color = Color.White.copy(alpha = 0.88f),
+                                        fontSize = 10.sp
+                                    )
+                                    Text(
+                                        text = if (sustainedPerf) "MODE PERFORMA AKTIF · NONAKTIFKAN" else "AKTIFKAN MODE PERFORMA",
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 11.sp,
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(
+                                                if (sustainedPerf) Color(0xFF46515F) else Color(0xFF1677D2)
+                                            )
+                                            .clickable {
+                                                if (sustainedPerf) {
+                                                    sustainedPerf = false
+                                                } else {
+                                                    autoOptimizeMC = true
+                                                    sustainedPerf = true
+                                                }
+                                                commitSettings()
+                                                Toast.makeText(
+                                                    context,
+                                                    if (sustainedPerf) {
+                                                        "Mali-G57 Performance Mode diaktifkan."
+                                                    } else {
+                                                        "Sustained Performance dinonaktifkan. Optimasi Minecraft tetap mengikuti pengaturan otomatis."
+                                                    },
+                                                    Toast.LENGTH_LONG
+                                                ).show()
+                                            }
+                                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                                    )
+                                }
+                            }
+                        }
+
                         // Section 1: Java Memory (RAM)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.Outlined.Memory,
                                 contentDescription = null,
-                                tint = NuxColors.ForestGreen,
+                                tint = Color(0xFF278BFF),
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
@@ -1185,19 +1254,19 @@ fun SettingsScreen(
                                 Box(
                                     modifier = Modifier
                                         .background(
-                                            if (ramMb > (totalRamMb * 0.75f)) NuxColors.Coral.copy(alpha = 0.2f) else NuxColors.ForestGreen.copy(alpha = 0.2f),
+                                            if (ramMb > (totalRamMb * 0.75f)) NuxColors.Coral.copy(alpha = 0.2f) else Color(0xFF278BFF).copy(alpha = 0.2f),
                                             RoundedCornerShape(4.dp)
                                         )
                                         .border(
                                             1.dp,
-                                            if (ramMb > (totalRamMb * 0.75f)) NuxColors.Coral.copy(alpha = 0.4f) else NuxColors.MintGreen.copy(alpha = 0.3f),
+                                            if (ramMb > (totalRamMb * 0.75f)) NuxColors.Coral.copy(alpha = 0.4f) else Color(0xFF50D7FF).copy(alpha = 0.3f),
                                             RoundedCornerShape(4.dp)
                                         )
                                         .padding(horizontal = 6.dp, vertical = 2.dp)
                                 ) {
                                     Text(
                                         text = "$ramMb MB (${String.format("%.1f", ramMb / 1024f)} GB)",
-                                        color = if (ramMb > (totalRamMb * 0.75f)) NuxColors.Coral else NuxColors.MintGreen,
+                                        color = if (ramMb > (totalRamMb * 0.75f)) NuxColors.Coral else Color(0xFF50D7FF),
                                         fontSize = 9.5.sp,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -1215,8 +1284,8 @@ fun SettingsScreen(
                                 valueRange = 512f..maxAllocatableRam.toFloat(),
                                 steps = ((maxAllocatableRam - 512) / 128) - 1,
                                 colors = SliderDefaults.colors(
-                                    thumbColor = NuxColors.MintGreen,
-                                    activeTrackColor = NuxColors.ForestGreen,
+                                    thumbColor = Color(0xFF50D7FF),
+                                    activeTrackColor = Color(0xFF278BFF),
                                     inactiveTrackColor = NuxColors.CardBorder
                                 )
                             )
@@ -1244,12 +1313,12 @@ fun SettingsScreen(
                                                 .height(24.dp)
                                                 .clip(RoundedCornerShape(4.dp))
                                                 .background(
-                                                    if (isSelected) NuxColors.ForestGreen else NuxColors.SurfaceElevated,
+                                                    if (isSelected) Color(0xFF278BFF) else NuxColors.SurfaceElevated,
                                                     RoundedCornerShape(4.dp)
                                                 )
                                                 .border(
                                                     1.dp,
-                                                    if (isSelected) NuxColors.MintGreen else NuxColors.CardBorder,
+                                                    if (isSelected) Color(0xFF50D7FF) else NuxColors.CardBorder,
                                                     RoundedCornerShape(4.dp)
                                                 )
                                                 .clickable {
@@ -1296,7 +1365,7 @@ fun SettingsScreen(
                             Icon(
                                 imageVector = Icons.Outlined.Speed,
                                 contentDescription = null,
-                                tint = NuxColors.ForestGreen,
+                                tint = Color(0xFF278BFF),
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
@@ -1340,7 +1409,7 @@ fun SettingsScreen(
                                                 .size(24.dp)
                                                 .clip(RoundedCornerShape(4.dp))
                                                 .background(NuxColors.SurfaceElevated)
-                                                .border(1.dp, NuxColors.MintGreen.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
+                                                .border(1.dp, Color(0xFF50D7FF).copy(alpha = 0.5f), RoundedCornerShape(4.dp))
                                                 .clickable {
                                                     selectedConfigRenderer = activeRendererInfo
                                                     showRendererConfigDialog = true
@@ -1350,7 +1419,7 @@ fun SettingsScreen(
                                             Icon(
                                                 imageVector = Icons.Default.Settings,
                                                 contentDescription = "Configure Renderer",
-                                                tint = NuxColors.MintGreen,
+                                                tint = Color(0xFF50D7FF),
                                                 modifier = Modifier.size(14.dp)
                                             )
                                         }
@@ -1373,7 +1442,7 @@ fun SettingsScreen(
                                             text = "CHANGE",
                                             fontSize = 9.5.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = NuxColors.MintGreen
+                                            color = Color(0xFF50D7FF)
                                         )
                                     }
                                 }
@@ -1391,19 +1460,19 @@ fun SettingsScreen(
                                     text = activeRendererInfo.displayName,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Black,
-                                    color = NuxColors.MintGreen
+                                    color = Color(0xFF50D7FF)
                                 )
                                 Box(
                                     modifier = Modifier
-                                        .background(NuxColors.ForestGreen.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
-                                        .border(1.dp, NuxColors.MintGreen.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                                        .background(Color(0xFF278BFF).copy(alpha = 0.2f), RoundedCornerShape(4.dp))
+                                        .border(1.dp, Color(0xFF50D7FF).copy(alpha = 0.3f), RoundedCornerShape(4.dp))
                                         .padding(horizontal = 6.dp, vertical = 2.dp)
                                 ) {
                                     Text(
                                         text = activeRendererInfo.badge,
                                         fontSize = 8.5.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = NuxColors.MintGreen,
+                                        color = Color(0xFF50D7FF),
                                         maxLines = 1
                                     )
                                 }
@@ -1450,7 +1519,7 @@ fun SettingsScreen(
                                 },
                                 colors = SwitchDefaults.colors(
                                     checkedThumbColor = Color.White,
-                                    checkedTrackColor = NuxColors.ForestGreen,
+                                    checkedTrackColor = Color(0xFF278BFF),
                                     uncheckedTrackColor = NuxColors.SurfaceElevated
                                 )
                             )
@@ -1478,7 +1547,7 @@ fun SettingsScreen(
                                     text = "$resolutionRatio%",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Black,
-                                    color = NuxColors.MintGreen
+                                    color = Color(0xFF50D7FF)
                                 )
                             }
                             Spacer(modifier = Modifier.height(4.dp))
@@ -1491,12 +1560,12 @@ fun SettingsScreen(
                                             .height(24.dp)
                                             .clip(RoundedCornerShape(4.dp))
                                             .background(
-                                                if (isSelected) NuxColors.ForestGreen else NuxColors.SurfaceElevated,
+                                                if (isSelected) Color(0xFF278BFF) else NuxColors.SurfaceElevated,
                                                 RoundedCornerShape(4.dp)
                                             )
                                             .border(
                                                 1.dp,
-                                                if (isSelected) NuxColors.MintGreen else NuxColors.CardBorder,
+                                                if (isSelected) Color(0xFF50D7FF) else NuxColors.CardBorder,
                                                 RoundedCornerShape(4.dp)
                                             )
                                             .clickable {
@@ -1545,12 +1614,12 @@ fun SettingsScreen(
                                             .height(24.dp)
                                             .clip(RoundedCornerShape(4.dp))
                                             .background(
-                                                if (isSelected) NuxColors.ForestGreen else NuxColors.SurfaceElevated,
+                                                if (isSelected) Color(0xFF278BFF) else NuxColors.SurfaceElevated,
                                                 RoundedCornerShape(4.dp)
                                             )
                                             .border(
                                                 1.dp,
-                                                if (isSelected) NuxColors.MintGreen else NuxColors.CardBorder,
+                                                if (isSelected) Color(0xFF50D7FF) else NuxColors.CardBorder,
                                                 RoundedCornerShape(4.dp)
                                             )
                                             .clickable {
@@ -1599,12 +1668,12 @@ fun SettingsScreen(
                                             .height(24.dp)
                                             .clip(RoundedCornerShape(4.dp))
                                             .background(
-                                                if (isSelected) NuxColors.ForestGreen else NuxColors.SurfaceElevated,
+                                                if (isSelected) Color(0xFF278BFF) else NuxColors.SurfaceElevated,
                                                 RoundedCornerShape(4.dp)
                                             )
                                             .border(
                                                 1.dp,
-                                                if (isSelected) NuxColors.MintGreen else NuxColors.CardBorder,
+                                                if (isSelected) Color(0xFF50D7FF) else NuxColors.CardBorder,
                                                 RoundedCornerShape(4.dp)
                                             )
                                             .clickable {
@@ -1659,7 +1728,7 @@ fun SettingsScreen(
                                 },
                                 colors = SwitchDefaults.colors(
                                     checkedThumbColor = Color.White,
-                                    checkedTrackColor = NuxColors.ForestGreen,
+                                    checkedTrackColor = Color(0xFF278BFF),
                                     uncheckedTrackColor = NuxColors.SurfaceElevated
                                 )
                             )
@@ -1696,7 +1765,7 @@ fun SettingsScreen(
                                 },
                                 colors = SwitchDefaults.colors(
                                     checkedThumbColor = Color.White,
-                                    checkedTrackColor = NuxColors.ForestGreen,
+                                    checkedTrackColor = Color(0xFF278BFF),
                                     uncheckedTrackColor = NuxColors.SurfaceElevated
                                 )
                             )
@@ -1727,7 +1796,7 @@ fun SettingsScreen(
                             Icon(
                                 imageVector = Icons.Outlined.Mouse,
                                 contentDescription = null,
-                                tint = NuxColors.ForestGreen,
+                                tint = Color(0xFF278BFF),
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
@@ -1769,7 +1838,7 @@ fun SettingsScreen(
                                     else
                                         "Touch actions for breaking/mining and placing/using items are enabled.",
                                     fontSize = 9.sp,
-                                    color = if (disableGestures) NuxColors.MintGreen else NuxColors.GrayNeutral,
+                                    color = if (disableGestures) Color(0xFF50D7FF) else NuxColors.GrayNeutral,
                                     lineHeight = 12.sp
                                 )
                             }
@@ -1781,7 +1850,7 @@ fun SettingsScreen(
                                 },
                                 colors = SwitchDefaults.colors(
                                     checkedThumbColor = Color.White,
-                                    checkedTrackColor = NuxColors.ForestGreen,
+                                    checkedTrackColor = Color(0xFF278BFF),
                                     uncheckedThumbColor = NuxColors.GrayNeutral,
                                     uncheckedTrackColor = NuxColors.CardBorder
                                 )
@@ -1804,7 +1873,7 @@ fun SettingsScreen(
                                     Icon(
                                         imageVector = Icons.Outlined.Tune,
                                         contentDescription = null,
-                                        tint = NuxColors.ForestGreen,
+                                        tint = Color(0xFF278BFF),
                                         modifier = Modifier.size(14.dp)
                                     )
                                     Text(
@@ -1827,7 +1896,7 @@ fun SettingsScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(34.dp),
-                                    backgroundColor = NuxColors.ForestGreen,
+                                    backgroundColor = Color(0xFF278BFF),
                                     contentColor = Color.White,
                                     cornerRadius = 6.dp
                                 ) {
@@ -1849,12 +1918,12 @@ fun SettingsScreen(
                                 modifier = Modifier
                                     .weight(1f)
                                     .background(
-                                        if (isSlide) NuxColors.ForestGreen.copy(alpha = 0.15f) else NuxColors.SurfaceInput,
+                                        if (isSlide) Color(0xFF278BFF).copy(alpha = 0.15f) else NuxColors.SurfaceInput,
                                         RoundedCornerShape(6.dp)
                                     )
                                     .border(
                                         1.dp,
-                                        if (isSlide) NuxColors.MintGreen else NuxColors.CardBorder,
+                                        if (isSlide) Color(0xFF50D7FF) else NuxColors.CardBorder,
                                         RoundedCornerShape(6.dp)
                                     )
                                     .clickable {
@@ -1868,7 +1937,7 @@ fun SettingsScreen(
                                         Icon(
                                             imageVector = Icons.Outlined.TouchApp,
                                             contentDescription = null,
-                                            tint = if (isSlide) NuxColors.MintGreen else Color.White,
+                                            tint = if (isSlide) Color(0xFF50D7FF) else Color.White,
                                             modifier = Modifier.size(14.dp)
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
@@ -1876,7 +1945,7 @@ fun SettingsScreen(
                                             text = tr("settings.mouse_mode_slide_title"),
                                             fontSize = 10.5.sp,
                                             fontWeight = FontWeight.Black,
-                                            color = if (isSlide) NuxColors.MintGreen else Color.White
+                                            color = if (isSlide) Color(0xFF50D7FF) else Color.White
                                         )
                                     }
                                     Spacer(modifier = Modifier.height(3.dp))
@@ -1895,12 +1964,12 @@ fun SettingsScreen(
                                 modifier = Modifier
                                     .weight(1f)
                                     .background(
-                                        if (isClick) NuxColors.ForestGreen.copy(alpha = 0.15f) else NuxColors.SurfaceInput,
+                                        if (isClick) Color(0xFF278BFF).copy(alpha = 0.15f) else NuxColors.SurfaceInput,
                                         RoundedCornerShape(6.dp)
                                     )
                                     .border(
                                         1.dp,
-                                        if (isClick) NuxColors.MintGreen else NuxColors.CardBorder,
+                                        if (isClick) Color(0xFF50D7FF) else NuxColors.CardBorder,
                                         RoundedCornerShape(6.dp)
                                     )
                                     .clickable {
@@ -1914,7 +1983,7 @@ fun SettingsScreen(
                                         Icon(
                                             imageVector = Icons.Outlined.NearMe,
                                             contentDescription = null,
-                                            tint = if (isClick) NuxColors.MintGreen else Color.White,
+                                            tint = if (isClick) Color(0xFF50D7FF) else Color.White,
                                             modifier = Modifier.size(14.dp)
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
@@ -1922,7 +1991,7 @@ fun SettingsScreen(
                                             text = tr("settings.mouse_mode_click_title"),
                                             fontSize = 10.5.sp,
                                             fontWeight = FontWeight.Black,
-                                            color = if (isClick) NuxColors.MintGreen else Color.White
+                                            color = if (isClick) Color(0xFF50D7FF) else Color.White
                                         )
                                     }
                                     Spacer(modifier = Modifier.height(3.dp))
@@ -1957,13 +2026,13 @@ fun SettingsScreen(
                                 )
                                 Box(
                                     modifier = Modifier
-                                        .background(NuxColors.ForestGreen.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
-                                        .border(1.dp, NuxColors.MintGreen.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                                        .background(Color(0xFF278BFF).copy(alpha = 0.2f), RoundedCornerShape(4.dp))
+                                        .border(1.dp, Color(0xFF50D7FF).copy(alpha = 0.3f), RoundedCornerShape(4.dp))
                                         .padding(horizontal = 6.dp, vertical = 2.dp)
                                 ) {
                                     Text(
                                         text = "$captureSensitivity%",
-                                        color = NuxColors.MintGreen,
+                                        color = Color(0xFF50D7FF),
                                         fontSize = 9.5.sp,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -1978,8 +2047,8 @@ fun SettingsScreen(
                                 valueRange = 50f..300f,
                                 steps = 25,
                                 colors = SliderDefaults.colors(
-                                    thumbColor = NuxColors.MintGreen,
-                                    activeTrackColor = NuxColors.ForestGreen,
+                                    thumbColor = Color(0xFF50D7FF),
+                                    activeTrackColor = Color(0xFF278BFF),
                                     inactiveTrackColor = NuxColors.CardBorder
                                 )
                             )
@@ -2006,13 +2075,13 @@ fun SettingsScreen(
                                 )
                                 Box(
                                     modifier = Modifier
-                                        .background(NuxColors.ForestGreen.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
-                                        .border(1.dp, NuxColors.MintGreen.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                                        .background(Color(0xFF278BFF).copy(alpha = 0.2f), RoundedCornerShape(4.dp))
+                                        .border(1.dp, Color(0xFF50D7FF).copy(alpha = 0.3f), RoundedCornerShape(4.dp))
                                         .padding(horizontal = 6.dp, vertical = 2.dp)
                                 ) {
                                     Text(
                                         text = "$cursorSensitivity%",
-                                        color = NuxColors.MintGreen,
+                                        color = Color(0xFF50D7FF),
                                         fontSize = 9.5.sp,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -2027,8 +2096,8 @@ fun SettingsScreen(
                                 valueRange = 50f..300f,
                                 steps = 25,
                                 colors = SliderDefaults.colors(
-                                    thumbColor = NuxColors.MintGreen,
-                                    activeTrackColor = NuxColors.ForestGreen,
+                                    thumbColor = Color(0xFF50D7FF),
+                                    activeTrackColor = Color(0xFF278BFF),
                                     inactiveTrackColor = NuxColors.CardBorder
                                 )
                             )
@@ -2057,7 +2126,7 @@ fun SettingsScreen(
                                     text = "${mouseSizeDp}dp",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Black,
-                                    color = NuxColors.MintGreen
+                                    color = Color(0xFF50D7FF)
                                 )
                             }
                             Slider(
@@ -2069,8 +2138,8 @@ fun SettingsScreen(
                                 valueRange = 16f..48f,
                                 steps = 16,
                                 colors = SliderDefaults.colors(
-                                    thumbColor = NuxColors.MintGreen,
-                                    activeTrackColor = NuxColors.ForestGreen,
+                                    thumbColor = Color(0xFF50D7FF),
+                                    activeTrackColor = Color(0xFF278BFF),
                                     inactiveTrackColor = NuxColors.CardBorder
                                 )
                             )
@@ -2106,8 +2175,8 @@ fun SettingsScreen(
                                     commitSettings()
                                 },
                                 colors = SwitchDefaults.colors(
-                                    checkedThumbColor = NuxColors.MintGreen,
-                                    checkedTrackColor = NuxColors.ForestGreen,
+                                    checkedThumbColor = Color(0xFF50D7FF),
+                                    checkedTrackColor = Color(0xFF278BFF),
                                     uncheckedThumbColor = Color.Gray,
                                     uncheckedTrackColor = NuxColors.CardBorder
                                 )
@@ -2165,7 +2234,7 @@ fun SettingsScreen(
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(34.dp),
-                                backgroundColor = NuxColors.ForestGreen,
+                                backgroundColor = Color(0xFF278BFF),
                                 contentColor = Color.White,
                                 cornerRadius = 6.dp
                             ) {
@@ -2213,7 +2282,7 @@ fun SettingsScreen(
                             Icon(
                                 imageVector = Icons.Outlined.AutoFixHigh,
                                 contentDescription = null,
-                                tint = NuxColors.ForestGreen,
+                                tint = Color(0xFF278BFF),
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
@@ -2247,7 +2316,7 @@ fun SettingsScreen(
                                     text = if (aiAutoAnalyze) "Active: AI analyzes crash logs automatically when game terminates unexpectedly."
                                            else "Disabled (Default): AI analysis is triggered manually in crash dialogs to conserve quota.",
                                     fontSize = 9.sp,
-                                    color = if (aiAutoAnalyze) NuxColors.MintGreen else NuxColors.GrayNeutral,
+                                    color = if (aiAutoAnalyze) Color(0xFF50D7FF) else NuxColors.GrayNeutral,
                                     lineHeight = 12.sp
                                 )
                             }
@@ -2259,7 +2328,7 @@ fun SettingsScreen(
                                 },
                                 colors = SwitchDefaults.colors(
                                     checkedThumbColor = Color.White,
-                                    checkedTrackColor = NuxColors.ForestGreen,
+                                    checkedTrackColor = Color(0xFF278BFF),
                                     uncheckedThumbColor = NuxColors.GrayNeutral,
                                     uncheckedTrackColor = NuxColors.CardBorder
                                 )
@@ -2271,7 +2340,7 @@ fun SettingsScreen(
                             Icon(
                                 imageVector = Icons.Outlined.Key,
                                 contentDescription = null,
-                                tint = NuxColors.ForestGreen,
+                                tint = Color(0xFF278BFF),
                                 modifier = Modifier.size(14.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
@@ -2376,7 +2445,7 @@ fun SettingsScreen(
                                     Icon(
                                         imageVector = Icons.Outlined.NetworkCheck,
                                         contentDescription = null,
-                                        tint = NuxColors.MintGreen,
+                                        tint = Color(0xFF50D7FF),
                                         modifier = Modifier.size(13.dp)
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
@@ -2392,7 +2461,7 @@ fun SettingsScreen(
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(34.dp),
-                                backgroundColor = NuxColors.ForestGreen,
+                                backgroundColor = Color(0xFF278BFF),
                                 contentColor = Color.White,
                                 cornerRadius = 6.dp
                             ) {
@@ -2414,12 +2483,12 @@ fun SettingsScreen(
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(6.dp))
                                     .background(
-                                        if (isAiConnectionSuccess) NuxColors.MintGreen.copy(alpha = 0.15f)
+                                        if (isAiConnectionSuccess) Color(0xFF50D7FF).copy(alpha = 0.15f)
                                         else NuxColors.Coral.copy(alpha = 0.15f)
                                     )
                                     .border(
                                         1.dp,
-                                        if (isAiConnectionSuccess) NuxColors.MintGreen.copy(alpha = 0.4f)
+                                        if (isAiConnectionSuccess) Color(0xFF50D7FF).copy(alpha = 0.4f)
                                         else NuxColors.Coral.copy(alpha = 0.4f),
                                         RoundedCornerShape(6.dp)
                                     )
@@ -2429,7 +2498,7 @@ fun SettingsScreen(
                                 Icon(
                                     imageVector = if (isAiConnectionSuccess) Icons.Outlined.CheckCircle else Icons.Outlined.ErrorOutline,
                                     contentDescription = null,
-                                    tint = if (isAiConnectionSuccess) NuxColors.MintGreen else NuxColors.Coral,
+                                    tint = if (isAiConnectionSuccess) Color(0xFF50D7FF) else NuxColors.Coral,
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
@@ -2472,7 +2541,7 @@ fun SettingsScreen(
                                 Icon(
                                     imageVector = Icons.Outlined.Info,
                                     contentDescription = null,
-                                    tint = NuxColors.ForestGreen,
+                                    tint = Color(0xFF278BFF),
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
@@ -2486,12 +2555,12 @@ fun SettingsScreen(
 
                             Box(
                                 modifier = Modifier
-                                    .background(NuxColors.MintGreen.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
+                                    .background(Color(0xFF50D7FF).copy(alpha = 0.2f), RoundedCornerShape(4.dp))
                                     .padding(horizontal = 6.dp, vertical = 2.dp)
                             ) {
                                 Text(
                                     text = "ONLINE & READY",
-                                    color = NuxColors.MintGreen,
+                                    color = Color(0xFF50D7FF),
                                     fontSize = 8.5.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -2531,7 +2600,7 @@ fun SettingsScreen(
                                         modifier = Modifier
                                             .padding(top = 2.dp)
                                             .size(5.dp)
-                                            .background(NuxColors.MintGreen, CircleShape)
+                                            .background(Color(0xFF50D7FF), CircleShape)
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Column {
@@ -2556,15 +2625,15 @@ fun SettingsScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(NuxColors.ForestGreen.copy(alpha = 0.12f), RoundedCornerShape(6.dp))
-                                .border(1.dp, NuxColors.ForestGreen.copy(alpha = 0.35f), RoundedCornerShape(6.dp))
+                                .background(Color(0xFF278BFF).copy(alpha = 0.12f), RoundedCornerShape(6.dp))
+                                .border(1.dp, Color(0xFF278BFF).copy(alpha = 0.35f), RoundedCornerShape(6.dp))
                                 .padding(10.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
                                     imageVector = Icons.Outlined.Lightbulb,
                                     contentDescription = null,
-                                    tint = NuxColors.MintGreen,
+                                    tint = Color(0xFF50D7FF),
                                     modifier = Modifier.size(14.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
@@ -2572,7 +2641,7 @@ fun SettingsScreen(
                                     text = "Want to Use a Personal API Key?",
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = NuxColors.MintGreen
+                                    color = Color(0xFF50D7FF)
                                 )
                             }
                             Spacer(modifier = Modifier.height(4.dp))
@@ -2667,7 +2736,7 @@ fun SettingsScreen(
                             Icon(
                                 imageVector = Icons.Outlined.Layers,
                                 contentDescription = null,
-                                tint = NuxColors.ForestGreen,
+                                tint = Color(0xFF278BFF),
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
@@ -2714,11 +2783,11 @@ fun SettingsScreen(
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(6.dp))
                                     .background(
-                                        if (isSelected) NuxColors.ForestGreen.copy(alpha = 0.15f) else NuxColors.SurfaceInput
+                                        if (isSelected) Color(0xFF278BFF).copy(alpha = 0.15f) else NuxColors.SurfaceInput
                                     )
                                     .border(
                                         width = 1.dp,
-                                        color = if (isSelected) NuxColors.MintGreen else NuxColors.CardBorder,
+                                        color = if (isSelected) Color(0xFF50D7FF) else NuxColors.CardBorder,
                                         shape = RoundedCornerShape(6.dp)
                                     )
                                     .clickable {
@@ -2748,7 +2817,7 @@ fun SettingsScreen(
                                                     Toast.makeText(context, "Renderer changed to: ${rendererItem.displayName}", Toast.LENGTH_SHORT).show()
                                                 },
                                                 colors = RadioButtonDefaults.colors(
-                                                    selectedColor = NuxColors.ForestGreen,
+                                                    selectedColor = Color(0xFF278BFF),
                                                     unselectedColor = NuxColors.CardBorder
                                                 ),
                                                 modifier = Modifier.size(18.dp)
@@ -2758,7 +2827,7 @@ fun SettingsScreen(
                                                 text = rendererItem.displayName,
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 11.sp,
-                                                color = if (isSelected) NuxColors.MintGreen else Color.White
+                                                color = if (isSelected) Color(0xFF50D7FF) else Color.White
                                             )
                                         }
                                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -2768,7 +2837,7 @@ fun SettingsScreen(
                                                         .size(22.dp)
                                                         .clip(RoundedCornerShape(4.dp))
                                                         .background(NuxColors.SurfaceElevated)
-                                                        .border(1.dp, NuxColors.MintGreen.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
+                                                        .border(1.dp, Color(0xFF50D7FF).copy(alpha = 0.5f), RoundedCornerShape(4.dp))
                                                         .clickable {
                                                             selectedConfigRenderer = rendererItem
                                                             showRendererDialog = false
@@ -2779,7 +2848,7 @@ fun SettingsScreen(
                                                     Icon(
                                                         imageVector = Icons.Default.Settings,
                                                         contentDescription = "Configure ${rendererItem.displayName}",
-                                                        tint = NuxColors.MintGreen,
+                                                        tint = Color(0xFF50D7FF),
                                                         modifier = Modifier.size(13.dp)
                                                     )
                                                 }
@@ -2788,7 +2857,7 @@ fun SettingsScreen(
                                             Box(
                                                 modifier = Modifier
                                                     .background(
-                                                        if (isSelected) NuxColors.ForestGreen else NuxColors.SurfaceElevated,
+                                                        if (isSelected) Color(0xFF278BFF) else NuxColors.SurfaceElevated,
                                                         RoundedCornerShape(4.dp)
                                                     )
                                                     .border(1.dp, NuxColors.CardBorder, RoundedCornerShape(4.dp))
@@ -2816,7 +2885,7 @@ fun SettingsScreen(
                                         text = "Compatibility: ${rendererItem.compatibility}",
                                         fontSize = 9.sp,
                                         fontWeight = FontWeight.SemiBold,
-                                        color = NuxColors.MintGreen,
+                                        color = Color(0xFF50D7FF),
                                         modifier = Modifier.padding(start = 24.dp)
                                     )
                                 }

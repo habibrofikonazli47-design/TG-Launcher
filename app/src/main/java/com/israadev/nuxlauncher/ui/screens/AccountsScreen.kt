@@ -105,7 +105,7 @@ fun AccountsScreen(
     val (activeTypeLabel, activeAccentColor, activeContainerBg) = when (activeType) {
         "microsoft" -> Triple("MICROSOFT", Color(0xFF0078D4), Color(0x260078D4))
         "elyby" -> Triple("ELY.BY", Color(0xFFA855F7), Color(0x26A855F7))
-        else -> Triple("OFFLINE", NuxColors.ForestGreen, NuxColors.LightGreen)
+        else -> Triple("OFFLINE", Color(0xFF278BFF), Color(0x26278BFF))
     }
 
     Column(
@@ -141,7 +141,7 @@ fun AccountsScreen(
                         Icon(
                             imageVector = Icons.Outlined.ArrowBack,
                             contentDescription = tr("common.back"),
-                            tint = NuxColors.ForestGreen,
+                            tint = Color(0xFF278BFF),
                             modifier = Modifier.size(12.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
@@ -171,8 +171,8 @@ fun AccountsScreen(
                 modifier = Modifier
                     .height(26.dp)
                     .clip(RoundedCornerShape(6.dp))
-                    .background(NuxColors.ForestGreen.copy(alpha = 0.12f), RoundedCornerShape(6.dp))
-                    .border(1.dp, NuxColors.ForestGreen.copy(alpha = 0.35f), RoundedCornerShape(6.dp))
+                    .background(Color(0xFF278BFF).copy(alpha = 0.12f), RoundedCornerShape(6.dp))
+                    .border(1.dp, Color(0xFF278BFF).copy(alpha = 0.35f), RoundedCornerShape(6.dp))
                     .clickable {
                         val maxSavedAccounts = launcherUser?.limits?.get("accounts") ?: if (launcherUser?.isActivated == true) -1 else 2
                         if (maxSavedAccounts >= 0 && accounts.size >= maxSavedAccounts) {
@@ -188,7 +188,7 @@ fun AccountsScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = tr("accounts.btn_add_account"),
-                        color = NuxColors.ForestGreen,
+                        color = Color(0xFF278BFF),
                         fontWeight = FontWeight.Bold,
                         fontSize = 9.5.sp,
                         letterSpacing = 0.5.sp
@@ -240,11 +240,11 @@ fun AccountsScreen(
                                 Box(
                                     modifier = Modifier
                                         .size(5.dp)
-                                        .background(NuxColors.ForestGreen, CircleShape)
+                                        .background(Color(0xFF278BFF), CircleShape)
                                 )
                                 Text(
                                     text = tr("accounts.active_profile"),
-                                    color = NuxColors.ForestGreen,
+                                    color = Color(0xFF278BFF),
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
                                     letterSpacing = 0.5.sp
@@ -426,7 +426,7 @@ fun AccountsScreen(
                                 val (badgeTxt, badgeBg, badgeColor) = when (acc.safeAccountType) {
                                     "microsoft" -> Triple("MS", Color(0x260078D4), Color(0xFF0078D4))
                                     "elyby" -> Triple("ELY", Color(0x26A855F7), Color(0xFFA855F7))
-                                    else -> Triple("OFF", NuxColors.LightGreen, NuxColors.ForestGreen)
+                                    else -> Triple("OFF", Color(0x26278BFF), Color(0xFF278BFF))
                                 }
 
                                 val itemShape = RoundedCornerShape(10.dp)
@@ -436,12 +436,12 @@ fun AccountsScreen(
                                         .fillMaxWidth()
                                         .clip(itemShape)
                                         .background(
-                                            if (isCurrent) Color(0xFF10B981).copy(alpha = 0.22f) else Color(0x73141822),
+                                            if (isCurrent) Color(0xFF278BFF).copy(alpha = 0.22f) else Color(0x73141822),
                                             itemShape
                                         )
                                         .border(
                                             width = 1.dp,
-                                            color = if (isCurrent) Color(0xFF10B981).copy(alpha = 0.55f) else Color(0x26FFFFFF),
+                                            color = if (isCurrent) Color(0xFF278BFF).copy(alpha = 0.55f) else Color(0x26FFFFFF),
                                             shape = itemShape
                                         )
                                         .clickable {
@@ -506,7 +506,7 @@ fun AccountsScreen(
                                             val shortUuid = if (acc.uuid.length > 10) "${acc.uuid.take(6)}...${acc.uuid.takeLast(4)}" else acc.uuid
                                             Text(
                                                 text = shortUuid,
-                                                color = if (isCurrent) NuxColors.ForestGreen.copy(alpha = 0.85f) else Color(0xFF71717A),
+                                                color = if (isCurrent) Color(0xFF278BFF).copy(alpha = 0.85f) else Color(0xFF71717A),
                                                 fontSize = 9.sp,
                                                 fontFamily = FontFamily.Monospace
                                             )
@@ -522,7 +522,7 @@ fun AccountsScreen(
                                             Box(
                                                 modifier = Modifier
                                                     .size(20.dp)
-                                                    .background(NuxColors.ForestGreen, CircleShape),
+                                                    .background(Color(0xFF278BFF), CircleShape),
                                                 contentAlignment = Alignment.Center
                                             ) {
                                                 Icon(
@@ -846,7 +846,7 @@ private fun AddAccountModal(
                     badge = "Free",
                     description = "Play offline without login",
                     isSelected = selectedTab == "offline",
-                    accentColor = NuxColors.ForestGreen,
+                    accentColor = Color(0xFF278BFF),
                     icon = Icons.Outlined.Person,
                     modifier = Modifier.weight(1f),
                     onClick = { selectedTab = "offline" }
@@ -900,7 +900,7 @@ private fun AddAccountModal(
                             modifier = Modifier
                                 .size(46.dp)
                                 .background(NuxColors.SurfaceInput, RoundedCornerShape(12.dp))
-                                .border(1.dp, NuxColors.ForestGreen.copy(alpha = 0.5f), RoundedCornerShape(12.dp)),
+                                .border(1.dp, Color(0xFF278BFF).copy(alpha = 0.5f), RoundedCornerShape(12.dp)),
                             contentAlignment = Alignment.Center
                         ) {
                             if (offlineName.trim().isNotBlank()) {
@@ -917,7 +917,7 @@ private fun AddAccountModal(
                                 Icon(
                                     imageVector = Icons.Outlined.Person,
                                     contentDescription = null,
-                                    tint = NuxColors.ForestGreen,
+                                    tint = Color(0xFF278BFF),
                                     modifier = Modifier.size(22.dp)
                                 )
                             }
@@ -953,7 +953,7 @@ private fun AddAccountModal(
                                 )
                                 onAccountAdded(newAcc)
                             },
-                            backgroundColor = NuxColors.ForestGreen,
+                            backgroundColor = Color(0xFF278BFF),
                             contentColor = Color.White,
                             enabled = offlineName.trim().isNotBlank(),
                             cornerRadius = NuxSizes.CornerRadiusSmall,

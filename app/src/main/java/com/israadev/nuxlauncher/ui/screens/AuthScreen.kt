@@ -176,7 +176,7 @@ fun AuthScreen(
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(Color(0xFF10B981).copy(alpha = 0.16f))
+                                .background(Color(0xFF278BFF).copy(alpha = 0.16f))
                                 .border(1.dp, NuxColors.ForestGreen.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
                                 .padding(horizontal = 9.dp, vertical = 4.dp)
                         ) {
@@ -1118,7 +1118,7 @@ private fun OtpBoxes(
                         .size(38.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .background(
-                            if (isFilled) Color(0xFF10B981).copy(alpha = 0.16f) else Color(0xFF141720)
+                            if (isFilled) Color(0xFF278BFF).copy(alpha = 0.16f) else Color(0xFF141720)
                         )
                         .border(
                             1.dp,

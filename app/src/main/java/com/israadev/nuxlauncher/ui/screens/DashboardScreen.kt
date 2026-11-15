@@ -260,11 +260,11 @@ fun DashboardScreen() {
             modifier = Modifier.fillMaxSize()
         )
     } else {
-        // Outer Container: TG Launcher Cyber-Emerald Green space
+        // TG Launcher dark-navy shell with electric-blue identity
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(NuxColors.ForestGreen)
+                .background(Color(0xFF070B14))
         ) {
             Row(
                 modifier = Modifier.fillMaxSize(),
@@ -289,10 +289,10 @@ fun DashboardScreen() {
                         .fillMaxHeight()
                 )
 
-                // Space between sidebar and main card (Nux green gap)
+                // Consistent spacing between navigation rail and content
                 Spacer(modifier = Modifier.width((8.dp).resp()))
 
-                // --- 2. MAIN CARD (SURROUNDED BY GREEN ON TOP, END, BOTTOM) ---
+                // --- 2. MAIN CONTENT CARD ---
                 val mainCardShape = RoundedCornerShape((24.dp).resp())
                 Box(
                     modifier = Modifier
@@ -460,7 +460,7 @@ fun DashboardScreen() {
                                             Box(
                                                 modifier = Modifier
                                                     .size((22.dp).resp())
-                                                    .background(NuxColors.ForestGreen, CircleShape),
+                                                    .background(Color(0xFF278BFF), CircleShape),
                                                 contentAlignment = Alignment.Center
                                             ) {
                                                 Text(
@@ -515,7 +515,7 @@ fun DashboardScreen() {
                                                         ) {
                                                             Text(
                                                                 text = acc.username,
-                                                                color = if (isSelected) NuxColors.MintGreen else Color.White,
+                                                                color = if (isSelected) Color(0xFF50D7FF) else Color.White,
                                                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                                                 fontSize = (12.sp).resp()
                                                             )
@@ -523,7 +523,7 @@ fun DashboardScreen() {
                                                                 Icon(
                                                                     imageVector = Icons.Default.Check,
                                                                     contentDescription = "Selected",
-                                                                    tint = NuxColors.ForestGreen,
+                                                                    tint = Color(0xFF278BFF),
                                                                     modifier = Modifier.size((16.dp).resp())
                                                                 )
                                                             }
@@ -543,7 +543,7 @@ fun DashboardScreen() {
                                             text = {
                                                 Text(
                                                     text = tr("dashboard.manage_accounts"),
-                                                    color = NuxColors.ForestGreen,
+                                                    color = Color(0xFF278BFF),
                                                     fontWeight = FontWeight.Bold,
                                                     fontSize = (12.sp).resp()
                                                 )
@@ -711,7 +711,7 @@ fun DashboardScreen() {
                                         .padding(horizontal = (12.dp).resp(), vertical = (8.dp).resp()),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    // Instance Index Box "1" (In Nux Green, rounded square matching Image 3)
+                                    // Instance index badge using TG electric blue
                                     val instanceIndex = if (selectedInstance != null) {
                                         (instances.indexOfFirst { it.id == selectedInstance!!.id }.takeIf { it >= 0 } ?: 0) + 1
                                     } else {
@@ -721,7 +721,7 @@ fun DashboardScreen() {
                                     Box(
                                         modifier = Modifier
                                             .size((44.dp).resp())
-                                            .background(NuxColors.ForestGreen, numBoxShape)
+                                            .background(Color(0xFF278BFF), numBoxShape)
                                             .clip(numBoxShape),
                                         contentAlignment = Alignment.Center
                                     ) {
@@ -780,10 +780,10 @@ fun DashboardScreen() {
                                             ) {
                                                 if (selectedInstance != null) {
                                                     val inst = selectedInstance!!
-                                                    // Loader tag (in NUX green! Was yellow in screenshot)
+                                                    // Loader tag using TG electric blue
                                                     Box(
                                                         modifier = Modifier
-                                                            .background(NuxColors.ForestGreen, RoundedCornerShape((8.dp).resp()))
+                                                            .background(Color(0xFF278BFF), RoundedCornerShape((8.dp).resp()))
                                                             .padding(horizontal = (7.dp).resp(), vertical = (2.dp).resp())
                                                     ) {
                                                         Text(
@@ -876,7 +876,7 @@ fun DashboardScreen() {
                                                                 Column(modifier = Modifier.weight(1f)) {
                                                                     Text(
                                                                         text = inst.name,
-                                                                        color = if (isSelected) NuxColors.MintGreen else Color.White,
+                                                                        color = if (isSelected) Color(0xFF50D7FF) else Color.White,
                                                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                                                         fontSize = (12.sp).resp(),
                                                                         maxLines = 1
@@ -895,7 +895,7 @@ fun DashboardScreen() {
                                                                         Icon(
                                                                             imageVector = Icons.Default.Check,
                                                                             contentDescription = tr("common.selected"),
-                                                                            tint = NuxColors.ForestGreen,
+                                                                            tint = Color(0xFF278BFF),
                                                                             modifier = Modifier.size((16.dp).resp())
                                                                         )
                                                                     }
@@ -939,12 +939,12 @@ fun DashboardScreen() {
                                                         Icon(
                                                             imageVector = Icons.Default.Add,
                                                             contentDescription = tr("common.add"),
-                                                            tint = NuxColors.ForestGreen,
+                                                            tint = Color(0xFF278BFF),
                                                             modifier = Modifier.size((18.dp).resp())
                                                         )
                                                         Text(
                                                             text = tr("dashboard.add_new_instance"),
-                                                            color = NuxColors.ForestGreen,
+                                                            color = Color(0xFF278BFF),
                                                             fontWeight = FontWeight.Bold,
                                                             fontSize = (12.5.sp).resp()
                                                         )
@@ -958,7 +958,7 @@ fun DashboardScreen() {
                                         }
                                     }
 
-                                    // Big PLAY Button (In Nux Green! Was yellow in screenshot)
+                                    // Primary PLAY action using TG electric blue
                                     val inst = selectedInstance
                                     val isFullyDownloaded = inst != null && inst.isDownloaded && InstanceManager.isInstanceDownloaded(context, inst)
                                     val playBtnShape = RoundedCornerShape((24.dp).resp())
@@ -966,7 +966,7 @@ fun DashboardScreen() {
                                     Row(
                                         modifier = Modifier
                                             .clip(playBtnShape)
-                                            .background(NuxColors.ForestGreen, playBtnShape)
+                                            .background(Color(0xFF278BFF), playBtnShape)
                                             .clickable {
                                                 if (inst == null) {
                                                     handleRequestCreateInstance()
