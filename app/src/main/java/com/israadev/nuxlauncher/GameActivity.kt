@@ -914,12 +914,15 @@ class GameActivity : ComponentActivity(), SurfaceHolder.Callback {
                 val isMobileGlues = targetRenderer.id == "mobileglues" || 
                         targetRenderer.rendererId.contains("mobileglue", ignoreCase = true) ||
                         (targetRenderer.pluginPackageName?.contains("mobileglue", ignoreCase = true) == true)
+                val isKopperZink = targetRenderer.rendererId == "opengles3_desktopgl_zink_kopper"
 
                 // POJAV_RENDERER: Persis Zalith Launcher, gunakan rendererId asli tanpa dipaksa ke opengles3!
                 Os.setenv("POJAV_NATIVEDIR", nativeLibDir, true)
                 Os.setenv("POJAV_RENDERER", rendererId, true)
                 Os.setenv("POJAV_SDL_REUSE_WINDOW", "1", true)
-                Os.setenv("SDL_OPENGL_LIBRARY", rendererId, true)
+                // Kopper Zink's SDL OpenGL loader expects the actual shim library path,
+                // not the POJAV_RENDERER identifier. Keep the identifier in POJAV_RENDERER.
+                Os.setenv("SDL_OPENGL_LIBRARY", if (isKopperZink) glLibPath else rendererId, true)
 
                 if (rendererId.startsWith("opengles2")) {
                     Os.setenv("LIBGL_ES", "2", true)
