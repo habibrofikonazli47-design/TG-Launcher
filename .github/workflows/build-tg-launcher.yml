@@ -29,7 +29,8 @@ permissions:
 
 jobs:
   import-and-build:
-    runs-on: ubuntu-latest
+    # ARM64 host lets the API 35 emulator install the exact ARM-only APK.
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Check out TG Launcher
         uses: actions/checkout@v4
@@ -190,6 +191,32 @@ jobs:
           done
           echo "MobileGlues packaging verified in both APKs."
 
+      - name: Test exact APK update on Android 15 ARM64 emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: arm64-v8a
+          profile: pixel_6
+          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect
+          disable-animations: true
+          script: |
+            set -euo pipefail
+            APK="app/build/outputs/apk/release/TG-Launcher-v1.1.6-tg${TG_BUILD_NUMBER}.apk"
+            BASELINE_APK="$RUNNER_TEMP/TG-Launcher-tg281.apk"
+            gh release download tg-launcher-preview-pr7-run201 \
+              --repo "$GITHUB_REPOSITORY" \
+              --pattern "TG-Launcher-v1.1.6-tg281.apk" \
+              --dir "$RUNNER_TEMP"
+            test -s "$BASELINE_APK"
+            adb wait-for-device
+            adb install "$BASELINE_APK"
+            adb shell dumpsys package com.tg.launcher | grep -q "versionCode=1201"
+            # This is an in-place upgrade test: do not uninstall the baseline app.
+            adb install -r "$APK"
+            adb shell dumpsys package com.tg.launcher | grep -q "versionCode=${TG_VERSION_CODE}"
+            echo "Android 15 ARM64 install and in-place update passed."
+
       - name: Publish direct APK download (PR preview)
         if: github.event_name == 'pull_request'
         uses: softprops/action-gh-release@v2
@@ -227,6 +254,28 @@ jobs:
           files: |
             app/build/outputs/apk/release/TG-Launcher-v1.1.6-tg${{ env.TG_BUILD_NUMBER }}.apk
             app/build/outputs/apk/release/output-metadata.json
+
+      - name: Verify uploaded release APK SHA-256
+        if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          APK_NAME="TG-Launcher-v1.1.6-tg${TG_BUILD_NUMBER}.apk"
+          LOCAL_SHA="$(sha256sum "app/build/outputs/apk/release/$APK_NAME" | awk '{print $1}')"
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            RELEASE_TAG="tg-launcher-preview-pr${{ github.event.pull_request.number }}-run${GITHUB_RUN_NUMBER}"
+          else
+            RELEASE_TAG="tg-launcher-${TG_VERSION_NAME}"
+          fi
+          REMOTE_SHA="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" \
+            --jq ".assets[] | select(.name == \"$APK_NAME\") | .digest" | sed 's/^sha256://')"
+          if [[ -z "$REMOTE_SHA" || "$REMOTE_SHA" != "$LOCAL_SHA" ]]; then
+            echo "Uploaded APK digest mismatch (local=$LOCAL_SHA remote=${REMOTE_SHA:-missing})." >&2
+            exit 1
+          fi
+          echo "Uploaded APK SHA-256 verified: $LOCAL_SHA"
 
       - name: Upload TG Launcher APK artifact
         uses: actions/upload-artifact@v4
