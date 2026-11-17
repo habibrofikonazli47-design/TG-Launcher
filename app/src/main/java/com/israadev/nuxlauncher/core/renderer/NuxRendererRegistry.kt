@@ -271,7 +271,10 @@ object NuxRendererRegistry {
                 hasGl4es && isCompatible(RENDERER_GL4ES) -> RENDERER_GL4ES
                 hasNgGl4es && isCompatible(RENDERER_KRYPTON) -> RENDERER_KRYPTON
                 hasMobileGlues && isCompatible(RENDERER_MOBILEGLUES) -> RENDERER_MOBILEGLUES
-                else -> RENDERER_GL4ES
+                else -> throw IllegalStateException(
+                    "No compatible graphics renderer is available for Minecraft $mcVersion. " +
+                        "Install or enable a compatible renderer before launching the game."
+                )
             }
         }
 
