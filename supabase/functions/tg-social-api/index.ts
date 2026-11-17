@@ -495,6 +495,28 @@ async function handle(req: Request) {
       return reply({ success: true, session: { id: sessionId, worldName, minecraftVersion, expiresAt }, inviteCode: code }, 201);
     }
 
+    if (req.method === "POST" && action === "accept_session") {
+      const sessionId = String(body.sessionId || "");
+      if (!/^[0-9a-f-]{36}$/i.test(sessionId)) return fail("ID undangan tidak valid");
+      const { data: session, error: sessionError } = await db.from("social_world_sessions")
+        .select("id,host_uid,world_name,minecraft_version,status,max_players,expires_at")
+        .eq("id", sessionId).eq("status", "active").gt("expires_at", nowIso).maybeSingle();
+      if (sessionError) return fail("Gagal memeriksa undangan dunia", 503);
+      if (!session) return fail("Undangan dunia sudah kedaluwarsa atau ditutup", 404);
+      if (!(await isFriend(session.host_uid))) return fail("Kamu harus berteman dengan host untuk bergabung", 403);
+      const { data: membership, error: membershipError } = await db.from("social_world_members")
+        .update({ status: "accepted", updated_at: nowIso }).eq("session_id", sessionId)
+        .eq("user_id", user.uid).eq("status", "invited")
+        .select("session_id,status").maybeSingle();
+      if (membershipError) return fail("Gagal menerima undangan dunia", 503);
+      if (!membership) return fail("Undangan ini bukan ditujukan untuk akunmu atau sudah digunakan", 403);
+      return reply({ success: true, session: {
+        id: session.id, hostUid: session.host_uid, worldName: session.world_name,
+        minecraftVersion: session.minecraft_version, maxPlayers: session.max_players,
+        expiresAt: session.expires_at
+      } });
+    }
+
     if (req.method === "POST" && action === "accept") {
       const code = String(body.inviteCode || "").trim().toUpperCase();
       if (!/^[A-HJ-NP-Z2-9]{10}$/.test(code)) return fail("Kode undangan tidak valid");
