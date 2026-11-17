@@ -2041,6 +2041,17 @@ fun GameScreen(
             }
         }
 
+        // Transparent tap targets aligned over Minecraft's native 9-slot hotbar.
+        // Each slot sends the same number-key event as the physical keyboard.
+        if (!isCustomGuiEditorActive) {
+            MinecraftTouchHotbar(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth(0.27f)
+                    .padding(bottom = 12.dp)
+            )
+        }
+
         // Exit Confirmation Dialog
         if (showExitConfirmDialog) {
             Dialog(
@@ -2781,3 +2792,41 @@ fun CustomVirtualJoystick(
 }
 
 
+
+
+/**
+ * Invisible hit areas sit over the game's own hotbar, so item icons and stack
+ * counts remain rendered by Minecraft. Tapping a slot selects it via keys 1-9.
+ */
+@Composable
+private fun MinecraftTouchHotbar(modifier: Modifier = Modifier) {
+    var selectedSlot by remember { mutableIntStateOf(0) }
+
+    Row(
+        modifier = modifier.height(34.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        repeat(9) { index ->
+            val selected = selectedSlot == index
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(if (selected) Color(0x30278BFF) else Color.Transparent)
+                    .border(
+                        width = if (selected) 2.dp else 1.dp,
+                        color = if (selected) Color(0xFF55B8FF) else Color(0x55FFFFFF),
+                        shape = RoundedCornerShape(2.dp)
+                    )
+                    .clickable {
+                        selectedSlot = index
+                        val keyCode = 49 + index // GLFW_KEY_1 ... GLFW_KEY_9
+                        CallbackBridge.sendKeyPress(keyCode, true)
+                        CallbackBridge.sendKeyPress(keyCode, false)
+                    }
+            )
+        }
+    }
+}
