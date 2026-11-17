@@ -83,10 +83,13 @@ jobs:
             echo "Android versionCode is not newer than the highest verified historical release (276)." >&2
             exit 1
           fi
+          # User-requested stable update identifier. Keep the numeric Android versionCode monotonic.
+          TG_BUILD_NUMBER=000
+          TG_VERSION_NAME=1.1.7-tg000
           echo "TG_BUILD_NUMBER=$TG_BUILD_NUMBER" >> "$GITHUB_ENV"
           echo "TG_VERSION_CODE=$TG_VERSION_CODE" >> "$GITHUB_ENV"
-          echo "TG_VERSION_NAME=1.1.6-tg${TG_BUILD_NUMBER}" >> "$GITHUB_ENV"
-          echo "Selected TG build ${TG_BUILD_NUMBER}, versionCode ${TG_VERSION_CODE}; latest published TG build was ${LATEST_RELEASE_BUILD}."
+          echo "TG_VERSION_NAME=$TG_VERSION_NAME" >> "$GITHUB_ENV"
+          echo "Selected TG version ${TG_VERSION_NAME}, versionCode ${TG_VERSION_CODE}; latest published TG build was ${LATEST_RELEASE_BUILD}."
 
       - name: Configure persistent APK signing key
         id: signing
@@ -122,7 +125,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          APK="app/build/outputs/apk/release/TG-Launcher-v1.1.6-tg${TG_BUILD_NUMBER}.apk"
+          APK="app/build/outputs/apk/release/TG-Launcher-v1.1.7-tg000.apk"
           METADATA="app/build/outputs/apk/release/output-metadata.json"
           cp app/build/outputs/apk/release/app-release.apk "$APK"
           test -s "$APK"
@@ -206,7 +209,7 @@ jobs:
             Install over an existing TG Launcher only when the signing certificate matches.
             Android versionCode: ${{ env.TG_VERSION_CODE }}
           files: |
-            app/build/outputs/apk/release/TG-Launcher-v1.1.6-tg${{ env.TG_BUILD_NUMBER }}.apk
+            app/build/outputs/apk/release/TG-Launcher-v1.1.7-tg000.apk
             app/build/outputs/apk/release/output-metadata.json
 
       - name: Publish direct APK download (TG beta release)
@@ -225,7 +228,7 @@ jobs:
             Install over an existing TG Launcher only when the signing certificate matches.
             Android versionCode: ${{ env.TG_VERSION_CODE }}
           files: |
-            app/build/outputs/apk/release/TG-Launcher-v1.1.6-tg${{ env.TG_BUILD_NUMBER }}.apk
+            app/build/outputs/apk/release/TG-Launcher-v1.1.7-tg000.apk
             app/build/outputs/apk/release/output-metadata.json
 
       - name: Upload TG Launcher APK artifact
@@ -233,7 +236,7 @@ jobs:
         with:
           name: TG-Launcher-release-verified
           path: |
-            app/build/outputs/apk/release/TG-Launcher-v1.1.6-tg${{ env.TG_BUILD_NUMBER }}.apk
+            app/build/outputs/apk/release/TG-Launcher-v1.1.7-tg000.apk
             app/build/outputs/apk/release/output-metadata.json
           if-no-files-found: error
           retention-days: 30
