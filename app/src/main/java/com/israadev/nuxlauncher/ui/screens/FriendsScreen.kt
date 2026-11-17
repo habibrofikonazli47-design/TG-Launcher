@@ -789,7 +789,7 @@ fun FriendsScreen(
             confirmButton = {
                 TextButton(onClick = { showWorldInboxDialog = false }) { Text("TUTUP") }
             },
-            containerColor = NuxColors.Surface
+            containerColor = NuxColors.SurfaceElevated
         )
     }
 
