@@ -288,7 +288,7 @@ object NuxRendererRegistry {
                 it.pluginPackageName?.contains(pkg, ignoreCase = true) == true
             }
             if (matchedPlugin != null) {
-                return matchedPlugin
+                return if (isCompatible(matchedPlugin)) matchedPlugin else automaticFallback()
             }
         }
 
