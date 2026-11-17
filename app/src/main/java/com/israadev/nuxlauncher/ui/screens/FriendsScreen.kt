@@ -92,6 +92,7 @@ fun FriendsScreen(
     val onlineRecommendations by NuxSocialManager.onlineRecommendations.collectAsState()
     val isLoadingRecommendations by NuxSocialManager.isLoadingRecommendations.collectAsState()
     val launcherUser by AccountManager.launcherUser.collectAsState()
+    val canUseVoiceRooms = launcherUser?.isActivated == true || launcherUser?.features?.contains("voice_rooms") == true
 
     var selectedTab by remember { mutableStateOf("friends") } // "room_chat", "friends", "rooms", "requests"
     var searchQuery by remember { mutableStateOf("") }
@@ -241,7 +242,7 @@ fun FriendsScreen(
                         .background(Color(0xFF278BFF).copy(alpha = 0.15f), RoundedCornerShape(6.dp))
                         .border(1.dp, Color(0xFF278BFF).copy(alpha = 0.4f), RoundedCornerShape(6.dp))
                         .clickable {
-                            if (launcherUser?.features?.contains("voice_rooms") != true) {
+                            if (!canUseVoiceRooms) {
                                 premiumInitialPrompt = "Real-time voice rooms (LiveKit WebRTC) are exclusive to TG Premium. Upgrade your account to create and join voice rooms!"
                                 showPremiumDialog = true
                             } else {
@@ -430,7 +431,7 @@ fun FriendsScreen(
                                                         return@VoiceRoomItem
                                                     }
                                                     if (launcherUser?.features?.contains("voice_rooms") != true) {
-                                                        premiumInitialPrompt = "Multiplayer Voice Rooms (LiveKit WebRTC) are exclusive to NUX Premium. Upgrade your account to voice chat with friends!"
+                                                        premiumInitialPrompt = "Multiplayer Voice Rooms (LiveKit WebRTC) are exclusive to TG Premium. Upgrade your account to voice chat with friends!"
                                                         showPremiumDialog = true
                                                         return@VoiceRoomItem
                                                     }
