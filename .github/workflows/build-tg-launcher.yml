@@ -169,11 +169,22 @@ jobs:
           grep -q "application-label:'TG Launcher'" /tmp/tg-badging.txt
           grep -q "native-code: .*arm64-v8a" /tmp/tg-badging.txt
           grep -q "native-code: .*armeabi-v7a" /tmp/tg-badging.txt
-          grep -q "platformBuildVersionCode='37'" /tmp/tg-badging.txt
+          grep -q "platformBuildVersionCode='35'" /tmp/tg-badging.txt
           grep -q "targetSdkVersion:'35'" /tmp/tg-badging.txt
           unzip -tq "$APK"
           sha256sum "$APK"
           echo "APK validation passed."
+
+      - name: Install-test release APK on Android 15 emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_2
+          script: |
+            adb install -r app/build/outputs/apk/release/TG-Launcher-v1.1.6-tg${TG_BUILD_NUMBER}.apk
+            adb shell pm path com.tg.launcher
+            adb uninstall com.tg.launcher
 
       - name: Verify MobileGlues native ABI packaging in debug and release APKs
         shell: bash
