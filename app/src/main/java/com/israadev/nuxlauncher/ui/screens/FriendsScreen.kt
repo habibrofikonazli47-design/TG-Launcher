@@ -56,6 +56,7 @@ import com.israadev.nuxlauncher.ui.theme.NuxSizes
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+import org.json.JSONObject
 
 /**
  * TG Launcher Social & Voice Hub (Android Landscape Optimized)
@@ -113,6 +114,8 @@ fun FriendsScreen(
     var showAddFriendDialog by remember { mutableStateOf(false) }
     var showCreateRoomDialog by remember { mutableStateOf(false) }
     var showWorldInviteDialog by remember { mutableStateOf(false) }
+    var showWorldInboxDialog by remember { mutableStateOf(false) }
+    var worldInboxItems by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
     var showJoinWorldDialog by remember { mutableStateOf(false) }
     var worldInviteCode by remember { mutableStateOf("") }
     var worldInviteBusy by remember { mutableStateOf(false) }
@@ -203,6 +206,30 @@ fun FriendsScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text("PRIVATE WORLD", color = Color(0xFF50D7FF), fontWeight = FontWeight.Bold, fontSize = 9.sp)
+                    }
+
+                    Box(
+                        modifier = Modifier.height(26.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(NuxColors.SurfaceElevated, RoundedCornerShape(6.dp))
+                            .border(1.dp, NuxColors.CardBorder, RoundedCornerShape(6.dp))
+                            .clickable {
+                                scope.launch {
+                                    worldInviteBusy = true
+                                    NuxSocialManager.fetchPrivateWorldInvites().onSuccess { response ->
+                                        val incoming = response.optJSONArray("invitations") ?: org.json.JSONArray()
+                                        worldInboxItems = (0 until incoming.length()).mapNotNull { incoming.optJSONObject(it) }
+                                        showWorldInboxDialog = true
+                                    }.onFailure {
+                                        Toast.makeText(context, it.message ?: "Gagal memuat undangan", Toast.LENGTH_LONG).show()
+                                    }
+                                    worldInviteBusy = false
+                                }
+                            }
+                            .padding(horizontal = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("INVITES", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 9.sp)
                     }
                     Box(
                         modifier = Modifier.height(26.dp)
@@ -697,6 +724,72 @@ fun FriendsScreen(
                 }
             },
             onDismiss = { showJoinWorldDialog = false }
+        )
+    }
+
+
+    if (showWorldInboxDialog && worldInvitesEnabled) {
+        AlertDialog(
+            onDismissRequest = { showWorldInboxDialog = false },
+            title = { Text("Undangan Dunia Masuk", color = Color.White, fontWeight = FontWeight.Bold) },
+            text = {
+                if (worldInboxItems.isEmpty()) {
+                    Text("Belum ada undangan dunia yang menunggu.", color = Color.LightGray)
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.heightIn(max = 280.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(worldInboxItems, key = { it.optString("id") }) { invite ->
+                            val host = invite.optJSONObject("host")
+                            val worldName = invite.optString("world_name", "Dunia privat")
+                            val hostName = host?.optString("username", "Teman") ?: "Teman"
+                            val sessionId = invite.optString("id")
+                            val version = invite.optString("minecraft_version")
+                            Row(
+                                modifier = Modifier.fillMaxWidth()
+                                    .background(NuxColors.SurfaceElevated, RoundedCornerShape(8.dp))
+                                    .padding(10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(worldName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                    Text("Dari $hostName · ${version.ifBlank { "Versi host" }}", color = Color.LightGray, fontSize = 10.sp)
+                                }
+                                Button(
+                                    onClick = {
+                                        scope.launch {
+                                            worldInviteBusy = true
+                                            NuxSocialManager.acceptPrivateWorldInviteSession(sessionId).onSuccess { response ->
+                                                val session = response.optJSONObject("session")
+                                                val acceptedId = session?.optString("id").orEmpty()
+                                                val acceptedVersion = session?.optString("minecraftVersion").orEmpty()
+                                                if (acceptedId.isNotBlank()) {
+                                                    NuxPrivateWorldLaunchStore.save(context, acceptedId, "guest", acceptedVersion)
+                                                    worldInboxItems = worldInboxItems.filterNot { it.optString("id") == sessionId }
+                                                    Toast.makeText(context, "Undangan diterima. Jalankan Minecraft ${acceptedVersion.ifBlank { "versi host" }} untuk bergabung.", Toast.LENGTH_LONG).show()
+                                                }
+                                            }.onFailure {
+                                                Toast.makeText(context, it.message ?: "Gagal menerima undangan", Toast.LENGTH_LONG).show()
+                                            }
+                                            worldInviteBusy = false
+                                        }
+                                    },
+                                    enabled = !worldInviteBusy,
+                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                                ) {
+                                    Text("TERIMA", fontSize = 10.sp)
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showWorldInboxDialog = false }) { Text("TUTUP") }
+            },
+            containerColor = NuxColors.Surface
         )
     }
 
