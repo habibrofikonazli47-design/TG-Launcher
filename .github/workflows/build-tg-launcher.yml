@@ -70,7 +70,7 @@ jobs:
           # The workflow run number is monotonic for this workflow; reserve a high range
           # to remain above all previously published TG Launcher APKs.
           TG_VERSION_CODE=$((GITHUB_RUN_NUMBER + 1000))
-          if (( TG_BUILD_NUMBER <= LATEST_RELEASE_BUILD )); then
+          if (( NEXT_RELEASE_BUILD <= LATEST_RELEASE_BUILD )); then
             echo "TG build number is not newer than the latest release." >&2
             exit 1
           fi
