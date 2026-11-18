@@ -1339,6 +1339,40 @@ fun SettingsScreen(
                             }
                         }
 
+                        Spacer(modifier = Modifier.height(8.dp))
+                        NuxButton(
+                            onClick = {
+                                val recommendedRam = when {
+                                    totalRamMb <= 3072 -> 768
+                                    totalRamMb <= 4096 -> 1280
+                                    totalRamMb <= 6144 -> 1792
+                                    totalRamMb <= 8192 -> 2560
+                                    else -> 3584
+                                }.coerceIn(512, maxAllocatableRam)
+                                ramMb = recommendedRam
+                                initialHeapMb = minOf(512, (recommendedRam / 4).coerceAtLeast(128))
+                                resolutionRatio = when {
+                                    totalRamMb <= 4096 -> 75
+                                    totalRamMb <= 6144 -> 85
+                                    else -> 100
+                                }
+                                autoOptimizeMC = true
+                                commitSettings()
+                            },
+                            backgroundColor = Color(0xFF1677E8),
+                            cornerRadius = 6.dp
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Outlined.AutoFixHigh, contentDescription = null, tint = Color.White, modifier = Modifier.size(13.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("OPTIMALKAN UNTUK HP INI", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 9.sp)
+                            }
+                        }
+
                         // Custom JVM Arguments
                         Column {
                             Text(
