@@ -76,7 +76,10 @@ object DeviceModRecipeManager {
         val totalGb = (totalBytes / (1024.0 * 1024.0 * 1024.0)).toInt().coerceAtLeast(1)
         val availableGb = (availableBytes / (1024.0 * 1024.0 * 1024.0)).toInt()
         val gpu = GpuPerformanceProfile.detect()?.renderer ?: "GPU tidak terdeteksi"
+        val isConservativeGpu = gpu.contains("Mali-G57", ignoreCase = true) ||
+            gpu.contains("Mali G57", ignoreCase = true)
         val recipe = when {
+            isConservativeGpu -> lowMemory
             totalGb >= 8 -> highMemory
             totalGb >= 6 -> balanced
             else -> lowMemory
@@ -91,6 +94,11 @@ object DeviceModRecipeManager {
         onProgress: (String) -> Unit = {}
     ): Result<List<String>> = withContext(Dispatchers.IO) {
         try {
+            if (!instance.loader.equals("fabric", ignoreCase = true)) {
+                return@withContext Result.failure(
+                    IllegalStateException("Racikan otomatis saat ini disiapkan untuk Fabric. Pilih instance Fabric agar mod tidak salah dipasang.")
+                )
+            }
             val installed = NuxModManager.getInstalledItems(context, instance, "mods")
             val installedProjectIds = installed.map { it.id.lowercase() }.toSet()
             val installedNames = installed.map { it.name.lowercase() }.toSet()
