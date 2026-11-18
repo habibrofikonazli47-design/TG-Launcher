@@ -457,6 +457,7 @@ class GameActivity : ComponentActivity(), SurfaceHolder.Callback {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        com.israadev.nuxlauncher.core.device.RefreshRateManager.apply(this)
         PhysicalMouseChecker.initChecker(this)
         SettingsManager.init(this)
         com.israadev.nuxlauncher.core.lang.NuxLanguageManager.init(this)
@@ -997,9 +998,13 @@ class GameActivity : ComponentActivity(), SurfaceHolder.Callback {
                     Os.setenv("POJAV_VSYNC_IN_ZINK", "1", true)
                     LoggerBridge.append("▷ [Renderer Config] POJAV_VSYNC_IN_ZINK=1")
                 }
-                if (activeSettings.graphicsApi != "DEFAULT") {
-                    Os.setenv("POJAV_GRAPHICS_API", activeSettings.graphicsApi, true)
-                    LoggerBridge.append("▷ [Renderer Config] POJAV_GRAPHICS_API=${activeSettings.graphicsApi}")
+                // Accept only explicit graphics API choices. Old saved HYBRID values
+                // are reset to DEFAULT to prevent automatic API switching and crashes.
+                val effectiveGraphicsApi = activeSettings.graphicsApi.uppercase()
+                    .takeIf { it in setOf("DEFAULT", "OPENGL", "VULKAN") } ?: "DEFAULT"
+                if (effectiveGraphicsApi != "DEFAULT") {
+                    Os.setenv("POJAV_GRAPHICS_API", effectiveGraphicsApi, true)
+                    LoggerBridge.append("▷ [Renderer Config] POJAV_GRAPHICS_API=$effectiveGraphicsApi")
                 }
                 if (activeSettings.vulkanDriver != "auto" && activeSettings.vulkanDriver.isNotBlank()) {
                     Os.setenv("POJAV_VULKAN_DRIVER", activeSettings.vulkanDriver, true)
@@ -2040,6 +2045,17 @@ fun GameScreen(
             }
         }
 
+        // Invisible touch zones directly overlay the native hotbar; no extra
+        // button artwork is drawn, so Minecraft's item slots remain unobstructed.
+        if (!isCustomGuiEditorActive) {
+            MinecraftTouchHotbar(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth(0.34f)
+                    .padding(bottom = 12.dp)
+            )
+        }
+
         // Exit Confirmation Dialog
         if (showExitConfirmDialog) {
             Dialog(
@@ -2780,3 +2796,33 @@ fun CustomVirtualJoystick(
 }
 
 
+
+
+/**
+ * Invisible hit areas sit over the game's own hotbar, so item icons and stack
+ * counts remain rendered by Minecraft. Tapping a slot selects it via keys 1-9.
+ */
+@Composable
+private fun MinecraftTouchHotbar(modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier.height(34.dp),
+        horizontalArrangement = Arrangement.spacedBy(0.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        repeat(9) { index ->
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .clickable(
+                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                        indication = null
+                    ) {
+                        val keyCode = 49 + index // GLFW_KEY_1 ... GLFW_KEY_9
+                        CallbackBridge.sendKeyPress(keyCode, true)
+                        CallbackBridge.sendKeyPress(keyCode, false)
+                    }
+            )
+        }
+    }
+}
