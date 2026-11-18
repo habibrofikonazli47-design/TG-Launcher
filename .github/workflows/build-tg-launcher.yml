@@ -59,8 +59,10 @@ jobs:
           set -euo pipefail
           # Never derive the Android version from a workflow run number alone:
           # other build workflows may already have published a higher TG number.
-          RELEASE_TAGS="$(gh release list --limit 100 --json tagName --jq '.[].tagName')"
-          LATEST_RELEASE_BUILD="$(printf '%s\n' "$RELEASE_TAGS" | sed -nE 's/^tg-launcher-(preview-.*-)?1\.1\.7-tg([0-9]+)(-run[0-9]+)?$/\2/p' | sort -n | tail -n 1)"
+          # Include all releases: PR previews, beta builds, and stable builds.
+          # Preview: tg-launcher-preview-1.1.7-tg003-run123; beta: tg-launcher-1.1.7-tg003.
+          RELEASE_TAGS="$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate --jq '.[].tag_name')"
+          LATEST_RELEASE_BUILD="$(printf '%s\\n' "$RELEASE_TAGS" | sed -nE 's/^tg-launcher-(preview-)?1\\.1\\.7-tg([0-9]+)(-run[0-9]+)?$/\\2/p' | sort -n | tail -n 1)"
           if [[ -z "$LATEST_RELEASE_BUILD" ]]; then LATEST_RELEASE_BUILD=1; fi
           NEXT_RELEASE_BUILD=$((LATEST_RELEASE_BUILD + 1))
           TG_BUILD_NUMBER="$(printf '%03d' "$NEXT_RELEASE_BUILD")"
@@ -78,7 +80,7 @@ jobs:
             echo "Android versionCode is not newer than the highest verified historical release (276)." >&2
             exit 1
           fi
-          # Start at tg002; each published preview/stable build advances the suffix.
+          # Advance from the highest preview, beta, or stable release tag.
           TG_VERSION_NAME="1.1.7-tg${TG_BUILD_NUMBER}"
           TG_APK_NAME="TG-Launcher-v${TG_VERSION_NAME}.apk"
           echo "TG_APK_NAME=$TG_APK_NAME" >> "$GITHUB_ENV"
