@@ -5,7 +5,6 @@ import android.util.Log
 import com.israadev.nuxlauncher.core.crash.CrashManager
 import com.israadev.nuxlauncher.core.renderer.MobileGluesConfigManager
 import com.israadev.nuxlauncher.core.renderer.NuxRendererRegistry
-import com.israadev.nuxlauncher.core.renderer.GraphicsApiManager
 import com.israadev.nuxlauncher.ui.activities.ErrorActivity
 import com.israadev.nuxlauncher.ui.components.GameLoadingOverlay
 import com.israadev.nuxlauncher.ui.dialogs.InGameSettingsDialog
@@ -999,17 +998,12 @@ class GameActivity : ComponentActivity(), SurfaceHolder.Callback {
                     Os.setenv("POJAV_VSYNC_IN_ZINK", "1", true)
                     LoggerBridge.append("▷ [Renderer Config] POJAV_VSYNC_IN_ZINK=1")
                 }
-                val effectiveGraphicsApi = GraphicsApiManager.resolve(
-                    context = this@GameActivity,
-                    requestedApi = activeSettings.graphicsApi,
-                    minecraftVersion = mcVersion
-                )
+                // Accept only explicit graphics API choices. Old saved HYBRID values
+                // are reset to DEFAULT to prevent automatic API switching and crashes.
+                val effectiveGraphicsApi = activeSettings.graphicsApi.uppercase()
+                    .takeIf { it in setOf("DEFAULT", "OPENGL", "VULKAN") } ?: "DEFAULT"
                 if (effectiveGraphicsApi != "DEFAULT") {
                     Os.setenv("POJAV_GRAPHICS_API", effectiveGraphicsApi, true)
-                }
-                if (activeSettings.graphicsApi.equals("HYBRID", ignoreCase = true)) {
-                    LoggerBridge.append("▷ [Hybrid Renderer] Minecraft $mcVersion -> $effectiveGraphicsApi")
-                } else if (effectiveGraphicsApi != "DEFAULT") {
                     LoggerBridge.append("▷ [Renderer Config] POJAV_GRAPHICS_API=$effectiveGraphicsApi")
                 }
                 if (activeSettings.vulkanDriver != "auto" && activeSettings.vulkanDriver.isNotBlank()) {
