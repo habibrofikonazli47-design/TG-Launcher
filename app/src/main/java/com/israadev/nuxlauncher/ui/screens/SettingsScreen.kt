@@ -1654,13 +1654,13 @@ fun SettingsScreen(
                                 color = Color.White
                             )
                             Text(
-                                text = "Configure graphics API used by modern Minecraft 26.2+",
+                                text = "Hybrid Auto uses OpenGL for older Minecraft and switches to Vulkan on Minecraft 26.2+ only when Android reports Vulkan 1.1 or newer.",
                                 fontSize = 9.5.sp,
                                 color = NuxColors.GrayNeutral
                             )
                             Spacer(modifier = Modifier.height(6.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                listOf("DEFAULT" to "Default", "OPENGL" to "OpenGL", "VULKAN" to "Vulkan").forEach { (id, label) ->
+                                listOf("HYBRID" to "Hybrid Auto", "DEFAULT" to "Default", "OPENGL" to "OpenGL", "VULKAN" to "Vulkan").forEach { (id, label) ->
                                     val isSelected = graphicsApi == id
                                     Box(
                                         modifier = Modifier
