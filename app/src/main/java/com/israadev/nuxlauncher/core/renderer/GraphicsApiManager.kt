@@ -33,9 +33,10 @@ object GraphicsApiManager {
         if (!requestedApi.equals(HYBRID_API, ignoreCase = true)) {
             return requestedApi.uppercase().takeIf { it in setOf("DEFAULT", "OPENGL", "VULKAN") } ?: "DEFAULT"
         }
-        if (minecraftVersion.isBlank() || NuxVersionUtils.compare(minecraftVersion, "26.2") < 0) {
-            return "OPENGL"
-        }
+        val versionParts = NuxVersionUtils.parseVersionParts(minecraftVersion)
+        val supportsModernApi = versionParts.size >= 2 &&
+            (versionParts[0] > 26 || (versionParts[0] == 26 && versionParts[1] >= 2))
+        if (!supportsModernApi) return "OPENGL"
         return if (hasVulkan11OrNewer(context)) "VULKAN" else "OPENGL"
     }
 }
