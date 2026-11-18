@@ -1,6 +1,10 @@
 package com.israadev.nuxlauncher.ui.screens
 
 import android.media.MediaMetadataRetriever
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.widget.Toast
 import java.io.File
 import java.io.FileOutputStream
@@ -35,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -324,23 +329,14 @@ fun DashboardScreen() {
                             }
                         } else {
                             val backgroundUrl = RemoteLauncherConfig.text(remoteConfig, "appearance", "backgroundImageUrl").trim()
-                            if (backgroundUrl.startsWith("https://")) {
-                                AsyncImage(
-                                    model = backgroundUrl,
-                                    contentDescription = "TG Launcher background",
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize(),
-                                    alpha = (1f - (remoteConfig?.optJSONObject("appearance")?.optInt("backgroundOverlayAlpha", 65) ?: 65) / 100f).coerceIn(0.15f, 1f)
-                                )
-                            } else {
-                                Image(
-                                    painter = painterResource(id = R.drawable.mc_hero_bg),
-                                    contentDescription = "TG Launcher background",
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize(),
-                                    alpha = if (isHomeTab) 0.45f else 0.25f
-                                )
-                            }
+                            GyroMinecraftHero(
+                                backgroundUrl = backgroundUrl,
+                                alpha = if (backgroundUrl.startsWith("https://")) {
+                                    (1f - (remoteConfig?.optJSONObject("appearance")?.optInt("backgroundOverlayAlpha", 65) ?: 65) / 100f).coerceIn(0.15f, 1f)
+                                } else if (isHomeTab) 0.45f else 0.25f,
+                                enabled = isHomeTab,
+                                modifier = Modifier.fillMaxSize()
+                            )
                         }
                     }
 
@@ -1300,6 +1296,87 @@ fun QuickActionCard(
                 lineHeight = (9.5.sp).resp(),
                 maxLines = 2
             )
+        }
+    }
+}
+
+/**
+ * Minecraft hero panorama with subtle gyroscope parallax.
+ * Rotation-vector sensor is fused by Android from the device motion sensors.
+ */
+@Composable
+private fun GyroMinecraftHero(
+    backgroundUrl: String,
+    alpha: Float,
+    enabled: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    var pitch by remember { mutableFloatStateOf(0f) }
+    var roll by remember { mutableFloatStateOf(0f) }
+
+    DisposableEffect(context, enabled) {
+        if (!enabled) {
+            pitch = 0f
+            roll = 0f
+            onDispose { }
+        } else {
+            val sensorManager = context.getSystemService(android.content.Context.SENSOR_SERVICE) as SensorManager
+            val sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
+            val listener = object : SensorEventListener {
+                private val matrix = FloatArray(9)
+                private val orientation = FloatArray(3)
+
+                override fun onSensorChanged(event: SensorEvent) {
+                    SensorManager.getRotationMatrixFromVector(matrix, event.values)
+                    SensorManager.getOrientation(matrix, orientation)
+                    val nextPitch = orientation[1].coerceIn(-0.42f, 0.42f)
+                    val nextRoll = orientation[2].coerceIn(-0.42f, 0.42f)
+                    pitch = pitch * 0.82f + nextPitch * 0.18f
+                    roll = roll * 0.82f + nextRoll * 0.18f
+                }
+
+                override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
+            }
+            if (sensor != null) {
+                sensorManager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_GAME)
+            }
+            onDispose { sensorManager.unregisterListener(listener) }
+        }
+    }
+
+    Box(modifier = modifier) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    val density = this.density
+                    rotationX = -pitch * 8.5f
+                    rotationY = roll * 8.5f
+                    translationX = roll * 34f * density
+                    translationY = pitch * 26f * density
+                    scaleX = 1.10f
+                    scaleY = 1.10f
+                    cameraDistance = 28f * density
+                }
+        ) {
+            if (backgroundUrl.startsWith("https://")) {
+                AsyncImage(
+                    model = backgroundUrl,
+                    contentDescription = "Minecraft world panorama",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                    alpha = alpha
+                )
+            } else {
+                Image(
+                    painter = painterResource(id = R.drawable.mc_hero_bg),
+                    contentDescription = "Minecraft world panorama",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                    alpha = alpha
+                )
+            }
         }
     }
 }

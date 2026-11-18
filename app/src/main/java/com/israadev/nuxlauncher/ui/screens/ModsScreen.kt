@@ -1079,23 +1079,35 @@ fun ModsScreen(
                                     modifier = Modifier.weight(1f),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(32.dp)
-                                            .clip(RoundedCornerShape(6.dp))
-                                            .background(
-                                                if (item.isEnabled) Color(0xFF278BFF).copy(alpha = 0.15f) else Color(0x0DFFFFFF),
-                                                RoundedCornerShape(6.dp)
-                                            )
-                                            .border(1.dp, NuxColors.CardBorder, RoundedCornerShape(6.dp)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = item.name.take(2).uppercase(),
-                                            fontWeight = FontWeight.Black,
-                                            color = if (item.isEnabled) Color(0xFF50D7FF) else NuxColors.GrayNeutral,
-                                            fontSize = 11.sp
+                                    if (!item.iconPath.isNullOrBlank()) {
+                                        NuxNetworkImage(
+                                            model = item.iconPath,
+                                            contentDescription = "${item.name} icon",
+                                            modifier = Modifier
+                                                .size(38.dp)
+                                                .clip(RoundedCornerShape(6.dp))
+                                                .border(1.dp, NuxColors.CardBorder, RoundedCornerShape(6.dp)),
+                                            fallbackInitials = item.name.take(2).uppercase()
                                         )
+                                    } else {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(38.dp)
+                                                .clip(RoundedCornerShape(6.dp))
+                                                .background(
+                                                    if (item.isEnabled) Color(0xFF278BFF).copy(alpha = 0.15f) else Color(0x0DFFFFFF),
+                                                    RoundedCornerShape(6.dp)
+                                                )
+                                                .border(1.dp, NuxColors.CardBorder, RoundedCornerShape(6.dp)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = item.name.take(2).uppercase(),
+                                                fontWeight = FontWeight.Black,
+                                                color = if (item.isEnabled) Color(0xFF50D7FF) else NuxColors.GrayNeutral,
+                                                fontSize = 11.sp
+                                            )
+                                        }
                                     }
 
                                     Spacer(modifier = Modifier.width(10.dp))

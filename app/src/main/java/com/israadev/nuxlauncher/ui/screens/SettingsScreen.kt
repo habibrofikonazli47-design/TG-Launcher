@@ -193,7 +193,7 @@ fun SettingsScreen(
     var sustainedPerf by remember(currentSettings.sustainedPerformanceMode) { mutableStateOf(currentSettings.sustainedPerformanceMode) }
     var selectedRenderer by remember(currentSettings.selectedRenderer) { mutableStateOf(currentSettings.selectedRenderer) }
     var vulkanDriver by remember(currentSettings.vulkanDriver) { mutableStateOf(currentSettings.vulkanDriver) }
-    var graphicsApi by remember(currentSettings.graphicsApi) { mutableStateOf(currentSettings.graphicsApi) }
+    var graphicsApi by remember(currentSettings.graphicsApi) { mutableStateOf(currentSettings.graphicsApi.uppercase().takeIf { it in setOf("DEFAULT", "OPENGL", "VULKAN") } ?: "DEFAULT") }
     var zinkPreferSystemDriver by remember(currentSettings.zinkPreferSystemDriver) { mutableStateOf(currentSettings.zinkPreferSystemDriver) }
     var vsyncInZink by remember(currentSettings.vsyncInZink) { mutableStateOf(currentSettings.vsyncInZink) }
     var showRendererDialog by remember { mutableStateOf(false) }
@@ -1654,7 +1654,7 @@ fun SettingsScreen(
                                 color = Color.White
                             )
                             Text(
-                                text = "Configure graphics API used by modern Minecraft 26.2+",
+                                text = "Choose the graphics API directly. Default keeps the launcher-managed setting; OpenGL and Vulkan force the selected API.",
                                 fontSize = 9.5.sp,
                                 color = NuxColors.GrayNeutral
                             )
