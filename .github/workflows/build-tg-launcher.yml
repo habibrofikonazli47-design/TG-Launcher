@@ -66,6 +66,9 @@ jobs:
           RELEASE_TAGS="$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate --jq '.[].tag_name')"
           LATEST_RELEASE_BUILD="$(printf '%s\n' "$RELEASE_TAGS" | sed -nE 's/^tg-launcher-(preview-)?1\.1\.7-tg([0-9]+)(-run[0-9]+)?$/\2/p' | sort -n | tail -n 1)"
           if [[ -z "$LATEST_RELEASE_BUILD" ]]; then LATEST_RELEASE_BUILD=1; fi
+          # TG suffixes are zero-padded (for example 008); force base-10 parsing
+          # so Bash does not interpret leading zeroes as octal numbers.
+          LATEST_RELEASE_BUILD=$((10#$LATEST_RELEASE_BUILD))
           NEXT_RELEASE_BUILD=$((LATEST_RELEASE_BUILD + 1))
           TG_BUILD_NUMBER="$(printf '%03d' "$NEXT_RELEASE_BUILD")"
           # Android requires versionCode to increase across every installable release.
