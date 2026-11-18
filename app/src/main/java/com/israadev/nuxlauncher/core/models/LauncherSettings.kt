@@ -25,7 +25,7 @@ data class LauncherSettings(
     val sustainedPerformanceMode: Boolean = false,
     val selectedRenderer: String = "auto", // "auto", "krypton", "mobileglues", "gl4es", "zink", "freedreno", "virgl", "panfrost"
     val vulkanDriver: String = "auto", // "auto", "system", "turnip", etc.
-    val graphicsApi: String = "DEFAULT", // "DEFAULT", "OPENGL", "VULKAN"
+    val graphicsApi: String = "DEFAULT", // "HYBRID", "DEFAULT", "OPENGL", "VULKAN"
     val zinkPreferSystemDriver: Boolean = false,
     val vsyncInZink: Boolean = false,
 
