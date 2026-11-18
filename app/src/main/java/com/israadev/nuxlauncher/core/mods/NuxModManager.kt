@@ -113,6 +113,62 @@ object NuxModManager {
     }
 
     /**
+     * Extract the icon declared by Fabric/Forge metadata from a downloaded mod JAR.
+     * Icons are cached inside the instance so the installed list works offline.
+     */
+    private fun extractInstalledModIcon(file: File, gameDir: File): String? {
+        return try {
+            ZipFile(file).use { zip ->
+                var iconPath: String? = null
+                val fabricEntry = zip.getEntry("fabric.mod.json")
+                if (fabricEntry != null) {
+                    zip.getInputStream(fabricEntry).bufferedReader().use { reader ->
+                        val json = JsonParser.parseReader(reader).asJsonObject
+                        val icon = json.get("icon")
+                        iconPath = when {
+                            icon == null || icon.isJsonNull -> null
+                            icon.isJsonPrimitive -> icon.asString
+                            icon.isJsonArray -> icon.asJsonArray.firstOrNull()?.let { element ->
+                                if (element.isJsonPrimitive) element.asString
+                                else if (element.isJsonObject && element.asJsonObject.has("path")) element.asJsonObject.get("path").asString
+                                else null
+                            }
+                            else -> null
+                        }
+                    }
+                } else {
+                    val tomlEntry = zip.getEntry("META-INF/mods.toml")
+                    if (tomlEntry != null) {
+                        zip.getInputStream(tomlEntry).bufferedReader().useLines { lines ->
+                            iconPath = lines.firstOrNull { it.trim().startsWith("logoFile") }
+                                ?.substringAfter("=")?.trim()?.trim('"', '\'')
+                        }
+                    }
+                }
+
+                val safePath = iconPath?.trim()?.removePrefix("/")?.takeIf {
+                    it.isNotBlank() && !it.contains("..") && !it.startsWith("/")
+                } ?: return@use null
+                val iconEntry = zip.getEntry(safePath) ?: return@use null
+                val bytes = zip.getInputStream(iconEntry).use { stream ->
+                    val data = stream.readNBytes(2 * 1024 * 1024 + 1)
+                    if (data.size > 2 * 1024 * 1024) null else data
+                } ?: return@use null
+                if (bytes.isEmpty()) return@use null
+
+                val extension = safePath.substringAfterLast('.', "png").lowercase()
+                    .takeIf { it in setOf("png", "jpg", "jpeg", "webp") } ?: "png"
+                val cacheDir = File(gameDir, ".tg_mod_icons").apply { mkdirs() }
+                val cachedIcon = File(cacheDir, "${file.name.hashCode().toUInt().toString(16)}.$extension")
+                cachedIcon.writeBytes(bytes)
+                Uri.fromFile(cachedIcon).toString()
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    /**
      * Membaca semua item yang telah terpasang di dalam instance untuk jenis addon tertentu
      */
     suspend fun getInstalledItems(
@@ -211,6 +267,9 @@ object NuxModManager {
 
             val meta = metaMap[cleanFilename.lowercase()]
             val finalId = meta?.projectId?.takeIf { it.isNotBlank() } ?: cleanFilename
+            val iconPath = if (itemType == "mods" && file.isFile && cleanFilename.endsWith(".jar", ignoreCase = true)) {
+                extractInstalledModIcon(file, gameDir)
+            } else null
 
             result.add(
                 InstalledModItem(
@@ -223,7 +282,8 @@ object NuxModManager {
                     category = itemType.replaceFirstChar { it.uppercase() },
                     isEnabled = isEnabled,
                     sizeBytes = if (file.isFile) file.length() else 0L,
-                    itemType = itemType
+                    itemType = itemType,
+                    iconPath = iconPath
                 )
             )
         }
