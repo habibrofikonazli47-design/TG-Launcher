@@ -151,8 +151,17 @@ object NuxModManager {
                 } ?: return@use null
                 val iconEntry = zip.getEntry(safePath) ?: return@use null
                 val bytes = zip.getInputStream(iconEntry).use { stream ->
-                    val data = stream.readNBytes(2 * 1024 * 1024 + 1)
-                    if (data.size > 2 * 1024 * 1024) null else data
+                    val output = java.io.ByteArrayOutputStream()
+                    val buffer = ByteArray(8192)
+                    var total = 0
+                    while (true) {
+                        val count = stream.read(buffer)
+                        if (count < 0) break
+                        total += count
+                        if (total > 2 * 1024 * 1024) return@use null
+                        output.write(buffer, 0, count)
+                    }
+                    output.toByteArray()
                 } ?: return@use null
                 if (bytes.isEmpty()) return@use null
 
