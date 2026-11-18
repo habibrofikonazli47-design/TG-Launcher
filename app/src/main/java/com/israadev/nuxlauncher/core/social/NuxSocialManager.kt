@@ -390,6 +390,16 @@ object NuxSocialManager {
             .map { JSONObject(it) }
     }
 
+    suspend fun acceptPrivateWorldInviteSession(sessionId: String): Result<JSONObject> = withContext(Dispatchers.IO) {
+        if (!worldInvitesAvailable()) return@withContext Result.failure(Exception("Fitur undangan dunia privat belum diaktifkan admin."))
+        if (sessionId.isBlank()) return@withContext Result.failure(Exception("ID undangan tidak valid."))
+        val token = getAuthToken(forceRefresh = true)
+            ?: return@withContext Result.failure(Exception("Sesi login kedaluwarsa. Silakan login ulang."))
+        val payload = JSONObject().put("action", "accept_session").put("sessionId", sessionId).toString()
+        AuthService.postApi("/api/social/world-invites", payload, bearerToken = token)
+            .map { JSONObject(it) }
+    }
+
     suspend fun acceptPrivateWorldInvite(inviteCode: String): Result<JSONObject> = withContext(Dispatchers.IO) {
         if (!worldInvitesAvailable()) return@withContext Result.failure(Exception("Fitur undangan dunia privat belum diaktifkan admin."))
         val code = inviteCode.trim().uppercase()
