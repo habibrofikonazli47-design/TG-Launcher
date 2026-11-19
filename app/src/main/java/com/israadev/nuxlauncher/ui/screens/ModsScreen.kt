@@ -456,6 +456,8 @@ fun ModsScreen(
             .background(Color.Transparent)
             .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 8.dp)
     ) {
+        ModRecipePanel(instance = selectedInstance)
+
         if (selectedInstance == null) {
             Box(
                 modifier = Modifier.fillMaxSize(),
