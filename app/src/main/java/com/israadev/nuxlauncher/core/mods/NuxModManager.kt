@@ -113,6 +113,71 @@ object NuxModManager {
     }
 
     /**
+     * Extract the icon declared by Fabric/Forge metadata from a downloaded mod JAR.
+     * Icons are cached inside the instance so the installed list works offline.
+     */
+    private fun extractInstalledModIcon(file: File, gameDir: File): String? {
+        return try {
+            ZipFile(file).use { zip ->
+                var iconPath: String? = null
+                val fabricEntry = zip.getEntry("fabric.mod.json")
+                if (fabricEntry != null) {
+                    zip.getInputStream(fabricEntry).bufferedReader().use { reader ->
+                        val json = JsonParser.parseReader(reader).asJsonObject
+                        val icon = json.get("icon")
+                        iconPath = when {
+                            icon == null || icon.isJsonNull -> null
+                            icon.isJsonPrimitive -> icon.asString
+                            icon.isJsonArray -> icon.asJsonArray.firstOrNull()?.let { element ->
+                                if (element.isJsonPrimitive) element.asString
+                                else if (element.isJsonObject && element.asJsonObject.has("path")) element.asJsonObject.get("path").asString
+                                else null
+                            }
+                            else -> null
+                        }
+                    }
+                } else {
+                    val tomlEntry = zip.getEntry("META-INF/mods.toml")
+                    if (tomlEntry != null) {
+                        zip.getInputStream(tomlEntry).bufferedReader().useLines { lines ->
+                            iconPath = lines.firstOrNull { it.trim().startsWith("logoFile") }
+                                ?.substringAfter("=")?.trim()?.trim('"', '\'')
+                        }
+                    }
+                }
+
+                val safePath = iconPath?.trim()?.removePrefix("/")?.takeIf {
+                    it.isNotBlank() && !it.contains("..") && !it.startsWith("/")
+                } ?: return@use null
+                val iconEntry = zip.getEntry(safePath) ?: return@use null
+                val bytes = zip.getInputStream(iconEntry).use { stream ->
+                    val output = java.io.ByteArrayOutputStream()
+                    val buffer = ByteArray(8192)
+                    var total = 0
+                    while (true) {
+                        val count = stream.read(buffer)
+                        if (count < 0) break
+                        total += count
+                        if (total > 2 * 1024 * 1024) return@use null
+                        output.write(buffer, 0, count)
+                    }
+                    output.toByteArray()
+                } ?: return@use null
+                if (bytes.isEmpty()) return@use null
+
+                val extension = safePath.substringAfterLast('.', "png").lowercase()
+                    .takeIf { it in setOf("png", "jpg", "jpeg", "webp") } ?: "png"
+                val cacheDir = File(gameDir, ".tg_mod_icons").apply { mkdirs() }
+                val cachedIcon = File(cacheDir, "${file.name.hashCode().toUInt().toString(16)}.$extension")
+                cachedIcon.writeBytes(bytes)
+                Uri.fromFile(cachedIcon).toString()
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    /**
      * Membaca semua item yang telah terpasang di dalam instance untuk jenis addon tertentu
      */
     suspend fun getInstalledItems(
@@ -211,6 +276,9 @@ object NuxModManager {
 
             val meta = metaMap[cleanFilename.lowercase()]
             val finalId = meta?.projectId?.takeIf { it.isNotBlank() } ?: cleanFilename
+            val iconPath = if (itemType == "mods" && file.isFile && cleanFilename.endsWith(".jar", ignoreCase = true)) {
+                extractInstalledModIcon(file, gameDir)
+            } else null
 
             result.add(
                 InstalledModItem(
@@ -223,7 +291,8 @@ object NuxModManager {
                     category = itemType.replaceFirstChar { it.uppercase() },
                     isEnabled = isEnabled,
                     sizeBytes = if (file.isFile) file.length() else 0L,
-                    itemType = itemType
+                    itemType = itemType,
+                    iconPath = iconPath
                 )
             )
         }
@@ -925,22 +994,47 @@ object NuxModManager {
         }
     }
 
+    /**
+     * Download to a temporary file first. A network interruption must never leave a
+     * truncated .jar with the final filename, because Minecraft may try to load it.
+     */
     private fun downloadFile(url: String, destFile: File) {
         val request = Request.Builder()
             .url(url)
             .header("User-Agent", USER_AGENT)
             .build()
+        val tempFile = File(destFile.parentFile, "${destFile.name}.part")
 
-        val response = httpClient.newCall(request).execute()
-        if (!response.isSuccessful) {
-            throw Exception("Failed to download file: HTTP ${response.code}")
-        }
-
-        response.body?.byteStream()?.use { input ->
-            FileOutputStream(destFile).use { output ->
-                input.copyTo(output)
+        try {
+            tempFile.delete()
+            httpClient.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    throw Exception("Failed to download file: HTTP ${response.code}")
+                }
+                val body = response.body ?: throw Exception("Body stream kosong")
+                body.byteStream().use { input ->
+                    FileOutputStream(tempFile).use { output ->
+                        input.copyTo(output)
+                        output.fd.sync()
+                    }
+                }
             }
-        } ?: throw Exception("Body stream kosong")
+
+            if (!tempFile.isFile || tempFile.length() <= 0L) {
+                throw Exception("File unduhan kosong atau tidak lengkap")
+            }
+
+            // Same-directory move keeps the final filename unavailable until download completes.
+            java.nio.file.Files.move(
+                tempFile.toPath(),
+                destFile.toPath(),
+                java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                java.nio.file.StandardCopyOption.ATOMIC_MOVE
+            )
+        } catch (error: Exception) {
+            tempFile.delete()
+            throw error
+        }
     }
 
     fun getModpackMetadataFile(gameDir: File, cleanFilename: String): File {

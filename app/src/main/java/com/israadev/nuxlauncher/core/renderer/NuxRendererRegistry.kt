@@ -250,10 +250,36 @@ object NuxRendererRegistry {
         val hasMobileGlues = File(nativeLibDir, "libmobileglues.so").exists()
         val hasGl4es = File(nativeLibDir, "libgl4es_114.so").exists()
 
-        // 1. Direct match in availableRenderers (built-in or scanned plugins)
+        // 1. Direct match in availableRenderers (built-in or scanned plugins).
+        // Never launch a renderer outside its declared Minecraft version range:
+        // unsupported GL bridges can start the JVM but leave the world blank/corrupted.
         val requested = findRendererById(selectedId)
+        fun isCompatible(renderer: NuxRendererInfo): Boolean =
+            NuxVersionUtils.isRendererSupported(renderer, mcVersion)
+
+        fun automaticFallback(): NuxRendererInfo {
+            val mobileGluesPlugin = pluginRenderers.firstOrNull {
+                it.libraryName.contains("mobileglue", ignoreCase = true) &&
+                    isCompatible(it)
+            }
+            return when {
+                isModernMinecraft(mcVersion) && hasNgGl4es && isCompatible(RENDERER_KRYPTON) ->
+                    RENDERER_KRYPTON
+                isModernMinecraft(mcVersion) && hasMobileGlues && isCompatible(RENDERER_MOBILEGLUES) ->
+                    RENDERER_MOBILEGLUES
+                mobileGluesPlugin != null -> mobileGluesPlugin
+                hasGl4es && isCompatible(RENDERER_GL4ES) -> RENDERER_GL4ES
+                hasNgGl4es && isCompatible(RENDERER_KRYPTON) -> RENDERER_KRYPTON
+                hasMobileGlues && isCompatible(RENDERER_MOBILEGLUES) -> RENDERER_MOBILEGLUES
+                else -> throw IllegalStateException(
+                    "No compatible graphics renderer is available for Minecraft $mcVersion. " +
+                        "Install or enable a compatible renderer before launching the game."
+                )
+            }
+        }
+
         if (requested.isPlugin) {
-            return requested
+            return if (isCompatible(requested)) requested else automaticFallback()
         }
 
         // 2. If user selected by plugin ID pattern or package name
@@ -265,7 +291,7 @@ object NuxRendererRegistry {
                 it.pluginPackageName?.contains(pkg, ignoreCase = true) == true
             }
             if (matchedPlugin != null) {
-                return matchedPlugin
+                return if (isCompatible(matchedPlugin)) matchedPlugin else automaticFallback()
             }
         }
 
@@ -276,14 +302,14 @@ object NuxRendererRegistry {
                 it.displayName.equals("MobileGL", ignoreCase = true) ||
                 it.pluginPackageName == "top.mobilegl.plugin"
             }
-            if (pluginMobileGL != null) {
+            if (pluginMobileGL != null && isCompatible(pluginMobileGL)) {
                 return pluginMobileGL
             }
         }
 
         // 4. If selectedId is "mobileglues" or mentions mobileglue
         if (selectedId.contains("mobileglue", ignoreCase = true)) {
-            if (hasMobileGlues) {
+            if (hasMobileGlues && isCompatible(RENDERER_MOBILEGLUES)) {
                 return RENDERER_MOBILEGLUES
             }
             // Auto-fallback to external MobileGlues plugin if installed
@@ -293,35 +319,24 @@ object NuxRendererRegistry {
                 it.libraryName.contains("mobileglue", ignoreCase = true) ||
                 it.pluginPackageName?.contains("mobileglue", ignoreCase = true) == true
             }
-            if (pluginMg != null) {
+            if (pluginMg != null && isCompatible(pluginMg)) {
                 return pluginMg
             }
         }
 
         // 4. Auto mode
         if (selectedId.equals("auto", ignoreCase = true)) {
-            val isModernMc = isModernMinecraft(mcVersion)
-            return if (isModernMc && hasNgGl4es) {
-                RENDERER_KRYPTON
-            } else if (isModernMc && (hasMobileGlues || pluginRenderers.any { it.libraryName.contains("mobileglue", ignoreCase = true) })) {
-                pluginRenderers.find { it.libraryName.contains("mobileglue", ignoreCase = true) } ?: RENDERER_MOBILEGLUES
-            } else if (hasGl4es) {
-                RENDERER_GL4ES
-            } else if (hasNgGl4es) {
-                RENDERER_KRYPTON
-            } else {
-                RENDERER_GL4ES
-            }
+            return automaticFallback()
         }
 
         // 5. If requested target .so exists in nativeLibDir
         val targetSo = File(nativeLibDir, requested.libraryName)
-        if (targetSo.exists()) {
+        if (targetSo.exists() && isCompatible(requested)) {
             return requested
         }
 
-        // 6. Fallback aman jika library target tidak ada di nativeLibDir
-        return if (hasNgGl4es) RENDERER_KRYPTON else if (hasMobileGlues) RENDERER_MOBILEGLUES else RENDERER_GL4ES
+        // 6. Fallback aman jika library target tidak ada atau tidak kompatibel.
+        return automaticFallback()
     }
 
     /**
