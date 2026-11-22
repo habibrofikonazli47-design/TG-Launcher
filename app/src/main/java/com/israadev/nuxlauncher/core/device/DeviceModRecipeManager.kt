@@ -78,10 +78,15 @@ object DeviceModRecipeManager {
         val gpu = GpuPerformanceProfile.detect()?.renderer ?: "GPU tidak terdeteksi"
         val isConservativeGpu = gpu.contains("Mali-G57", ignoreCase = true) ||
             gpu.contains("Mali G57", ignoreCase = true)
+        // Base the recipe on currently free memory as well as installed RAM.
+        // A device with many GB of RAM can still be under pressure when the launcher starts.
+        val hasLowMemoryHeadroom = availableBytes < 1536L * 1024L * 1024L
+        val hasBalancedMemoryHeadroom = availableBytes >= 2560L * 1024L * 1024L
+        val hasHighMemoryHeadroom = availableBytes >= 3584L * 1024L * 1024L
         val recipe = when {
-            isConservativeGpu -> lowMemory
-            totalGb >= 8 -> highMemory
-            totalGb >= 6 -> balanced
+            isConservativeGpu || totalGb <= 4 || hasLowMemoryHeadroom -> lowMemory
+            totalGb >= 8 && hasHighMemoryHeadroom -> highMemory
+            totalGb >= 6 && hasBalancedMemoryHeadroom -> balanced
             else -> lowMemory
         }
         DeviceModProfile(totalGb, availableGb, gpu, recipe)
