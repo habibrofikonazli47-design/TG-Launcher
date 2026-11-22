@@ -1025,12 +1025,20 @@ object NuxModManager {
             }
 
             // Same-directory move keeps the final filename unavailable until download completes.
-            java.nio.file.Files.move(
-                tempFile.toPath(),
-                destFile.toPath(),
-                java.nio.file.StandardCopyOption.REPLACE_EXISTING,
-                java.nio.file.StandardCopyOption.ATOMIC_MOVE
-            )
+            try {
+                java.nio.file.Files.move(
+                    tempFile.toPath(),
+                    destFile.toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                    java.nio.file.StandardCopyOption.ATOMIC_MOVE
+                )
+            } catch (_: java.nio.file.AtomicMoveNotSupportedException) {
+                java.nio.file.Files.move(
+                    tempFile.toPath(),
+                    destFile.toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING
+                )
+            }
         } catch (error: Exception) {
             tempFile.delete()
             throw error
