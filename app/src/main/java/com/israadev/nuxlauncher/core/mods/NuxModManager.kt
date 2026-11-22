@@ -994,22 +994,47 @@ object NuxModManager {
         }
     }
 
+    /**
+     * Download to a temporary file first. A network interruption must never leave a
+     * truncated .jar with the final filename, because Minecraft may try to load it.
+     */
     private fun downloadFile(url: String, destFile: File) {
         val request = Request.Builder()
             .url(url)
             .header("User-Agent", USER_AGENT)
             .build()
+        val tempFile = File(destFile.parentFile, "${destFile.name}.part")
 
-        val response = httpClient.newCall(request).execute()
-        if (!response.isSuccessful) {
-            throw Exception("Failed to download file: HTTP ${response.code}")
-        }
-
-        response.body?.byteStream()?.use { input ->
-            FileOutputStream(destFile).use { output ->
-                input.copyTo(output)
+        try {
+            tempFile.delete()
+            httpClient.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    throw Exception("Failed to download file: HTTP ${response.code}")
+                }
+                val body = response.body ?: throw Exception("Body stream kosong")
+                body.byteStream().use { input ->
+                    FileOutputStream(tempFile).use { output ->
+                        input.copyTo(output)
+                        output.fd.sync()
+                    }
+                }
             }
-        } ?: throw Exception("Body stream kosong")
+
+            if (!tempFile.isFile || tempFile.length() <= 0L) {
+                throw Exception("File unduhan kosong atau tidak lengkap")
+            }
+
+            // Same-directory move keeps the final filename unavailable until download completes.
+            java.nio.file.Files.move(
+                tempFile.toPath(),
+                destFile.toPath(),
+                java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                java.nio.file.StandardCopyOption.ATOMIC_MOVE
+            )
+        } catch (error: Exception) {
+            tempFile.delete()
+            throw error
+        }
     }
 
     fun getModpackMetadataFile(gameDir: File, cleanFilename: String): File {
