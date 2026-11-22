@@ -193,7 +193,7 @@ fun SettingsScreen(
     var sustainedPerf by remember(currentSettings.sustainedPerformanceMode) { mutableStateOf(currentSettings.sustainedPerformanceMode) }
     var selectedRenderer by remember(currentSettings.selectedRenderer) { mutableStateOf(currentSettings.selectedRenderer) }
     var vulkanDriver by remember(currentSettings.vulkanDriver) { mutableStateOf(currentSettings.vulkanDriver) }
-    var graphicsApi by remember(currentSettings.graphicsApi) { mutableStateOf(currentSettings.graphicsApi) }
+    var graphicsApi by remember(currentSettings.graphicsApi) { mutableStateOf(currentSettings.graphicsApi.uppercase().takeIf { it in setOf("DEFAULT", "OPENGL", "VULKAN") } ?: "DEFAULT") }
     var zinkPreferSystemDriver by remember(currentSettings.zinkPreferSystemDriver) { mutableStateOf(currentSettings.zinkPreferSystemDriver) }
     var vsyncInZink by remember(currentSettings.vsyncInZink) { mutableStateOf(currentSettings.vsyncInZink) }
     var showRendererDialog by remember { mutableStateOf(false) }
@@ -1339,6 +1339,40 @@ fun SettingsScreen(
                             }
                         }
 
+                        Spacer(modifier = Modifier.height(8.dp))
+                        NuxButton(
+                            onClick = {
+                                val recommendedRam = when {
+                                    totalRamMb <= 3072 -> 768
+                                    totalRamMb <= 4096 -> 1280
+                                    totalRamMb <= 6144 -> 1792
+                                    totalRamMb <= 8192 -> 2560
+                                    else -> 3584
+                                }.coerceIn(512, maxAllocatableRam)
+                                ramMb = recommendedRam
+                                initialHeapMb = minOf(512, (recommendedRam / 4).coerceAtLeast(128))
+                                resolutionRatio = when {
+                                    totalRamMb <= 4096 -> 75
+                                    totalRamMb <= 6144 -> 85
+                                    else -> 100
+                                }
+                                autoOptimizeMC = true
+                                commitSettings()
+                            },
+                            backgroundColor = Color(0xFF1677E8),
+                            cornerRadius = 6.dp
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Outlined.AutoFixHigh, contentDescription = null, tint = Color.White, modifier = Modifier.size(13.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("OPTIMALKAN UNTUK HP INI", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 9.sp)
+                            }
+                        }
+
                         // Custom JVM Arguments
                         Column {
                             Text(
@@ -1654,7 +1688,7 @@ fun SettingsScreen(
                                 color = Color.White
                             )
                             Text(
-                                text = "Configure graphics API used by modern Minecraft 26.2+",
+                                text = "Choose the graphics API directly. Default keeps the launcher-managed setting; OpenGL and Vulkan force the selected API.",
                                 fontSize = 9.5.sp,
                                 color = NuxColors.GrayNeutral
                             )

@@ -39,6 +39,8 @@ import com.israadev.nuxlauncher.core.lang.tr
 import com.israadev.nuxlauncher.core.lang.trStr
 import com.israadev.nuxlauncher.core.lang.NuxLanguageManager
 import com.israadev.nuxlauncher.core.instance.InstanceManager
+import com.israadev.nuxlauncher.core.device.DeviceModProfile
+import com.israadev.nuxlauncher.core.device.DeviceModRecipeManager
 import com.israadev.nuxlauncher.core.models.*
 import com.israadev.nuxlauncher.core.mods.NuxModManager
 import com.israadev.nuxlauncher.core.network.RemoteLauncherConfig
@@ -193,6 +195,17 @@ fun ModsScreen(
 
     val instances by InstanceManager.instances.collectAsState()
     val selectedInstance by InstanceManager.selectedInstance.collectAsState()
+
+    var deviceProfile by remember { mutableStateOf<DeviceModProfile?>(null) }
+    var isDetectingDevice by remember { mutableStateOf(true) }
+    var isInstallingRecipe by remember { mutableStateOf(false) }
+    var recipeProgress by remember { mutableStateOf("") }
+    var recipeResult by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        deviceProfile = DeviceModRecipeManager.detect(context)
+        isDetectingDevice = false
+    }
 
     // Mode: "installed" | "browse"
     var mainMode by remember { mutableStateOf("browse") }
@@ -609,6 +622,25 @@ fun ModsScreen(
                         )
                     }
                     }
+
+                    val isRecipe = mainMode == "recipe"
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(if (isRecipe) Color(0xFF278BFF).copy(alpha = 0.2f) else Color.Transparent)
+                            .border(1.dp, if (isRecipe) Color(0xFF278BFF).copy(alpha = 0.45f) else Color.Transparent, RoundedCornerShape(4.dp))
+                            .clickable { activeType = "mods"; mainMode = "recipe"; recipeResult = null }
+                            .padding(horizontal = 9.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "⚡ Racikan",
+                            color = if (isRecipe) Color(0xFF50D7FF) else NuxColors.GrayNeutral,
+                            fontWeight = if (isRecipe) FontWeight.Black else FontWeight.SemiBold,
+                            fontSize = 9.5.sp
+                        )
+                    }
                 }
             }
 
@@ -1006,7 +1038,85 @@ fun ModsScreen(
         // =========================================================================
         // MOD LIST / INSTALLED CARDS
         // =========================================================================
-        if (mainMode == "installed") {
+        if (mainMode == "recipe") {
+            val profile = deviceProfile
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 18.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                item {
+                    NuxCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        backgroundColor = NuxColors.SurfaceElevated,
+                        borderColor = NuxColors.CardBorder,
+                        cornerRadius = 10.dp
+                    ) {
+                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Outlined.Memory, contentDescription = null, tint = Color(0xFF50D7FF), modifier = Modifier.size(22.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text("Racikan Mod Sesuai HP", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                    Text("Deteksi perangkat dan pilih mod yang kompatibel otomatis", color = NuxColors.GrayNeutral, fontSize = 10.sp)
+                                }
+                            }
+                            if (isDetectingDevice || profile == null) {
+                                LinearProgressIndicator(Modifier.fillMaxWidth(), color = Color(0xFF278BFF))
+                                Text("Menganalisis RAM dan GPU...", color = NuxColors.GrayNeutral, fontSize = 10.sp)
+                            } else {
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    DeviceSpecChip("RAM", "${profile.totalRamGb} GB")
+                                    DeviceSpecChip("Tersedia", "${profile.availableRamGb} GB")
+                                }
+                                Text("GPU: ${profile.gpuName}", color = NuxColors.GrayNeutral, fontSize = 10.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                Divider(color = NuxColors.CardBorder.copy(alpha = 0.7f))
+                                Text(profile.recipe.title, color = Color(0xFF50D7FF), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Text(profile.recipe.description, color = Color.White.copy(alpha = 0.8f), fontSize = 10.sp)
+                                Text("Target: Minecraft ${currentInst.mcVersion} · ${currentInst.loader.uppercase()}", color = NuxColors.GrayNeutral, fontSize = 10.sp)
+                                Text("Daftar mod yang akan diperiksa:", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 10.sp)
+                                profile.recipe.projectIds.forEach { (name, _) ->
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Outlined.CheckCircleOutline, contentDescription = null, tint = Color(0xFF50D7FF), modifier = Modifier.size(13.dp))
+                                        Spacer(Modifier.width(6.dp))
+                                        Text(name, color = Color.White, fontSize = 10.sp)
+                                    }
+                                }
+                                Text("Hanya versi release yang cocok dengan versi Minecraft dan loader instance yang dipilih. Mod yang tidak kompatibel atau sudah terpasang akan dilewati.", color = NuxColors.GrayNeutral, fontSize = 9.sp)
+                                NuxButton(
+                                    onClick = {
+                                        if (isInstallingRecipe) return@NuxButton
+                                        isInstallingRecipe = true
+                                        recipeResult = null
+                                        recipeProgress = "Menyiapkan racikan..."
+                                        scope.launch {
+                                            val result = DeviceModRecipeManager.install(context, currentInst, profile.recipe) { status -> recipeProgress = status }
+                                            isInstallingRecipe = false
+                                            recipeResult = result.fold(
+                                                { lines -> if (lines.isEmpty()) "Semua mod sudah terpasang atau tidak ada versi kompatibel." else lines.joinToString("\\n") },
+                                                { error -> "Gagal memasang racikan: ${error.message ?: "kesalahan tidak diketahui"}" }
+                                            )
+                                            reloadInstalled()
+                                        }
+                                    },
+                                    backgroundColor = Color(0xFF1677E8),
+                                    cornerRadius = 7.dp
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                                        if (isInstallingRecipe) CircularProgressIndicator(Modifier.size(14.dp), color = Color.White, strokeWidth = 2.dp)
+                                        else Icon(Icons.Outlined.Download, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+                                        Spacer(Modifier.width(6.dp))
+                                        Text(if (isInstallingRecipe) "Mengunduh..." else "DOWNLOAD SEMUA MOD", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 10.sp)
+                                    }
+                                }
+                                if (isInstallingRecipe) Text(recipeProgress, color = Color(0xFF50D7FF), fontSize = 10.sp)
+                                recipeResult?.let { resultText -> Text(resultText, color = Color.White, fontSize = 10.sp) }
+                            }
+                        }
+                    }
+                }
+            }
+        } else if (mainMode == "installed") {
             val filteredInstalled = remember(installedItems, installedSearch) {
                 if (installedSearch.isBlank()) installedItems
                 else installedItems.filter {
@@ -1079,23 +1189,35 @@ fun ModsScreen(
                                     modifier = Modifier.weight(1f),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(32.dp)
-                                            .clip(RoundedCornerShape(6.dp))
-                                            .background(
-                                                if (item.isEnabled) Color(0xFF278BFF).copy(alpha = 0.15f) else Color(0x0DFFFFFF),
-                                                RoundedCornerShape(6.dp)
-                                            )
-                                            .border(1.dp, NuxColors.CardBorder, RoundedCornerShape(6.dp)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = item.name.take(2).uppercase(),
-                                            fontWeight = FontWeight.Black,
-                                            color = if (item.isEnabled) Color(0xFF50D7FF) else NuxColors.GrayNeutral,
-                                            fontSize = 11.sp
+                                    if (!item.iconPath.isNullOrBlank()) {
+                                        NuxNetworkImage(
+                                            model = item.iconPath,
+                                            contentDescription = "${item.name} icon",
+                                            modifier = Modifier
+                                                .size(38.dp)
+                                                .clip(RoundedCornerShape(6.dp))
+                                                .border(1.dp, NuxColors.CardBorder, RoundedCornerShape(6.dp)),
+                                            fallbackInitials = item.name.take(2).uppercase()
                                         )
+                                    } else {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(38.dp)
+                                                .clip(RoundedCornerShape(6.dp))
+                                                .background(
+                                                    if (item.isEnabled) Color(0xFF278BFF).copy(alpha = 0.15f) else Color(0x0DFFFFFF),
+                                                    RoundedCornerShape(6.dp)
+                                                )
+                                                .border(1.dp, NuxColors.CardBorder, RoundedCornerShape(6.dp)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = item.name.take(2).uppercase(),
+                                                fontWeight = FontWeight.Black,
+                                                color = if (item.isEnabled) Color(0xFF50D7FF) else NuxColors.GrayNeutral,
+                                                fontSize = 11.sp
+                                            )
+                                        }
                                     }
 
                                     Spacer(modifier = Modifier.width(10.dp))
@@ -2483,5 +2605,22 @@ private fun formatCompactNumber(number: Long): String {
         number >= 1_000_000 -> DecimalFormat("#,##0.#").format(number / 1_000_000.0) + "M"
         number >= 1_000 -> DecimalFormat("#,##0.#").format(number / 1_000.0) + "K"
         else -> number.toString()
+    }
+}
+
+
+@Composable
+private fun DeviceSpecChip(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(5.dp))
+            .background(Color(0xFF278BFF).copy(alpha = 0.12f))
+            .border(1.dp, Color(0xFF278BFF).copy(alpha = 0.3f), RoundedCornerShape(5.dp))
+            .padding(horizontal = 8.dp, vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(label, color = NuxColors.GrayNeutral, fontSize = 9.sp)
+        Spacer(Modifier.width(5.dp))
+        Text(value, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 9.sp)
     }
 }
