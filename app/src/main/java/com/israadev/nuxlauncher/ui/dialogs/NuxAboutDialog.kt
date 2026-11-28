@@ -426,7 +426,60 @@ fun NuxAboutDialog(
                                 }
                             )
 
-                            if (supportUrl.startsWith("https://") || websiteUrl.startsWith("https://")) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(Color(0xFF17202E))
+                                        .border(1.dp, Color(0x334B8BFF), RoundedCornerShape(8.dp))
+                                        .clickable {
+                                            runCatching {
+                                                context.startActivity(
+                                                    Intent(Intent.ACTION_VIEW, Uri.parse("https://discord.gg/SbzU5HwJ2T"))
+                                                )
+                                            }
+                                        }
+                                        .padding(9.dp)
+                                ) {
+                                    Text("Komunitas Discord ↗", color = Color(0xFF8AB4FF), fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                }
+                                if (supportUrl.startsWith("https://")) {
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(Color(0xFF17221F))
+                                            .border(1.dp, Color(0x334ADE80), RoundedCornerShape(8.dp))
+                                            .clickable {
+                                                runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(supportUrl))) }
+                                            }
+                                            .padding(9.dp)
+                                    ) {
+                                        Text("Dukungan TG Launcher ↗", color = NuxColors.MintGreen, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                                if (websiteUrl.startsWith("https://")) {
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(Color(0xFF17221F))
+                                            .border(1.dp, Color(0x334ADE80), RoundedCornerShape(8.dp))
+                                            .clickable {
+                                                runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(websiteUrl))) }
+                                            }
+                                            .padding(9.dp)
+                                    ) {
+                                        Text("Website TG Launcher ↗", color = NuxColors.MintGreen, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+
+                            if (false) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
