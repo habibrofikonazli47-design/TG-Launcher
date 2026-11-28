@@ -479,43 +479,7 @@ fun NuxAboutDialog(
                                 }
                             }
 
-                            if (false) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    if (supportUrl.startsWith("https://")) {
-                                        Box(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .clip(RoundedCornerShape(8.dp))
-                                                .background(Color(0xFF17221F))
-                                                .border(1.dp, Color(0x334ADE80), RoundedCornerShape(8.dp))
-                                                .clickable {
-                                                    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(supportUrl))) }
-                                                }
-                                                .padding(9.dp)
-                                        ) {
-                                            Text("Dukungan TG Launcher ↗", color = NuxColors.MintGreen, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                                        }
-                                    }
-                                    if (websiteUrl.startsWith("https://")) {
-                                        Box(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .clip(RoundedCornerShape(8.dp))
-                                                .background(Color(0xFF17221F))
-                                                .border(1.dp, Color(0x334ADE80), RoundedCornerShape(8.dp))
-                                                .clickable {
-                                                    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(websiteUrl))) }
-                                                }
-                                                .padding(9.dp)
-                                        ) {
-                                            Text("Website TG Launcher ↗", color = NuxColors.MintGreen, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                                        }
-                                    }
-                                }
-                            }
+
 
                             // Disclaimer Card
                             Box(
